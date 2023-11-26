@@ -1,0 +1,653 @@
+#include "ink_compiler.h"
+
+#include "utils.h"
+
+#include "objects/ink_object.h"
+#include "objects/ink_object_choice.h"
+#include "objects/ink_object_choicetextmix.h"
+#include "objects/ink_object_conditional.h"
+#include "objects/ink_object_divert.h"
+#include "objects/ink_object_globalvariable.h"
+#include "objects/ink_object_glue.h"
+#include "objects/ink_object_interpolation.h"
+#include "objects/ink_object_linebreak.h"
+#include "objects/ink_object_sequence.h"
+#include "objects/ink_object_tag.h"
+#include "objects/ink_object_text.h"
+
+#include <unordered_map>
+#include <fstream>
+#include <sstream>
+
+#include <iostream>
+#include <stdexcept>
+
+namespace {
+	static const std::unordered_map<char, InkToken> TokenChars = {
+		{'/', InkToken::Slash},
+		{'\\', InkToken::Backslash},
+
+		{'#', InkToken::Hash},
+
+		{'*', InkToken::Asterisk},
+		{'+', InkToken::Plus},
+
+		{'(', InkToken::LeftParen},
+		{')', InkToken::RightParen},
+		{'[', InkToken::LeftBracket},
+		{']', InkToken::RightBracket},
+		{'{', InkToken::LeftBrace},
+		{'}', InkToken::RightBrace},
+
+		{'=', InkToken::Equal},
+
+		{':', InkToken::Colon},
+		{'|', InkToken::Pipe},
+		{'&', InkToken::Ampersand},
+		{'~', InkToken::Tilde},
+	};
+
+	char next_char(const std::string& script_text, size_t index) {
+		if (index + 1 < script_text.length()) {
+			return script_text[index + 1];
+		} else {
+			return -1;
+		}
+	}
+
+	const InkLexer::Token& next_token(const std::vector<InkLexer::Token>& tokens, size_t index) {
+		if (index + 1 < tokens.size()) {
+			return tokens[index + 1];
+		} else {
+			return InkLexer::Token();
+		}
+	}
+
+	bool next_token_is(const std::vector<InkLexer::Token>& tokens, size_t index, InkToken what) {
+		return next_token(tokens, index).token == what;
+	}
+
+	bool next_token_is_sequence(const std::vector<InkLexer::Token>& tokens, size_t index, const std::vector<InkToken>& what) {
+		for (size_t i = 0; i < what.size(); ++i) {
+			if (!next_token_is(tokens, index + i, what[i])) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	const InkLexer::Token last_token(const std::vector<InkLexer::Token>& tokens) {
+		return !tokens.empty() ? tokens.back() : InkLexer::Token();
+	}
+
+	void try_add_text_token(std::vector<InkLexer::Token>& result, const std::string& text) {
+		InkLexer::Token text_token{InkToken::Text, text};
+		if (!text_token.text_contents.empty()) {
+			result.push_back(text_token);
+		}
+	}
+
+	std::vector<InkLexer::Token> remove_comments(const std::vector<InkLexer::Token>& token_stream) {
+		std::vector<InkLexer::Token> result;
+
+		size_t index = 0;
+		while (index < token_stream.size()) {
+			if (token_stream[index].token == InkToken::Slash) {
+				InkToken next = next_token(token_stream, index).token;
+				if (next == InkToken::Slash) {
+					++index;
+					do {
+						++index;
+					} while (token_stream[index].token != InkToken::NewLine);
+
+					++index;
+				} else if (next == InkToken::Asterisk) {
+					++index;
+					do {
+						++index;
+					} while (token_stream[index].token != InkToken::Asterisk || !next_token_is(token_stream, index, InkToken::Slash));
+
+					index += 2;
+				}
+			}
+
+			result.push_back(token_stream[index]);
+			++index;
+		}
+
+		return result;
+	}
+}
+
+std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text) {
+	std::vector<Token> result;
+
+	std::size_t index = 0;
+	std::string current_text;
+	current_text.reserve(50);
+	bool any_tokens_this_line = false;
+
+	while (index < script_text.length()) {
+		Token this_token;
+		bool end_text = true;
+		char chr = script_text[index];
+
+		this_token.text_contents = chr;
+		switch (chr) {
+			case '\n': {
+				if (last_token(result).token != InkToken::NewLine || !current_text.empty()) {
+					this_token.token = InkToken::NewLine;
+				}
+			} break;
+
+			case '*':
+			case '+': {
+				this_token.token = chr == '*' ? InkToken::Asterisk : InkToken::Plus;
+				++index;
+				while (true) {
+					char inner_chr = script_text[index];
+					if (inner_chr > 32) {
+						if (inner_chr == chr) {
+							++this_token.count;
+						} else {
+							break;
+						}
+					}
+
+					++index;
+				}
+
+				--index;
+			} break;
+
+			case '-': {
+				if (next_char(script_text, index) == '>') {
+					this_token.token = InkToken::Arrow;
+					++index;
+				} else {
+					this_token.token = InkToken::Dash;
+					++index;
+					while (true) {
+						char inner_chr = script_text[index];
+						if (inner_chr > 32) {
+							if (inner_chr == chr) {
+								++this_token.count;
+							} else {
+								break;
+							}
+						}
+
+						++index;
+					}
+
+					--index;
+				}
+			} break;
+
+			case '<': {
+				if (next_char(script_text, index) == '>') {
+					this_token.token = InkToken::Diamond;
+					++index;
+				} else if (next_char(script_text, index) == '-') {
+					this_token.token = InkToken::BackArrow;
+					++index;
+				} else {
+					current_text += '<';
+					end_text = false;
+				}
+			} break;
+
+			case '!': {
+				if (last_token(result).token == InkToken::LeftBrace) {
+				this_token.token = InkToken::Bang;
+				} else {
+					current_text += '!';
+					end_text = false;
+				}
+			} break;
+
+			default: {
+				if (auto token_char = TokenChars.find(chr); token_char != TokenChars.end()) {
+					this_token.token = token_char->second;
+				} else if (any_tokens_this_line || !current_text.empty() || chr > 32) {
+					current_text += chr;
+					end_text = false;
+				}
+			} break;
+		}
+
+		if (strip_string_edges(current_text) == "VAR") {
+			this_token.token = InkToken::KeywordVar;
+			current_text.clear();
+		}
+
+		if (end_text) {
+			try_add_text_token(result, current_text);
+			current_text.clear();
+		}
+
+		if (this_token.token != InkToken::INVALID) {
+			result.push_back(this_token);
+			any_tokens_this_line = this_token.token != InkToken::NewLine;
+		}
+
+		++index;
+	}
+
+	try_add_text_token(result, current_text);
+
+	return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+InkStory InkCompiler::compile_script(const std::string& script) {
+	compile(script);
+	return InkStory();
+}
+
+InkStory InkCompiler::compile_file(const std::string& file_path)
+{
+	std::ifstream infile{file_path};
+	std::stringstream buffer;
+	buffer << infile.rdbuf();
+	std::string file_text = buffer.str();
+	infile.close();
+
+	compile(file_text);
+	return InkStory();
+}
+
+void InkCompiler::compile_script_to_file(const std::string& script, const std::string& out_file_path) {
+}
+
+void InkCompiler::compile_file_to_file(const std::string& in_file_path, const std::string& out_file_path) {
+}
+
+std::vector<std::uint8_t> InkCompiler::compile(const std::string &script) {
+	InkLexer lexer;
+	std::vector<InkLexer::Token> token_stream = lexer.lex_script(script);
+	token_stream = remove_comments(token_stream);
+
+	std::vector<Knot> result_knots = {{"_S", {}, {}}};
+
+	token_index = 0;
+	while (token_index < token_stream.size()) {
+		const InkLexer::Token& this_token = token_stream[token_index];
+		InkObject* this_token_object = compile_token(token_stream, this_token, result_knots);
+		if (this_token_object) {
+			if (this_token_object->get_id() == ObjectId::Text && last_token_object && last_token_object->get_id() == ObjectId::Text) {
+				static_cast<InkObjectText*>(result_knots.back().objects.back())->append_text(static_cast<InkObjectText*>(this_token_object)->get_text_contents());
+			} else if (this_token_object->get_id() != ObjectId::LineBreak || (last_token_object && last_token_object->get_id() == ObjectId::LineBreak)) {
+				result_knots.back().objects.push_back(this_token_object);
+			}
+		}
+
+		last_token_object = this_token_object;
+		++token_index;
+	}
+
+	for (Knot& knot : result_knots) {
+		std::cout << "=== " << knot.name << std::endl;
+		for (InkObject* object : knot.objects) {
+			std::cout << object->to_string() << std::endl;
+			delete object;
+		}
+	}
+
+	return {};
+}
+
+InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots)
+{
+	bool end_text = true;
+	bool end_line = false;
+	InkObject* result_object = nullptr;
+
+	switch (token.token) {
+		case InkToken::NewLine: {
+			result_object = new InkObjectLineBreak();
+			end_line = true;
+		} break;
+
+		case InkToken::Slash: {
+			result_object = new InkObjectText("/");
+			end_text = false;
+		} break;
+
+		case InkToken::Hash: {
+			std::string tag_contents;
+
+			++token_index;
+			while (true) {
+				if (all_tokens[token_index].token == InkToken::Hash) {
+					--token_index;
+					break;
+				} else if (all_tokens[token_index].token == InkToken::NewLine) {
+					break;
+				}
+
+				tag_contents += all_tokens[token_index].text_contents;
+				++token_index;
+			}
+
+			result_object = new InkObjectTag(tag_contents);
+		} break;
+
+		case InkToken::Equal: {
+			if (at_line_start) {
+				if (next_token_is_sequence(all_tokens, token_index, {InkToken::Equal, InkToken::Equal})) {
+					if (next_token_is(all_tokens, token_index + 2, InkToken::Text)) {
+						std::string new_knot_name = strip_string_edges(all_tokens[token_index + 3].text_contents);
+						story_knots.push_back({new_knot_name, {}});
+
+						while (all_tokens[token_index].token != InkToken::NewLine) {
+							++token_index;
+						}
+
+						end_line = true;
+					} else {
+						throw std::exception("Expected knot name");
+					}
+				} else if (next_token_is(all_tokens, token_index, InkToken::Text)) {
+					std::string new_stitch_name = strip_string_edges(all_tokens[token_index + 1].text_contents);
+					story_knots.back().stitches.push_back({new_stitch_name, story_knots.back().objects.size()});
+
+					while (all_tokens[token_index].token != InkToken::NewLine) {
+						++token_index;
+					}
+
+					end_line = true;
+				} else {
+					throw std::exception("Expected stitch name");
+				}
+			} else {
+				result_object = new InkObjectText("=");
+				end_text = false;
+			}
+		} break;
+
+		case InkToken::Asterisk:
+		case InkToken::Plus: {
+			if (at_line_start) {
+				++choice_level;
+				std::vector<InkChoiceEntry> choice_options;
+				bool has_gather = false;
+
+				while (token_index < all_tokens.size()) {
+					if (all_tokens[token_index].token == InkToken::NewLine) {
+						if (next_token_is(all_tokens, token_index, InkToken::Equal)) {
+							end_line = true;
+							break;
+						} else if (next_token_is(all_tokens, token_index, InkToken::Dash)) { // TODO: nested choices
+							has_gather = true;
+							end_line = true;
+							break;
+						} else if (next_token_is(all_tokens, token_index, InkToken::Asterisk) || next_token_is(all_tokens, token_index, InkToken::Plus)) { // TODO: nested choices
+							end_line = true;
+							break;
+						}
+					}
+
+					bool in_result = false;
+					in_choice_line = true;
+					past_choice_initial_braces = false;
+					++token_index;
+
+					choice_stack.push_back({.sticky = token.token == InkToken::Plus});
+					InkChoiceEntry& choice_entry = choice_stack.back();
+
+					while (token_index < all_tokens.size()) {
+						const InkLexer::Token& in_choice_token = all_tokens[token_index];
+						if (in_choice_token.token == InkToken::NewLine) {
+							if (next_token_is(all_tokens, token_index, InkToken::Dash) || next_token_is(all_tokens, token_index, InkToken::Equal)) {
+								break;
+							} else if (next_token_is(all_tokens, token_index, InkToken::Asterisk) || next_token_is(all_tokens, token_index, InkToken::Plus)) {
+								break;
+							}
+						}
+
+						InkObject* in_choice_object = compile_token(all_tokens, in_choice_token, story_knots);
+						if (!in_result && (in_choice_object->get_id() == ObjectId::LineBreak || in_choice_object->get_id() == ObjectId::Divert)) {
+							in_result = true;
+							in_choice_line = false;
+							if (in_choice_object->get_id() == ObjectId::Divert) {
+								if (in_choice_object->has_any_contents()) {
+									--token_index;
+								} else {
+									const std::vector<InkObject*>& text_contents = choice_entry.text;
+									bool no_text = text_contents.empty() || text_contents.size() == 1 && !text_contents[0]->has_any_contents();
+									choice_entry.fallback = no_text;
+									++token_index;
+								}
+							}
+
+							continue;
+						}
+
+						std::vector<InkObject*>& target_array = !in_result ? choice_entry.text : choice_entry.result;
+						if (in_choice_object->has_any_contents()) {
+							target_array.push_back(in_choice_object);
+						}
+
+						++token_index;
+
+						if (in_choice_token.token != InkToken::LeftBrace && (in_choice_token.token != InkToken::Text || !strip_string_edges(in_choice_token.text_contents).empty())) {
+							past_choice_initial_braces = true;
+						} 
+					}
+
+					choice_options.push_back(choice_entry);
+					choice_stack.pop_back();
+				}
+
+				result_object = new InkObjectChoice(choice_options, has_gather);
+				--choice_level;
+			} else {
+				result_object = new InkObjectText(token.token == InkToken::Plus ? "+" : "*");
+				end_text = false;
+			}
+		} break;
+
+		case InkToken::LeftBracket:
+		case InkToken::RightBracket: {
+			bool right = token.token == InkToken::RightBracket;
+			if (in_choice_line) {
+				result_object = new InkObjectChoiceTextMix(right);
+			} else {
+				result_object = new InkObjectText(right ? "]" : "[");
+			}
+		} break;
+
+		case InkToken::LeftBrace: {
+			++brace_level;
+
+			InkSequenceType sequence_type = InkSequenceType::Sequence;
+			switch (next_token(all_tokens, token_index).token) {
+				case InkToken::Ampersand: {
+					sequence_type = InkSequenceType::Cycle;
+					++token_index;
+				} break;
+				case InkToken::Bang: {
+					sequence_type = InkSequenceType::OnceOnly;
+					++token_index;
+				} break;
+				case InkToken::Tilde: {
+					sequence_type = InkSequenceType::Shuffle;
+					++token_index;
+				} break;
+			}
+
+			std::vector<std::vector<InkObject*>> items;
+			std::vector<InkObject*> items_if;
+			std::vector<InkObject*> items_else;
+			std::vector<std::string> text_items;
+
+			bool is_conditional = false;
+			bool in_else = false;
+			bool found_pipe = false;
+
+			++token_index;
+			while (all_tokens[token_index].token != InkToken::RightBrace) {
+				text_items.push_back(all_tokens[token_index].text_contents);
+				if (in_choice_line && !past_choice_initial_braces) {
+					items_if.push_back(compile_token(all_tokens, all_tokens[token_index], story_knots));
+				} else {
+					switch (all_tokens[token_index].token) {
+						case InkToken::Colon: {
+							is_conditional = true;
+						} break;
+
+						case InkToken::Pipe: {
+							found_pipe = true;
+							if (is_conditional) {
+								in_else = true;
+							} else {
+								items.push_back({});
+							}
+						} break;
+
+						default: {
+							InkObject* compiled_object = compile_token(all_tokens, all_tokens[token_index], story_knots);
+							if (is_conditional) {
+								std::vector<InkObject*>& target_array = in_else ? items_else : items_if;
+								target_array.push_back(compiled_object);
+							} else if (!items.empty()) {
+								items.back().push_back(compiled_object);
+							}
+						} break;
+					}
+				}
+
+				++token_index;
+			}
+
+			--brace_level;
+
+			if (in_choice_line && !past_choice_initial_braces) {
+				//choice_stack.back().conditions.push_back(join_string_vector(items_if, std::string()));
+				// TODO: ???
+			} else {
+				if (is_conditional) {
+					// TODO: change to actual thing
+					result_object = new InkObjectConditional(strip_string_edges(items[0][0]->to_string()), items_if, items_else);
+				} else if (found_pipe || sequence_type != InkSequenceType::Sequence) {
+					result_object = new InkObjectSequence(sequence_type, items, current_sequence_index);
+					++current_sequence_index;
+				} else if (!text_items.empty()) {
+					std::string all_text = join_string_vector(text_items, std::string());
+					result_object = new InkObjectInterpolation(all_text);
+				}
+			}
+		} break;
+
+		case InkToken::Colon: {
+			if (brace_level == 0) {
+				result_object = new InkObjectText(":");
+				end_text = false;
+			}
+		} break;
+
+		case InkToken::Arrow: {
+			if (next_token_is(all_tokens, token_index, InkToken::Text)) {
+				const std::string& target = strip_string_edges(all_tokens[token_index + 1].text_contents);
+				result_object = new InkObjectDivert(target);
+				++token_index;
+			} else if (in_choice_line) {
+				result_object = new InkObjectDivert();
+			} else {
+				throw std::exception("Expected divert target");
+			}
+		} break;
+
+		case InkToken::Diamond: {
+			result_object = new InkObjectGlue();
+		} break;
+
+		case InkToken::Dash: {
+			if (!at_line_start) {
+				result_object = new InkObjectText("-");
+				end_text = false;
+			}
+		} break;
+
+		case InkToken::KeywordVar: {
+			if (at_line_start) {
+				if (next_token_is_sequence(all_tokens, token_index, {InkToken::Text, InkToken::Equal, InkToken::Text})) {
+					const std::string& identifier = all_tokens[token_index + 1].text_contents;
+					const std::string& expression = all_tokens[token_index + 3].text_contents;
+					result_object = new InkObjectGlobalVariable(identifier, expression);
+
+					token_index += 3;
+				} else {
+					throw std::exception("Malformed VAR statement");
+				}
+			} else {
+				result_object = new InkObjectText("VAR");
+				end_text = false;
+			}
+		} break;
+
+		case InkToken::Text: {
+			if (std::string text_stripped = strip_string_edges(token.text_contents); !text_stripped.empty() || token.text_contents.find(" ") != token.text_contents.npos) {
+				result_object = new InkObjectText(text_stripped);
+			}
+		} break;
+	}
+
+	at_line_start = end_line;
+	// result_object->end_text = end_text;
+
+	return result_object;
+}
+
+std::vector<InkLexer::Token> InkCompiler::remove_comments(const std::vector<InkLexer::Token>& tokens) {
+	std::vector<InkLexer::Token> result;
+
+	std::size_t index = 0;
+	while (index < tokens.size()) {
+		if (tokens[index].token == InkToken::Slash) {
+			if (next_token_is(tokens, index, InkToken::Slash)) {
+				++index;
+				do {
+					++index;
+				} while (tokens[index].token != InkToken::NewLine);
+			} else if (next_token_is(tokens, index, InkToken::Asterisk)) {
+				++index;
+				do {
+					++index;
+				} while (tokens[index].token != InkToken::Asterisk || !next_token_is(tokens, index, InkToken::Slash));
+
+				index += 2;
+			}
+		}
+
+		result.push_back(tokens[index]);
+		++index;
+	}
+
+	return result;
+}
+
+InkLexer::Token InkCompiler::next_token(const std::vector<InkLexer::Token>& tokens, std::size_t index) {
+	if (index + 1 < tokens.size()) {
+		return tokens[index + 1];
+	} else {
+		return InkLexer::Token();
+	}
+}
+
+bool InkCompiler::next_token_is(const std::vector<InkLexer::Token>& tokens, std::size_t index, InkToken what) {
+	return next_token(tokens, index).token == what;
+}
+
+bool InkCompiler::next_token_is_sequence(const std::vector<InkLexer::Token>& tokens, std::size_t index, std::vector<InkToken>&& what) {
+	for (std::size_t i = 0; i < what.size(); ++i) {
+		if (!next_token_is(tokens, index + i, what[i])) {
+			return false;
+		}
+	}
+
+	return true;
+}
