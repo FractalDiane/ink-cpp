@@ -28,3 +28,10 @@ public:
 	
 	std::vector<std::uint8_t> get_serialized_bytes() const;
 };
+
+template <>
+struct Serializer<InkObject*> {
+	std::vector<std::uint8_t> operator()(const InkObject* object) noexcept {
+		return object->get_serialized_bytes();
+	}
+};

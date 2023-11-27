@@ -2,6 +2,7 @@
 
 #include "ink_enums.h"
 #include "runtime/ink_story.h"
+#include "runtime/ink_story_data.h"
 
 #include "objects/ink_object_choice.h"
 
@@ -37,7 +38,7 @@ public:
 
 class InkCompiler {
 private:
-	struct Stitch {
+	/*struct Stitch {
 		std::string name;
 		std::size_t index;
 	};
@@ -46,7 +47,7 @@ private:
 		std::string name;
 		std::vector<InkObject*> objects;
 		std::vector<Stitch> stitches;
-	};
+	};*/
 
 	std::size_t token_index = 0;
 	InkObject* last_token_object = nullptr;
@@ -69,7 +70,7 @@ public:
 	void compile_file_to_file(const std::string& in_file_path, const std::string& out_file_path);
 
 private:
-	std::vector<std::uint8_t> compile(const std::string& script);
+	InkStoryData* compile(const std::string& script);
 	InkObject* compile_token(const std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots);
 
 	static std::vector<InkLexer::Token> remove_comments(const std::vector<InkLexer::Token>& tokens);

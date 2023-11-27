@@ -1,6 +1,7 @@
 #pragma once
 
 #include "objects/ink_object.h"
+#include "runtime/ink_story_data.h"
 
 #include <string>
 #include <unordered_map>
@@ -8,10 +9,11 @@
 
 class InkStory {
 private:
-	std::unordered_map<std::string, std::vector<InkObject*>> knots;
-	std::vector<std::string> knot_order;
+	InkStoryData* story_data;
 
 public:
-	InkStory() {}
-	~InkStory();
+	InkStory(InkStoryData* data) : story_data{data} {}
+	~InkStory() { delete story_data; }
+
+	void print_info() const;
 };

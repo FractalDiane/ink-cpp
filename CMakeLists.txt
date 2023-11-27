@@ -27,4 +27,6 @@ set(SRC_OBJECTS
 
 add_executable(ink_compiler main.cpp ${SRC_COMPILER} ${SRC_OBJECTS} ${SRC_RUNTIME})
 
+target_compile_definitions(ink_compiler PUBLIC INKB_VERSION=0)
+
 include_directories(include include/objects)

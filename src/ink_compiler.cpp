@@ -2,6 +2,9 @@
 
 #include "utils.h"
 
+#include "runtime/ink_story.h"
+#include "runtime/ink_story_data.h"
+
 #include "objects/ink_object.h"
 #include "objects/ink_object_choice.h"
 #include "objects/ink_object_choicetextmix.h"
@@ -243,8 +246,8 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 InkStory InkCompiler::compile_script(const std::string& script) {
-	compile(script);
-	return InkStory();
+	InkStoryData* story_data = compile(script);
+	return InkStory(story_data);
 }
 
 InkStory InkCompiler::compile_file(const std::string& file_path)
@@ -255,8 +258,8 @@ InkStory InkCompiler::compile_file(const std::string& file_path)
 	std::string file_text = buffer.str();
 	infile.close();
 
-	compile(file_text);
-	return InkStory();
+	InkStoryData* story_data = compile(file_text);
+	return InkStory(story_data);
 }
 
 void InkCompiler::compile_script_to_file(const std::string& script, const std::string& out_file_path) {
@@ -265,7 +268,7 @@ void InkCompiler::compile_script_to_file(const std::string& script, const std::s
 void InkCompiler::compile_file_to_file(const std::string& in_file_path, const std::string& out_file_path) {
 }
 
-std::vector<std::uint8_t> InkCompiler::compile(const std::string &script) {
+InkStoryData* InkCompiler::compile(const std::string& script) {
 	InkLexer lexer;
 	std::vector<InkLexer::Token> token_stream = lexer.lex_script(script);
 	token_stream = remove_comments(token_stream);
@@ -288,15 +291,15 @@ std::vector<std::uint8_t> InkCompiler::compile(const std::string &script) {
 		++token_index;
 	}
 
-	for (Knot& knot : result_knots) {
+	/*for (Knot& knot : result_knots) {
 		std::cout << "=== " << knot.name << std::endl;
 		for (InkObject* object : knot.objects) {
 			std::cout << object->to_string() << std::endl;
 			delete object;
 		}
-	}
+	}*/
 
-	return {};
+	return new InkStoryData(result_knots);
 }
 
 InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots)
