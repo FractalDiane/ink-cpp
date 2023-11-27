@@ -26,7 +26,7 @@ std::string strip_string_edges(const std::string& string, bool left = true, bool
 	}
 
 	if (right) {
-		result.resize(last_right_index - first_left_index + 1);
+		result.shrink_to_fit();
 	}
 	
 	return result;

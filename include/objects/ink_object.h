@@ -23,10 +23,12 @@ class InkObject {
 public:
 	virtual std::string to_string() const;
 	virtual std::vector<std::uint8_t> to_bytes() const;
+	virtual InkObject* populate_from_bytes(const std::vector<std::uint8_t>& bytes, std::size_t& index);
 	virtual ObjectId get_id() const = 0;
 	virtual bool has_any_contents() const { return false; }
 	
 	std::vector<std::uint8_t> get_serialized_bytes() const;
+	//InkObject* populate_from_bytes() const;
 };
 
 template <>

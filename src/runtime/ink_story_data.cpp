@@ -25,7 +25,11 @@ InkStoryData::~InkStoryData() {
 
 std::vector<std::uint8_t> InkStoryData::get_serialized_bytes() const {
 	std::vector<std::uint8_t> result = {'I', 'N', 'K', 'B', INKB_VERSION};
-	result.reserve(1000);
+	result.reserve(2048);
+
+	Serializer<std::uint16_t> ssize;
+	std::vector<std::uint8_t> size_bytes = ssize(knots.size());
+	result.insert(result.end(), size_bytes.begin(), size_bytes.end());
 
 	for (const auto& entry : knots) {
 		const Knot& knot = entry.second;
@@ -34,9 +38,9 @@ std::vector<std::uint8_t> InkStoryData::get_serialized_bytes() const {
 		result.insert(result.end(), bytes.begin(), bytes.end());
 	}
 
-	Serializer<std::vector<std::string>> sorder;
+	/*Serializer<std::vector<std::string>> sorder;
 	std::vector<std::uint8_t> bytes = sorder(knot_order);
-	result.insert(result.end(), bytes.begin(), bytes.end());
+	result.insert(result.end(), bytes.begin(), bytes.end());*/
 
 	return result;
 }

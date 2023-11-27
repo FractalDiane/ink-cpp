@@ -66,6 +66,7 @@ public:
 	InkStory compile_script(const std::string& script);
 	InkStory compile_file(const std::string& file_path);
 
+	void save_data_to_file(InkStoryData* story_data, const std::string& out_file_path);
 	void compile_script_to_file(const std::string& script, const std::string& out_file_path);
 	void compile_file_to_file(const std::string& in_file_path, const std::string& out_file_path);
 

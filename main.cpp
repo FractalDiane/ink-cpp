@@ -13,7 +13,11 @@ int main() {
     -> END
 )";*/
 
-	InkCompiler compiler;
+	/*InkCompiler compiler;
 	InkStory story = compiler.compile_file("../test.ink");
+	story.print_info();
+	compiler.save_data_to_file(story.get_story_data(), "../test.inkb");*/
+
+	InkStory story{"../test.inkb"};
 	story.print_info();
 }

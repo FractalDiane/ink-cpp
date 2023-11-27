@@ -9,7 +9,7 @@
 
 struct Stitch {
 	std::string name;
-	std::size_t index;
+	std::uint16_t index;
 };
 
 struct Knot {
@@ -23,10 +23,20 @@ struct Serializer<Stitch> {
 	std::vector<std::uint8_t> operator()(const Stitch& stitch) noexcept {
 		Serializer<std::string> sstring;
 		std::vector<std::uint8_t> result = sstring(stitch.name);
-		Serializer<std::size_t> ssize;
+		Serializer<std::uint16_t> ssize;
 		std::vector<std::uint8_t> result2 = ssize(stitch.index);
 		result.insert(result.end(), result2.begin(), result2.end());
 
+		return result;
+	}
+
+	Stitch operator()(const std::vector<std::uint8_t>& bytes, std::size_t& index) {
+		Stitch result;
+		Serializer<std::string> dsstring;
+		result.name = dsstring(bytes, index);
+		Serializer<std::uint16_t> dssize;
+		result.index = dssize(bytes, index);
+		
 		return result;
 	}
 };

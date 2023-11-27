@@ -262,10 +262,32 @@ InkStory InkCompiler::compile_file(const std::string& file_path)
 	return InkStory(story_data);
 }
 
+void InkCompiler::save_data_to_file(InkStoryData* story_data, const std::string& out_file_path) {
+	std::ofstream outfile{out_file_path, std::ios::binary};
+	std::vector<std::uint8_t> bytes = story_data->get_serialized_bytes();
+	for (std::uint8_t byte : bytes) {
+		outfile << byte;
+	}
+
+	outfile.close();
+}
+
 void InkCompiler::compile_script_to_file(const std::string& script, const std::string& out_file_path) {
+	InkStoryData* story_data = compile(script);
+	save_data_to_file(story_data, out_file_path);
+	delete story_data;
 }
 
 void InkCompiler::compile_file_to_file(const std::string& in_file_path, const std::string& out_file_path) {
+	std::ifstream infile{in_file_path};
+	std::stringstream buffer;
+	buffer << infile.rdbuf();
+	std::string file_text = buffer.str();
+	infile.close();
+
+	InkStoryData* story_data = compile(file_text);
+	save_data_to_file(story_data, out_file_path);
+	delete story_data;
 }
 
 InkStoryData* InkCompiler::compile(const std::string& script) {
@@ -355,7 +377,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					}
 				} else if (next_token_is(all_tokens, token_index, InkToken::Text)) {
 					std::string new_stitch_name = strip_string_edges(all_tokens[token_index + 1].text_contents);
-					story_knots.back().stitches.push_back({new_stitch_name, story_knots.back().objects.size()});
+					story_knots.back().stitches.push_back({new_stitch_name, static_cast<std::uint16_t>(story_knots.back().objects.size())});
 
 					while (all_tokens[token_index].token != InkToken::NewLine) {
 						++token_index;

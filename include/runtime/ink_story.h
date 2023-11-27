@@ -12,8 +12,10 @@ private:
 	InkStoryData* story_data;
 
 public:
-	InkStory(InkStoryData* data) : story_data{data} {}
+	explicit InkStory(InkStoryData* data) : story_data{data} {}
+	explicit InkStory(const std::string& inkb_file);
 	~InkStory() { delete story_data; }
 
+	InkStoryData* get_story_data() const { return story_data; }
 	void print_info() const;
 };

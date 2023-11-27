@@ -15,6 +15,7 @@ public:
 	InkObjectText(std::string&& text) : text_contents{text} {}
 
 	virtual std::vector<std::uint8_t> to_bytes() const override;
+	virtual InkObject* populate_from_bytes(const std::vector<std::uint8_t>& bytes, std::size_t& index) override;
 	virtual ObjectId get_id() const override { return ObjectId::Text; }
 	virtual std::string to_string() const override { return std::format("Text ({})", text_contents); }
 	virtual bool has_any_contents() const override { return !text_contents.empty(); }
