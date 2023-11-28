@@ -50,7 +50,7 @@ InkStory::InkStory(const std::string& inkb_file) {
 	}
 
 	if (header != expected_header) {
-		throw std::exception("Not a valid inkb file (incorrect header)");
+		throw std::runtime_error("Not a valid inkb file (incorrect header)");
 	}*/
 
 	std::uint8_t version = bytes[index++];

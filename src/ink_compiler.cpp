@@ -373,7 +373,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 						end_line = true;
 					} else {
-						throw std::exception("Expected knot name");
+						throw std::runtime_error("Expected knot name");
 					}
 				} else if (next_token_is(all_tokens, token_index, InkToken::Text)) {
 					std::string new_stitch_name = strip_string_edges(all_tokens[token_index + 1].text_contents);
@@ -385,7 +385,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 					end_line = true;
 				} else {
-					throw std::exception("Expected stitch name");
+					throw std::runtime_error("Expected stitch name");
 				}
 			} else {
 				result_object = new InkObjectText("=");
@@ -582,7 +582,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			} else if (in_choice_line) {
 				result_object = new InkObjectDivert();
 			} else {
-				throw std::exception("Expected divert target");
+				throw std::runtime_error("Expected divert target");
 			}
 		} break;
 
@@ -606,7 +606,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 					token_index += 3;
 				} else {
-					throw std::exception("Malformed VAR statement");
+					throw std::runtime_error("Malformed VAR statement");
 				}
 			} else {
 				result_object = new InkObjectText("VAR");
