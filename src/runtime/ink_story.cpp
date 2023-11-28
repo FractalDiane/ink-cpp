@@ -62,6 +62,10 @@ InkStory::InkStory(const std::string& inkb_file) {
 					this_object = (new InkObjectText())->populate_from_bytes(bytes, index);
 				} break;
 
+				case ObjectId::LineBreak: {
+					this_object = new InkObjectLineBreak();
+				} break;
+
 				case ObjectId::Tag: {
 					this_object = (new InkObjectTag(""))->populate_from_bytes(bytes, index);
 				} break;

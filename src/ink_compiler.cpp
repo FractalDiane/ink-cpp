@@ -23,6 +23,7 @@
 #include <sstream>
 
 #include <iostream>
+#include <format>
 #include <stdexcept>
 
 namespace {
@@ -301,10 +302,18 @@ InkStoryData* InkCompiler::compile(const std::string& script) {
 	while (token_index < token_stream.size()) {
 		const InkLexer::Token& this_token = token_stream[token_index];
 		InkObject* this_token_object = compile_token(token_stream, this_token, result_knots);
-		if (this_token_object) {
+
+		bool add_this_object = true;
+		if (!this_token_object->has_any_contents()) {
+			add_this_object = false;
+		} else if (this_token_object->get_id() == ObjectId::LineBreak && result_knots.back().objects.empty()) {
+			add_this_object = false;
+		}
+
+		if (add_this_object && this_token_object) {
 			if (this_token_object->get_id() == ObjectId::Text && last_token_object && last_token_object->get_id() == ObjectId::Text) {
 				static_cast<InkObjectText*>(result_knots.back().objects.back())->append_text(static_cast<InkObjectText*>(this_token_object)->get_text_contents());
-			} else if (this_token_object->get_id() != ObjectId::LineBreak || (last_token_object && last_token_object->get_id() == ObjectId::LineBreak)) {
+			} else if (this_token_object->get_id() != ObjectId::LineBreak || !last_token_object || last_token_object->get_id() != ObjectId::LineBreak) {
 				result_knots.back().objects.push_back(this_token_object);
 			}
 		}
@@ -347,7 +356,6 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			++token_index;
 			while (true) {
 				if (all_tokens[token_index].token == InkToken::Hash) {
-					--token_index;
 					break;
 				} else if (all_tokens[token_index].token == InkToken::NewLine) {
 					break;
@@ -357,6 +365,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				++token_index;
 			}
 
+			--token_index;
 			result_object = new InkObjectTag(tag_contents);
 		} break;
 
