@@ -58,7 +58,7 @@ namespace {
 		}
 	}
 
-	const InkLexer::Token& next_token(const std::vector<InkLexer::Token>& tokens, size_t index) {
+	const InkLexer::Token next_token(const std::vector<InkLexer::Token>& tokens, size_t index) {
 		if (index + 1 < tokens.size()) {
 			return tokens[index + 1];
 		} else {
