@@ -42,7 +42,7 @@ InkStory::InkStory(const std::string& inkb_file) {
 	std::vector<std::string> knot_order;
 
 	// HACK: make this less bad and more fail safe
-	std::size_t index = 0;
+	std::size_t index = 4;
 	/*constexpr const char* expected_header = "INKB";
 	std::string header;
 	for (std::size_t i = 0; i < 4; ++i) {

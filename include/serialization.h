@@ -2,6 +2,8 @@
 
 #include <vector>
 #include <string>
+#include <cstdint>
+#include <cstring>
 
 template <typename T>
 struct Serializer {

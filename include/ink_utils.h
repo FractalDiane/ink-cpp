@@ -2,6 +2,7 @@
 
 #include <string>
 #include <numeric>
+#include <vector>
 
 std::string strip_string_edges(const std::string& string, bool left = true, bool right = true) noexcept {
 	std::string result;

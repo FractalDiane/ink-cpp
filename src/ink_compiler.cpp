@@ -1,6 +1,6 @@
 #include "ink_compiler.h"
 
-#include "utils.h"
+#include "ink_utils.h"
 
 #include "runtime/ink_story.h"
 #include "runtime/ink_story_data.h"
