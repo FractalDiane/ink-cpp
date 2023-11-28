@@ -21,6 +21,8 @@ enum ObjectId {
 
 class InkObject {
 public:
+	virtual ~InkObject() = default;
+
 	virtual std::string to_string() const;
 	virtual std::vector<std::uint8_t> to_bytes() const;
 	virtual InkObject* populate_from_bytes(const std::vector<std::uint8_t>& bytes, std::size_t& index);
