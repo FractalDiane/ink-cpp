@@ -15,35 +15,21 @@
 
 #include <fstream>
 #include <stdexcept>
+#include <filesystem>
 #include <iostream>
 
 InkStory::InkStory(const std::string& inkb_file) {
 	std::ifstream infile{inkb_file, std::ios::binary};
-	std::vector<std::uint8_t> bytes;
 
-	//infile.seekg(0, std::ios::end);
-	//bytes.reserve(infile.tellg());
-	//infile.seekg(0);
-	
-	std::uint8_t inbyte;
-	while (infile >> inbyte) {
-		bytes.push_back(inbyte);
-	}
+	std::size_t infile_size = std::filesystem::file_size(inkb_file);
+	std::vector<std::uint8_t> bytes(infile_size);
 
+	infile.read(reinterpret_cast<char*>(bytes.data()), infile_size);
 	infile.close();
 
-	for (std::uint8_t byte : bytes) {
-		std::cout << static_cast<int>(byte) << " ";
-	}
-
-	std::cout << std::endl;
-
-	std::vector<Knot> knots;
-	std::vector<std::string> knot_order;
-
 	// HACK: make this less bad and more fail safe
-	std::size_t index = 4;
-	/*constexpr const char* expected_header = "INKB";
+	std::size_t index = 0;
+	constexpr const char* expected_header = "INKB";
 	std::string header;
 	for (std::size_t i = 0; i < 4; ++i) {
 		header += bytes[index++];
@@ -51,13 +37,14 @@ InkStory::InkStory(const std::string& inkb_file) {
 
 	if (header != expected_header) {
 		throw std::runtime_error("Not a valid inkb file (incorrect header)");
-	}*/
+	}
 
 	std::uint8_t version = bytes[index++];
 
 	Serializer<std::uint16_t> dssize;
 	std::uint16_t knots_count = dssize(bytes, index);
 
+	std::vector<Knot> knots;
 	for (std::size_t i = 0; i < knots_count; ++i) {
 		Serializer<std::string> dsname;
 		std::string this_knot_name = dsname(bytes, index);
@@ -107,9 +94,6 @@ InkStory::InkStory(const std::string& inkb_file) {
 	
 		knots.push_back({this_knot_name, this_knot_contents, this_knot_stitches});
 	}
-
-	//Serializer<std::vector<std::string>> dsorder;
-	//std::vector<std::string> knot_order = dsorder(bytes, index);
 
 	story_data = new InkStoryData(knots);
 }
