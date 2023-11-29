@@ -21,4 +21,6 @@ public:
 	InkObjectChoice(const std::vector<InkChoiceEntry>& choices, bool has_gather) : choices{choices}, has_gather{has_gather} {}
 
 	virtual ObjectId get_id() const override { return ObjectId::Choice; }
+
+	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 };

@@ -18,16 +18,17 @@ std::string strip_string_edges(const std::string& string, bool left = true, bool
 			result += chr;
 		} else if (!whitespace) {
 			result += chr;
+			first_left_index = i;
 			stripped_left = true;
 		}
 
 		if (!whitespace) {
-			last_right_index = i;
+			last_right_index = i - first_left_index;
 		}
 	}
 
 	if (right) {
-		result.shrink_to_fit();
+		result.resize(last_right_index + 1);
 	}
 	
 	return result;

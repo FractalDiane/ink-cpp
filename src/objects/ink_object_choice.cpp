@@ -7,3 +7,7 @@
 ObjectId InkObjectChoice::get_id() const {
 	return ObjectId::Choice;
 }*/
+
+void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
+	
+}

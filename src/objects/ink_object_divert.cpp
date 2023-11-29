@@ -10,3 +10,7 @@ InkObject* InkObjectDivert::populate_from_bytes(const std::vector<std::uint8_t>&
 	target_knot = ds(bytes, index);
 	return this;
 }
+
+void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
+	//return target_knot;
+}

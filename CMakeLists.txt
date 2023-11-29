@@ -41,10 +41,9 @@ endif()
 FetchContent_MakeAvailable(googletest)
 
 add_executable(ink_compiler main.cpp ${SRC_COMPILER} ${SRC_OBJECTS} ${SRC_RUNTIME})
-add_executable(ink_tests tests.cpp)
+add_executable(ink_tests tests.cpp ${SRC_COMPILER} ${SRC_OBJECTS} ${SRC_RUNTIME})
 
 target_compile_definitions(ink_compiler PUBLIC INKB_VERSION=0)
-target_link_libraries(ink_compiler GTest::gtest_main)
 target_link_libraries(ink_tests GTest::gtest_main)
 
 include_directories(include)

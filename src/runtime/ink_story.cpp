@@ -57,6 +57,7 @@ InkStory::InkStory(const std::string& inkb_file) {
 		for (std::size_t i = 0; i < this_knot_size; ++i) {
 			InkObject* this_object = nullptr;
 			ObjectId this_id = static_cast<ObjectId>(bytes[index++]);
+			// TODO: find out if there's a better way to do this
 			switch (this_id) {
 				case ObjectId::Text: {
 					this_object = (new InkObjectText())->populate_from_bytes(bytes, index);
@@ -100,8 +101,28 @@ InkStory::InkStory(const std::string& inkb_file) {
 	}
 
 	story_data = new InkStoryData(knots);
+	init_story();
 }
 
 void InkStory::print_info() const {
 	story_data->print_info();
+}
+
+void InkStory::init_story() {
+	story_state.current_knot = &(story_data->knots[story_data->knot_order[0]]);
+}
+
+std::string InkStory::continue_story() {
+	story_state.current_tags.clear();
+
+	InkStoryEvalResult eval_result = {.should_continue = true};
+	eval_result.result.reserve(512);
+	while (eval_result.should_continue) {
+		InkObject* current_object = story_state.current_knot->objects[story_state.index_in_knot];
+		current_object->execute(story_state, eval_result);
+
+		++story_state.index_in_knot;
+	}
+
+	return eval_result.result;
 }

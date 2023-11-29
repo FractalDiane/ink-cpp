@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "serialization.h"
+#include "runtime/ink_story_state.h"
 
 enum ObjectId {
 	Text,
@@ -28,6 +29,8 @@ public:
 	virtual InkObject* populate_from_bytes(const std::vector<std::uint8_t>& bytes, std::size_t& index);
 	virtual ObjectId get_id() const = 0;
 	virtual bool has_any_contents() const { return false; }
+
+	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) = 0;
 	
 	std::vector<std::uint8_t> get_serialized_bytes() const;
 	//InkObject* populate_from_bytes() const;

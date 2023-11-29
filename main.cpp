@@ -13,13 +13,15 @@ int main() {
     -> END
 )";*/
 
-	InkCompiler compiler;
+	/*InkCompiler compiler;
 	InkStory story = compiler.compile_file("../test.ink");
 	story.print_info();
 	compiler.save_data_to_file(story.get_story_data(), "../test.inkb");
 
-	std::cout << "=====================================" << std::endl;
+	std::cout << "=====================================" << std::endl;*/
 
 	InkStory story2{"../test.inkb"};
-	story2.print_info();
+	//story2.print_info();
+	std::cout << story2.continue_story() << std::endl;
+	std::cout << story2.continue_story() << std::endl;
 }

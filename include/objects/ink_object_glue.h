@@ -11,4 +11,6 @@ private:
 public:
 	virtual ObjectId get_id() const override { return ObjectId::Glue; }
 	virtual std::string to_string() const override { return "Glue"; }
+
+	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 };

@@ -24,4 +24,6 @@ public:
 		: sequence_type{type}, items{items}, current_index{index} {}
 
 	virtual ObjectId get_id() const override { return ObjectId::Sequence; }
+
+	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 };

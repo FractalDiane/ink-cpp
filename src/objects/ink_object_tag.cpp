@@ -10,3 +10,7 @@ InkObject* InkObjectTag::populate_from_bytes(const std::vector<std::uint8_t>& by
 	tag = ds(bytes, index);
 	return this;
 }
+
+void InkObjectTag::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
+	//return tag;
+}

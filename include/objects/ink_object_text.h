@@ -20,6 +20,8 @@ public:
 	virtual std::string to_string() const override { return std::format("Text ({})", text_contents); }
 	virtual bool has_any_contents() const override { return !text_contents.empty(); }
 
+	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
+
 	void append_text(const std::string& text);
 	const std::string& get_text_contents() const { return text_contents; }
 };

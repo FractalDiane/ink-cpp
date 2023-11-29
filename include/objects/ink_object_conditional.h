@@ -15,4 +15,6 @@ public:
 		: condition{condition}, branch_if{objects_if}, branch_else{objects_else} {}
  
 	virtual ObjectId get_id() const override { return ObjectId::Conditional; }
+
+	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 };

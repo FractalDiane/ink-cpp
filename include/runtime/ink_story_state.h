@@ -1,0 +1,38 @@
+#pragma once
+
+#include <string>
+#include <string_view>
+#include <vector>
+
+#include "runtime/ink_story_structs.h"
+
+struct InkStoryState {
+	enum class ChoiceMixPosition {
+		Before,
+		In,
+		After,
+	};
+
+	Knot* current_knot = nullptr;
+	std::string_view current_knot_name;
+	std::string_view current_stitch;
+	std::size_t index_in_knot = 0;
+
+	std::string_view new_knot_target;
+	bool new_knot_from_choice = false;
+
+	std::vector<std::string> current_tags;
+
+	std::vector<std::string> current_choices;
+	std::size_t selected_choice = -1;
+	ChoiceMixPosition choice_mix_position;
+
+	bool in_glue = false;
+	bool in_choice_text = false;
+	bool at_choice = false;
+};
+
+struct InkStoryEvalResult {
+	std::string result;
+	bool should_continue;
+};
