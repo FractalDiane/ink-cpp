@@ -12,5 +12,5 @@ InkObject* InkObjectTag::populate_from_bytes(const std::vector<std::uint8_t>& by
 }
 
 void InkObjectTag::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	//return tag;
+	story_state.current_tags.push_back(tag);
 }

@@ -9,6 +9,7 @@ set(SRC_COMPILER src/ink_compiler.cpp)
 set(SRC_RUNTIME 
 	src/runtime/ink_story_data.cpp
 	src/runtime/ink_story.cpp
+	src/runtime/ink_story_state.cpp
 )
 
 set(SRC_OBJECTS

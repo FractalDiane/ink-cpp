@@ -30,6 +30,8 @@ struct InkStoryState {
 	bool in_glue = false;
 	bool in_choice_text = false;
 	bool at_choice = false;
+
+	class InkObject* get_current_object(std::size_t index_offset) const;
 };
 
 struct InkStoryEvalResult {

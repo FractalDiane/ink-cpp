@@ -126,3 +126,11 @@ std::string InkStory::continue_story() {
 
 	return eval_result.result;
 }
+
+const std::vector<std::string>& InkStory::get_current_choices() const {
+	return story_state.current_choices;
+}
+
+const std::vector<std::string>& InkStory::get_current_tags() const {
+	return story_state.current_tags;
+}
