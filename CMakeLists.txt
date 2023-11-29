@@ -40,10 +40,16 @@ endif()
 
 FetchContent_MakeAvailable(googletest)
 
-add_executable(ink_compiler main.cpp ${SRC_COMPILER} ${SRC_OBJECTS} ${SRC_RUNTIME})
-add_executable(ink_tests tests.cpp ${SRC_COMPILER} ${SRC_OBJECTS} ${SRC_RUNTIME})
+add_library(ink_backend STATIC ${SRC_OBJECTS} ${SRC_RUNTIME})
 
-target_compile_definitions(ink_compiler PUBLIC INKB_VERSION=0)
-target_link_libraries(ink_tests GTest::gtest_main)
+add_executable(ink_compiler main.cpp ${SRC_COMPILER})
+add_dependencies(ink_compiler ink_backend)
+target_link_libraries(ink_compiler PUBLIC ink_backend)
+
+add_executable(ink_tests tests.cpp ${SRC_COMPILER})
+add_dependencies(ink_tests ink_backend)
+target_link_libraries(ink_tests ink_backend GTest::gtest_main)
+
+add_compile_definitions(INKB_VERSION=0)
 
 include_directories(include)
