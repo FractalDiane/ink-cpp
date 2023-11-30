@@ -135,5 +135,5 @@ const std::vector<std::string>& InkStory::get_current_tags() const {
 	return story_state.current_tags;
 }
 void InkStory::choose_choice_index(std::size_t index) {
-	
+	story_state.selected_choice = index;
 }

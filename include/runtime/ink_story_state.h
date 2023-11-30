@@ -26,6 +26,7 @@ struct InkStoryState {
 	std::vector<std::string> current_tags;
 
 	std::vector<std::string> current_choices;
+	std::vector<struct InkChoiceEntry*> current_choice_structs;
 	std::size_t selected_choice = -1;
 	ChoiceMixPosition choice_mix_position;
 	std::unordered_map<Knot*, std::unordered_set<std::size_t>> choices_taken;

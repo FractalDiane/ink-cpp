@@ -6,7 +6,7 @@
 
 struct InkChoiceEntry {
 	std::vector<InkObject*> text;
-	std::vector<InkObject*> result;
+	Knot result;
 	bool sticky;
 	std::vector<std::string> conditions;
 	bool fallback;

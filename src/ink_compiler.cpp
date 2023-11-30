@@ -466,7 +466,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 							continue;
 						}
 
-						std::vector<InkObject*>& target_array = !in_result ? choice_entry.text : choice_entry.result;
+						std::vector<InkObject*>& target_array = !in_result ? choice_entry.text : choice_entry.result.objects;
 						if (in_choice_object->has_any_contents()) {
 							target_array.push_back(in_choice_object);
 						}
