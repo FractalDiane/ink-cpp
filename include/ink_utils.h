@@ -4,7 +4,7 @@
 #include <numeric>
 #include <vector>
 
-std::string strip_string_edges(const std::string& string, bool left = true, bool right = true) noexcept {
+static std::string strip_string_edges(const std::string& string, bool left = true, bool right = true) noexcept {
 	std::string result;
 	result.reserve(string.length());
 
@@ -34,7 +34,7 @@ std::string strip_string_edges(const std::string& string, bool left = true, bool
 	return result;
 }
 
-std::string join_string_vector(const std::vector<std::string>& vector, std::string&& delimiter) noexcept {
+static std::string join_string_vector(const std::vector<std::string>& vector, std::string&& delimiter) noexcept {
 	if (!vector.empty()) {
 		return std::accumulate(
 			std::next(vector.begin()), vector.end(), vector[0],

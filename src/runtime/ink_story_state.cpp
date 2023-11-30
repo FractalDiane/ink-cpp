@@ -9,3 +9,10 @@ InkObject* InkStoryState::get_current_object(std::size_t index_offset) const {
 
 	return nullptr;
 }
+bool InkStoryState::has_choice_been_taken(std::size_t index) const {
+	if (auto knot_choices_taken = choices_taken.find(current_knot); knot_choices_taken != choices_taken.end()) {
+		return knot_choices_taken->second.contains(index);
+	}
+
+	return false;
+}

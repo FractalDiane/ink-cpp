@@ -149,6 +149,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 			case '+': {
 				this_token.token = chr == '*' ? InkToken::Asterisk : InkToken::Plus;
 				++index;
+				std::size_t whitespace_skipped = 0;
 				while (true) {
 					char inner_chr = script_text[index];
 					if (inner_chr > 32) {
@@ -157,12 +158,17 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 						} else {
 							break;
 						}
+					} else {
+						++whitespace_skipped;
 					}
 
 					++index;
 				}
 
 				--index;
+				if (this_token.count == 1) {
+					index -= whitespace_skipped;
+				}
 			} break;
 
 			case '-': {
@@ -356,6 +362,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			++token_index;
 			while (true) {
 				if (all_tokens[token_index].token == InkToken::Hash) {
+					--token_index;
 					break;
 				} else if (all_tokens[token_index].token == InkToken::NewLine) {
 					break;
@@ -365,9 +372,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				++token_index;
 			}
 
-			--token_index;
-			result_object = new InkObjectTag(tag_contents);
-		} break;
+			result_object = new InkObjectTag(strip_string_edges(tag_contents, true, true));
+		} break; 
 
 		case InkToken::Equal: {
 			if (at_line_start) {
@@ -418,7 +424,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 							has_gather = true;
 							end_line = true;
 							break;
-						} else if (next_token_is(all_tokens, token_index, InkToken::Asterisk) || next_token_is(all_tokens, token_index, InkToken::Plus)) { // TODO: nested choices
+						} else if ((next_token_is(all_tokens, token_index, InkToken::Asterisk) || next_token_is(all_tokens, token_index, InkToken::Plus)) && next_token(all_tokens, token_index).count < choice_level) { // TODO: nested choices
 							end_line = true;
 							break;
 						}

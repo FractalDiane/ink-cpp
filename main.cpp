@@ -13,15 +13,15 @@ int main() {
     -> END
 )";*/
 
-	/*InkCompiler compiler;
-	InkStory story = compiler.compile_file("../test.ink");
+	InkCompiler compiler;
+	InkStory story = compiler.compile_file("../tests/2_choices/2a_choice.ink");
 	story.print_info();
-	compiler.save_data_to_file(story.get_story_data(), "../test.inkb");
+	//compiler.save_data_to_file(story.get_story_data(), "../test.inkb");
 
-	std::cout << "=====================================" << std::endl;*/
+	std::cout << "=====================================" << std::endl;
 
-	InkStory story2{"../test.inkb"};
+	/*InkStory story2{"../test.inkb"};
 	//story2.print_info();
 	std::cout << story2.continue_story() << std::endl;
-	std::cout << story2.continue_story() << std::endl;
+	std::cout << story2.continue_story() << std::endl;*/
 }

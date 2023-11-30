@@ -19,6 +19,7 @@ private:
 
 public:
 	InkObjectChoice(const std::vector<InkChoiceEntry>& choices, bool has_gather) : choices{choices}, has_gather{has_gather} {}
+	virtual std::string to_string() const override;
 
 	virtual ObjectId get_id() const override { return ObjectId::Choice; }
 

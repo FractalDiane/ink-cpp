@@ -117,7 +117,7 @@ std::string InkStory::continue_story() {
 
 	InkStoryEvalResult eval_result = {.should_continue = true};
 	eval_result.result.reserve(512);
-	while (eval_result.should_continue) {
+	while (eval_result.should_continue && story_state.index_in_knot < story_state.current_knot->objects.size()) {
 		InkObject* current_object = story_state.current_knot->objects[story_state.index_in_knot];
 		current_object->execute(story_state, eval_result);
 
@@ -133,4 +133,7 @@ const std::vector<std::string>& InkStory::get_current_choices() const {
 
 const std::vector<std::string>& InkStory::get_current_tags() const {
 	return story_state.current_tags;
+}
+void InkStory::choose_choice_index(std::size_t index) {
+	
 }

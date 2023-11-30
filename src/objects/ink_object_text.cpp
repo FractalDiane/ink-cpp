@@ -15,10 +15,6 @@ InkObject* InkObjectText::populate_from_bytes(const std::vector<std::uint8_t>& b
 
 void InkObjectText::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	eval_result.result += text_contents;
-
-	if (story_state.get_current_object(1)->get_id() != ObjectId::Tag) {
-		eval_result.should_continue = false;
-	}
 }
 
 void InkObjectText::append_text(const std::string& text) {
