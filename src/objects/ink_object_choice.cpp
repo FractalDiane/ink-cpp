@@ -10,6 +10,18 @@ ObjectId InkObjectChoice::get_id() const {
 	return ObjectId::Choice;
 }*/
 
+InkObjectChoice::~InkObjectChoice() {
+	for (InkChoiceEntry& choice : choices) {
+		for (InkObject* object : choice.text) {
+			delete object;
+		}
+
+		for (InkObject* object : choice.result.objects) {
+			delete object;
+		}
+	}
+}
+
 std::string InkObjectChoice::to_string() const {
 	std::string result = "Choice (\n";
 	for (int i = 0; i < choices.size(); ++i) {

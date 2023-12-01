@@ -11,7 +11,7 @@ protected:\
 #ifdef _WIN32
 #define STORY(path) InkStory story = compiler.compile_file(R"(C:/Users/Duncan Sparks/Desktop/Programming/ink-cpp/tests/)" path)
 #else
-#define STORY(path) InkStory story = compiler.compile_file(R"(~/Programming/ink-cpp/tests/)" path)
+#define STORY(path) InkStory story = compiler.compile_file(R"(/home/diane/Programming/ink-cpp/tests/)" path)
 #endif
 
 

@@ -8,7 +8,7 @@
 #ifdef _WIN32
 #define TEST_PATH(path) R"(C:/Users/Duncan Sparks/Desktop/Programming/ink-cpp/tests/)" path
 #else
-#define TEST_PATH(path) R"(~/Programming/ink-cpp/tests/)" path
+#define TEST_PATH(path) R"(/home/diane/Programming/ink-cpp/tests/)" path
 #endif
 
 int main() {
@@ -24,13 +24,13 @@ int main() {
 	std::string test = strip_string_edges("\t");
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("2_choices/2d_choice_multiple.ink"));
+	InkStory story = compiler.compile_file(TEST_PATH("2_choices/2a_choice.ink"));
 	//story.print_info();
 	//compiler.save_data_to_file(story.get_story_data(), "../test.inkb");
 
 	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(2);
-	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
+	//std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 
 	/*for (int i = 0; i < 3; ++i) {

@@ -325,24 +325,35 @@ InkStoryData *InkCompiler::compile(const std::string &script)
 	token_index = 0;
 	while (token_index < token_stream.size()) {
 		const InkLexer::Token& this_token = token_stream[token_index];
-		InkObject* this_token_object = compile_token(token_stream, this_token, result_knots);
-
-		bool add_this_object = true;
-		if (!this_token_object->has_any_contents()) {
-			add_this_object = false;
-		} else if (this_token_object->get_id() == ObjectId::LineBreak && result_knots.back().objects.empty()) {
-			add_this_object = false;
-		}
-
-		if (add_this_object && this_token_object) {
-			if (this_token_object->get_id() == ObjectId::Text && last_token_object && last_token_object->get_id() == ObjectId::Text) {
-				static_cast<InkObjectText*>(result_knots.back().objects.back())->append_text(static_cast<InkObjectText*>(this_token_object)->get_text_contents());
-			} else if (this_token_object->get_id() != ObjectId::LineBreak || !last_token_object || last_token_object->get_id() != ObjectId::LineBreak) {
-				result_knots.back().objects.push_back(this_token_object);
+		if (InkObject* this_token_object = compile_token(token_stream, this_token, result_knots)) {
+			bool add_this_object = true;
+			if (!this_token_object->has_any_contents()) {
+				add_this_object = false;
+			} else if (this_token_object->get_id() == ObjectId::LineBreak && result_knots.back().objects.empty()) {
+				add_this_object = false;
 			}
-		}
 
-		last_token_object = this_token_object;
+			if (add_this_object) {
+				if (this_token_object->get_id() == ObjectId::Text && last_token_object && last_token_object->get_id() == ObjectId::Text) {
+					static_cast<InkObjectText*>(result_knots.back().objects.back())->append_text(static_cast<InkObjectText*>(this_token_object)->get_text_contents());
+					delete this_token_object;
+					this_token_object = nullptr;
+				} else if (this_token_object->get_id() != ObjectId::LineBreak || !last_token_object || last_token_object->get_id() != ObjectId::LineBreak) {
+					result_knots.back().objects.push_back(this_token_object);
+				} else {
+					delete this_token_object;
+					this_token_object = nullptr;
+				}
+			} else {
+				delete this_token_object;
+				this_token_object = nullptr;
+			}
+
+			last_token_object = this_token_object;
+		} else {
+			last_token_object = nullptr;
+		}
+		
 		++token_index;
 	}
 
@@ -482,6 +493,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 									}
 								}
 
+								delete in_choice_object;
 								continue;
 							}
 
