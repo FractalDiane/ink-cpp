@@ -2,9 +2,10 @@
 
 #include "objects/ink_object.h"
 
-InkObject* InkStoryState::get_current_object(std::size_t index_offset) const {
-	if (current_knot && index_in_knot + index_offset < current_knot->objects.size()) {
-		return current_knot->objects[index_in_knot + index_offset];
+InkObject* InkStoryState::get_current_object(std::int64_t index_offset) const {
+	std::int64_t index = index_in_knot + index_offset;
+	if (current_knot && index >= 0 && index < current_knot->objects.size()) {
+		return current_knot->objects[index];
 	}
 
 	return nullptr;

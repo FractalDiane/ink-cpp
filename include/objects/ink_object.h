@@ -29,7 +29,6 @@ public:
 	virtual InkObject* populate_from_bytes(const std::vector<std::uint8_t>& bytes, std::size_t& index);
 	virtual ObjectId get_id() const = 0;
 	virtual bool has_any_contents() const { return true; }
-	virtual bool strip_previous_spaces() const { return true; }
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) = 0;
 	

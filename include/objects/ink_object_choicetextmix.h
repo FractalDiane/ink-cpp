@@ -12,7 +12,6 @@ public:
 	virtual std::string to_string() const override;
 
 	virtual ObjectId get_id() const override { return ObjectId::ChoiceTextMix; }
-	virtual bool strip_previous_spaces() const override { return false; }
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 };

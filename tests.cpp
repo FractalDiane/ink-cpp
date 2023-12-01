@@ -8,7 +8,13 @@ protected:\
 	InkCompiler compiler;\
 }
 
-#define STORY(path) InkStory story = compiler.compile_file(path)
+#ifdef _WIN32
+#define STORY(path) InkStory story = compiler.compile_file(R"(C:/Users/Duncan Sparks/Desktop/Programming/ink-cpp/tests/)" path)
+#else
+#define STORY(path) InkStory story = compiler.compile_file(R"(~/Programming/ink-cpp/tests/)" path)
+#endif
+
+
 #define EXPECT_TEXT(...) {\
 		std::vector<std::string> seq = {__VA_ARGS__};\
 		for (const std::string& expected_text : seq) {\
@@ -27,22 +33,22 @@ FIXTURE(ContentTests);
 FIXTURE(ChoiceTests);
 
 TEST_F(ContentTests, SingleLineText) {
-	STORY("../tests/1_content/1a_text.ink");
+	STORY("1_content/1a_text.ink");
 	EXPECT_TEXT("Hello, world");
 }
 
 TEST_F(ContentTests, MultiLineText) {
-	STORY("../tests/1_content/1b_multiline_text.ink");
+	STORY("1_content/1b_multiline_text.ink");
 	EXPECT_TEXT("Hello, world", "Hello?", "Hello, are you there?");
 }
 
 TEST_F(ContentTests, Comments) {
-	STORY("../tests/1_content/1c_comments.ink");
+	STORY("1_content/1c_comments.ink");
 	EXPECT_TEXT(R"("What do you make of this?" she asked.)", R"("I couldn't possibly comment," I replied.)");
 }
 
 TEST_F(ContentTests, Tags) {
-	STORY("../tests/1_content/1d_tags.ink");
+	STORY("1_content/1d_tags.ink");
 	EXPECT_TEXT("A line of normal game-text.");
 
 	std::vector<std::string> expected_tags = {"three * test", "other tags", "right here", "colour it blue"};
@@ -50,7 +56,7 @@ TEST_F(ContentTests, Tags) {
 }
 
 TEST_F(ChoiceTests, SingleChoice) {
-	STORY("../tests/2_choices/2a_choice.ink");
+	STORY("2_choices/2a_choice.ink");
 	EXPECT_TEXT("Hello world!");
 
 	EXPECT_CHOICES("Hello back!");
@@ -59,7 +65,7 @@ TEST_F(ChoiceTests, SingleChoice) {
 }
 
 TEST_F(ChoiceTests, SuppressedChoiceText) {
-	STORY("../tests/2_choices/2b_choice_suppressed.ink");
+	STORY("2_choices/2b_choice_suppressed.ink");
 	EXPECT_TEXT("Hello world!");
 
 	EXPECT_CHOICES("Hello back!");
@@ -68,7 +74,7 @@ TEST_F(ChoiceTests, SuppressedChoiceText) {
 }
 
 TEST_F(ChoiceTests, MixedChoiceText) {
-	STORY("../tests/2_choices/2c_choice_mixed.ink");
+	STORY("2_choices/2c_choice_mixed.ink");
 	EXPECT_TEXT("Hello world!");
 
 	EXPECT_CHOICES("Hello back!");
@@ -84,7 +90,7 @@ TEST_F(ChoiceTests, MultipleChoices) {
 	};
 
 	for (int i = 0; i < 3; ++i) {
-		STORY("../tests/2_choices/2d_choice_multiple.ink");
+		STORY("2_choices/2d_choice_multiple.ink");
 		EXPECT_TEXT(R"("What's that?" my master asked.)");
 
 		EXPECT_CHOICES(R"("I am somewhat tired.")", R"("Nothing, Monsieur!")", R"("I said, this journey is appalling.")");

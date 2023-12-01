@@ -71,6 +71,8 @@ public:
 	void compile_file_to_file(const std::string& in_file_path, const std::string& out_file_path);
 
 private:
+	void init_compiler();
+
 	InkStoryData* compile(const std::string& script);
 	InkObject* compile_token(const std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots);
 

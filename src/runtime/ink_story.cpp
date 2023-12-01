@@ -126,7 +126,7 @@ std::string InkStory::continue_story() {
 		++story_state.index_in_knot;
 	}
 
-	return remove_duplicate_spaces(eval_result.result);
+	return remove_duplicate_spaces(strip_string_edges(eval_result.result, true, true, true));
 }
 
 const std::vector<std::string>& InkStory::get_current_choices() const {

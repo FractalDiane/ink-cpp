@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
+#include <cstdint>
 
 #include "runtime/ink_story_structs.h"
 
@@ -36,7 +37,7 @@ struct InkStoryState {
 	bool in_choice_text = false;
 	bool at_choice = false;
 
-	class InkObject* get_current_object(std::size_t index_offset) const;
+	class InkObject* get_current_object(std::int64_t index_offset) const;
 	bool has_choice_been_taken(std::size_t index) const;
 };
 

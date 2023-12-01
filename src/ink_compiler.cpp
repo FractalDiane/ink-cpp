@@ -297,7 +297,25 @@ void InkCompiler::compile_file_to_file(const std::string& in_file_path, const st
 	delete story_data;
 }
 
-InkStoryData* InkCompiler::compile(const std::string& script) {
+void InkCompiler::init_compiler() {
+	token_index = 0;
+	last_token_object = nullptr;
+
+	brace_level = 0;
+	in_choice_line = false;
+	at_line_start = true;
+	past_choice_initial_braces = false;
+
+	choice_level = 0;
+	choice_stack.clear();
+
+	current_sequence_index = 0;
+}
+
+InkStoryData *InkCompiler::compile(const std::string &script)
+{
+	init_compiler();
+
 	InkLexer lexer;
 	std::vector<InkLexer::Token> token_stream = lexer.lex_script(script);
 	token_stream = remove_comments(token_stream);
@@ -632,11 +650,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		} break;
 
 		case InkToken::Text: {
-			/*if (std::string text_stripped = strip_string_edges(token.text_contents); !text_stripped.empty() || token.text_contents.find(" ") != token.text_contents.npos) {
-				result_object = new InkObjectText(text_stripped);
-			}*/
 			if (std::string text_stripped = strip_string_edges(token.text_contents); !text_stripped.empty()) {
-				result_object = new InkObjectText(text_stripped);
+				result_object = new InkObjectText(token.text_contents);
 			}
 		} break;
 	}
