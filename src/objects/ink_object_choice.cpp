@@ -54,7 +54,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 						object->execute(story_state, choice_eval_result);
 					}
 
-					story_state.current_choices.push_back(strip_string_edges(choice_eval_result.result));
+					story_state.current_choices.push_back(strip_string_edges(choice_eval_result.result, true, true, true));
 					story_state.current_choice_structs.push_back(&this_choice);
 				} else {
 					fallback_index = i;

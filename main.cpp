@@ -23,7 +23,7 @@ int main() {
 	//compiler.save_data_to_file(story.get_story_data(), "../test.inkb");
 
 	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
+	story.choose_choice_index(2);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 

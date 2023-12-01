@@ -444,6 +444,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 							if (next_token_is(all_tokens, token_index, InkToken::Dash) || next_token_is(all_tokens, token_index, InkToken::Equal)) {
 								break;
 							} else if (next_token_is(all_tokens, token_index, InkToken::Asterisk) || next_token_is(all_tokens, token_index, InkToken::Plus)) {
+								++token_index;
 								break;
 							}
 						}
