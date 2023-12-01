@@ -1,6 +1,8 @@
 #include "ink_compiler.h"
 #include "runtime/ink_story.h"
 
+#include "ink_utils.h"
+
 #include <iostream>
 
 int main() {
@@ -13,8 +15,10 @@ int main() {
     -> END
 )";*/
 
+	std::string test = strip_string_edges("\t");
+
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file("../tests/2_choices/2a_choice.ink");
+	InkStory story = compiler.compile_file(R"(C:\Users\Duncan Sparks\Desktop\Programming\ink-cpp\tests\2_choices\2d_choice_multiple.ink)");
 	//story.print_info();
 	//compiler.save_data_to_file(story.get_story_data(), "../test.inkb");
 

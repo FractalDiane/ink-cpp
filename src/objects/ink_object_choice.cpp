@@ -34,9 +34,10 @@ std::string InkObjectChoice::to_string() const {
 }
 
 void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	if (story_state.selected_choice == -1) {
+	if (story_state.selected_choice == -1 || story_state.current_choices.empty()) {
 		story_state.in_choice_text = true;
 		story_state.current_choices.clear();
+		story_state.selected_choice = -1;
 
 		std::size_t fallback_index = -1;
 		for (std::size_t i = 0; i < choices.size(); ++i) {
@@ -76,12 +77,15 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 		InkStoryEvalResult choice_eval_result = {.should_continue = true};
 		choice_eval_result.result.reserve(50);
-		/*for (InkObject* object : selected_choice_struct.text) {
+		for (InkObject* object : selected_choice_struct->text) {
 			object->execute(story_state, choice_eval_result);
 			if (object->get_id() == ObjectId::LineBreak) {
 				choice_eval_result.should_continue = false;
 			}
-		}*/
+		}
+
+		eval_result.result = choice_eval_result.result;
+		eval_result.should_continue = eval_result.result.empty();
 
 		story_state.current_knot = &(selected_choice_struct->result);
 		story_state.index_in_knot = 0;

@@ -13,6 +13,8 @@
 #include "objects/ink_object_tag.h"
 #include "objects/ink_object_text.h"
 
+#include "ink_utils.h"
+
 #include <fstream>
 #include <stdexcept>
 #include <filesystem>
@@ -124,7 +126,7 @@ std::string InkStory::continue_story() {
 		++story_state.index_in_knot;
 	}
 
-	return eval_result.result;
+	return remove_duplicate_spaces(eval_result.result);
 }
 
 const std::vector<std::string>& InkStory::get_current_choices() const {
@@ -135,5 +137,8 @@ const std::vector<std::string>& InkStory::get_current_tags() const {
 	return story_state.current_tags;
 }
 void InkStory::choose_choice_index(std::size_t index) {
-	story_state.selected_choice = index;
+	if (story_state.selected_choice == -1) {
+		story_state.selected_choice = index;
+		--story_state.index_in_knot;
+	}
 }

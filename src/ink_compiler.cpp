@@ -372,7 +372,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				++token_index;
 			}
 
-			result_object = new InkObjectTag(strip_string_edges(tag_contents, true, true));
+			result_object = new InkObjectTag(strip_string_edges(tag_contents, true, true, true));
 		} break; 
 
 		case InkToken::Equal: {
@@ -448,29 +448,30 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 							}
 						}
 
-						InkObject* in_choice_object = compile_token(all_tokens, in_choice_token, story_knots);
-						if (!in_result && (in_choice_object->get_id() == ObjectId::LineBreak || in_choice_object->get_id() == ObjectId::Divert)) {
-							in_result = true;
-							in_choice_line = false;
-							if (in_choice_object->get_id() == ObjectId::Divert) {
-								if (in_choice_object->has_any_contents()) {
-									--token_index;
-								} else {
-									const std::vector<InkObject*>& text_contents = choice_entry.text;
-									bool no_text = text_contents.empty() || text_contents.size() == 1 && !text_contents[0]->has_any_contents();
-									choice_entry.fallback = no_text;
-									++token_index;
+						if (InkObject* in_choice_object = compile_token(all_tokens, in_choice_token, story_knots)) {
+							if (!in_result && (in_choice_object->get_id() == ObjectId::LineBreak || in_choice_object->get_id() == ObjectId::Divert)) {
+								in_result = true;
+								in_choice_line = false;
+								if (in_choice_object->get_id() == ObjectId::Divert) {
+									if (in_choice_object->has_any_contents()) {
+										--token_index;
+									} else {
+										const std::vector<InkObject*>& text_contents = choice_entry.text;
+										bool no_text = text_contents.empty() || text_contents.size() == 1 && !text_contents[0]->has_any_contents();
+										choice_entry.fallback = no_text;
+										++token_index;
+									}
 								}
+
+								continue;
 							}
 
-							continue;
+							std::vector<InkObject*>& target_array = !in_result ? choice_entry.text : choice_entry.result.objects;
+							if (in_choice_object->has_any_contents()) {
+								target_array.push_back(in_choice_object);
+							}
 						}
-
-						std::vector<InkObject*>& target_array = !in_result ? choice_entry.text : choice_entry.result.objects;
-						if (in_choice_object->has_any_contents()) {
-							target_array.push_back(in_choice_object);
-						}
-
+						
 						++token_index;
 
 						if (in_choice_token.token != InkToken::LeftBrace && (in_choice_token.token != InkToken::Text || !strip_string_edges(in_choice_token.text_contents).empty())) {
@@ -630,7 +631,10 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		} break;
 
 		case InkToken::Text: {
-			if (std::string text_stripped = strip_string_edges(token.text_contents); !text_stripped.empty() || token.text_contents.find(" ") != token.text_contents.npos) {
+			/*if (std::string text_stripped = strip_string_edges(token.text_contents); !text_stripped.empty() || token.text_contents.find(" ") != token.text_contents.npos) {
+				result_object = new InkObjectText(text_stripped);
+			}*/
+			if (std::string text_stripped = strip_string_edges(token.text_contents); !text_stripped.empty()) {
 				result_object = new InkObjectText(text_stripped);
 			}
 		} break;

@@ -3,8 +3,9 @@
 #include <string>
 #include <numeric>
 #include <vector>
+#include <algorithm>
 
-static std::string strip_string_edges(const std::string& string, bool left = true, bool right = true) noexcept {
+static std::string strip_string_edges(const std::string& string, bool left = true, bool right = true, bool include_spaces = false) noexcept {
 	std::string result;
 	result.reserve(string.length());
 
@@ -13,7 +14,7 @@ static std::string strip_string_edges(const std::string& string, bool left = tru
 	size_t last_right_index = 0;
 	for (size_t i = 0; i < string.length(); ++i) {
 		char chr = string[i];
-		bool whitespace = chr <= 32;
+		bool whitespace = chr < 32 + include_spaces;
 		if (!left || stripped_left) {
 			result += chr;
 		} else if (!whitespace) {
@@ -27,10 +28,17 @@ static std::string strip_string_edges(const std::string& string, bool left = tru
 		}
 	}
 
-	if (right) {
+	if (right && !result.empty()) {
 		result.resize(last_right_index + 1);
 	}
 	
+	return result;
+}
+
+static std::string remove_duplicate_spaces(const std::string& string) noexcept {
+	std::string result = string;
+	auto end = std::unique(result.begin(), result.end(), [](char lhs, char rhs) { return lhs == rhs && lhs == ' '; });
+	result.erase(end, result.end());
 	return result;
 }
 
