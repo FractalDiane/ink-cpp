@@ -338,7 +338,7 @@ InkStoryData *InkCompiler::compile(const std::string &script)
 					static_cast<InkObjectText*>(result_knots.back().objects.back())->append_text(static_cast<InkObjectText*>(this_token_object)->get_text_contents());
 					delete this_token_object;
 					this_token_object = nullptr;
-				} else if (this_token_object->get_id() != ObjectId::LineBreak || !last_token_object || last_token_object->get_id() != ObjectId::LineBreak) {
+				} else if (!(this_token_object->get_id() == ObjectId::LineBreak && (result_knots.back().objects.empty() || (last_token_object && last_token_object->get_id() == ObjectId::LineBreak)))) {
 					result_knots.back().objects.push_back(this_token_object);
 				} else {
 					delete this_token_object;
@@ -494,6 +494,10 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 								}
 
 								delete in_choice_object;
+								continue;
+							} else if (in_result && in_choice_object->get_id() == ObjectId::LineBreak && choice_entry.result.objects.empty()) {
+								delete in_choice_object;
+								++token_index;
 								continue;
 							}
 

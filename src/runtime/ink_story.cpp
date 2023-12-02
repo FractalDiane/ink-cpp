@@ -121,12 +121,19 @@ std::string InkStory::continue_story() {
 	eval_result.result.reserve(512);
 	eval_result.target_knot.reserve(32);
 	while (eval_result.should_continue && !story_state.should_end_story && story_state.index_in_knot < story_state.current_knot->objects.size()) {
+		Knot* knot_before_object = story_state.current_knot;
 		bool changed_knot = false;
 		InkObject* current_object = story_state.current_knot->objects[story_state.index_in_knot];
 		current_object->execute(story_state, eval_result);
 
+		if (story_state.current_knot != knot_before_object) {
+			changed_knot = true;
+		}
+
 		if (story_state.check_for_glue_divert) { // HACK: is there a better way to do this?
-			if (auto knot = story_data->knots.find(eval_result.target_knot); knot != story_data->knots.end() && !knot->second.objects.empty()) {
+			if (eval_result.target_knot == "END") {
+				story_state.should_end_story = true;
+			} else if (auto knot = story_data->knots.find(eval_result.target_knot); knot != story_data->knots.end() && !knot->second.objects.empty()) {
 				eval_result.should_continue = knot->second.objects[0]->get_id() == ObjectId::Glue;
 			}
 

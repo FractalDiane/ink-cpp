@@ -24,12 +24,13 @@ int main() {
 	std::string test = strip_string_edges("\t");
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("4_diverts/4b_glue.ink"));
+	InkStory story = compiler.compile_file(TEST_PATH("2_choices/2a_choice.ink"));
 	//story.print_info();
 	//compiler.save_data_to_file(story.get_story_data(), "../test.inkb");
 
 	std::cout << story.continue_story() << std::endl;
-	//std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 
 	/*for (int i = 0; i < 3; ++i) {

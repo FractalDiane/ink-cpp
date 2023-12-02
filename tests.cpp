@@ -33,6 +33,7 @@ FIXTURE(ContentTests);
 FIXTURE(ChoiceTests);
 FIXTURE(KnotTests);
 FIXTURE(DivertTests);
+FIXTURE(BranchingTests);
 
 TEST_F(ContentTests, SingleLineText) {
 	STORY("1_content/1a_text.ink");
@@ -114,6 +115,42 @@ TEST_F(DivertTests, Diverts) {
 TEST_F(DivertTests, DivertsWithGlue) {
 	STORY("4_diverts/4b_glue.ink");
 	EXPECT_TEXT("We hurried home to Savile Row as fast as we could.");
+}
+
+TEST_F(BranchingTests, AdvancedBranching) {
+	std::vector<std::string> expected_texts = {
+		"You open the gate, and step out onto the path.",
+		"You smash down the gate, and charge out onto the path.",
+		"You turn back and go home. Pitiful.",
+	};
+
+	for (int i = 0; i < 3; ++i) {
+		STORY("5_branching/5a_branch.ink");
+		EXPECT_TEXT("You stand by the wall of Analand, sword in hand.");
+
+		EXPECT_CHOICES("Open the gate", "Smash down the gate", "Turn back and go home");
+		story.choose_choice_index(i);
+		EXPECT_TEXT(expected_texts[i]);
+	}
+}
+
+TEST_F(BranchingTests, BranchingAndJoining) {
+	std::vector<std::vector<std::string>> expected_texts = {
+		{R"("There is not a moment to lose!" I declared.)", "We hurried home to Savile Row as fast as we could."},
+		{R"("Monsieur, let us savour this moment!" I declared.)", "My master clouted me firmly around the head and dragged me out of the door.", "He insisted that we hurried home to Savile Row as fast as we could."},
+		{"We hurried home to Savile Row as fast as we could."},
+	};
+
+	for (int i = 0; i < 3; ++i) {
+		STORY("5_branching/5b_branch_and_join.ink");
+		EXPECT_TEXT("We arrived into London at 9.45pm exactly.");
+
+		EXPECT_CHOICES(R"("There is not a moment to lose!")", R"("Monsieur, let us savour this moment!")", R"(We hurried home)");
+		story.choose_choice_index(i);
+		for (const std::string& expected_text : expected_texts[i]) {
+			EXPECT_EQ(story.continue_story(), expected_text);
+		}
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
