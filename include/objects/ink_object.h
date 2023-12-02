@@ -6,7 +6,7 @@
 #include "serialization.h"
 #include "runtime/ink_story_state.h"
 
-enum ObjectId {
+enum class ObjectId {
 	Text,
 	Choice,
 	LineBreak,

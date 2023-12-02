@@ -34,6 +34,7 @@ FIXTURE(ChoiceTests);
 FIXTURE(KnotTests);
 FIXTURE(DivertTests);
 FIXTURE(BranchingTests);
+FIXTURE(StitchTests);
 
 TEST_F(ContentTests, SingleLineText) {
 	STORY("1_content/1a_text.ink");
@@ -151,6 +152,38 @@ TEST_F(BranchingTests, BranchingAndJoining) {
 			EXPECT_EQ(story.continue_story(), expected_text);
 		}
 	}
+}
+
+TEST_F(StitchTests, BasicStitches) {
+	std::vector<std::string> expected_texts = {
+		"Welcome to first class, sir.",
+		"Welcome to third class, sir.",
+		"You're not supposed to be here.",
+	};
+
+	for (int i = 0; i < 3; ++i) {
+		STORY("6_stitches/6a_stitches.ink");
+		story.continue_story();
+		EXPECT_CHOICES("Travel in first class", "Travel in third class", "Travel in the guard's van");
+
+		story.choose_choice_index(i);
+		EXPECT_TEXT(expected_texts[i]);
+	}
+}
+
+// TODO: Expect compilation fail
+/*TEST_F(StitchTests, StitchesWithoutFallthrough) {
+	STORY("6_stitches/6b_stitches_no_fallthrough.ink");
+	EXPECT_TEXT("You are on a train. Whoa?", "");
+	
+}*/
+
+TEST_F(StitchTests, StitchesWithLocalDiverts) {
+	STORY("6_stitches/6c_stitches_local_divert.ink");
+	EXPECT_TEXT("I settled my master.");
+	EXPECT_CHOICES("Move to third class");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I put myself in third.");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

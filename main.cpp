@@ -24,7 +24,7 @@ int main() {
 	std::string test = strip_string_edges("\t");
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("2_choices/2a_choice.ink"));
+	InkStory story = compiler.compile_file(TEST_PATH("6_stitches/6c_stitches_local_divert.ink"));
 	//story.print_info();
 	//compiler.save_data_to_file(story.get_story_data(), "../test.inkb");
 

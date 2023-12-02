@@ -16,10 +16,15 @@ struct InkStoryState {
 		After,
 	};
 
-	Knot* current_knot = nullptr;
-	std::string_view current_knot_name;
-	std::string_view current_stitch;
-	std::size_t index_in_knot = 0;
+	struct KnotStatus {
+		Knot* knot;
+		std::size_t index;
+	};
+
+	std::vector<KnotStatus> current_knots_stack;
+	//std::string_view current_knot_name;
+	//std::string_view current_stitch;
+	//std::vector<std::size_t> knot_index_stack;
 
 	bool should_end_story = false;
 
@@ -40,8 +45,12 @@ struct InkStoryState {
 	bool in_choice_text = false;
 	bool at_choice = false;
 
-	class InkObject* get_current_object(std::int64_t index_offset) const;
-	bool has_choice_been_taken(std::size_t index) const;
+	class InkObject* get_current_object(std::int64_t index_offset);
+	bool has_choice_been_taken(std::size_t index);
+	inline std::size_t index_in_knot() const { return current_knots_stack.back().index; }
+	inline KnotStatus& current_knot() { return current_knots_stack.back(); }
+	inline std::size_t current_knot_size() const { return current_knots_stack.back().knot->objects.size(); }
+	KnotStatus& current_nonchoice_knot();
 };
 
 struct InkStoryEvalResult {

@@ -16,8 +16,10 @@
 #include "ink_utils.h"
 
 #include <fstream>
-#include <stdexcept>
 #include <filesystem>
+#include <algorithm>
+
+#include <stdexcept>
 #include <iostream>
 
 InkStory::InkStory(const std::string& inkb_file) {
@@ -111,7 +113,7 @@ void InkStory::print_info() const {
 }
 
 void InkStory::init_story() {
-	story_state.current_knot = &(story_data->knots[story_data->knot_order[0]]);
+	story_state.current_knots_stack = {{&(story_data->knots[story_data->knot_order[0]]), 0}};
 }
 
 std::string InkStory::continue_story() {
@@ -120,18 +122,19 @@ std::string InkStory::continue_story() {
 	InkStoryEvalResult eval_result;
 	eval_result.result.reserve(512);
 	eval_result.target_knot.reserve(32);
-	while (eval_result.should_continue && !story_state.should_end_story && story_state.index_in_knot < story_state.current_knot->objects.size()) {
-		Knot* knot_before_object = story_state.current_knot;
+	while (eval_result.should_continue && !story_state.should_end_story && story_state.index_in_knot() < story_state.current_knot_size()) {
+		Knot* knot_before_object = story_state.current_knot().knot;
 		bool changed_knot = false;
-		InkObject* current_object = story_state.current_knot->objects[story_state.index_in_knot];
+		InkObject* current_object = story_state.current_knot().knot->objects[story_state.index_in_knot()];
 		current_object->execute(story_state, eval_result);
 
-		if (story_state.current_knot != knot_before_object) {
+		if (story_state.current_knot().knot != knot_before_object) {
 			changed_knot = true;
 		}
 
+		// Special case: line break is ignored if a divert after it leads to glue
 		if (story_state.check_for_glue_divert) { // HACK: is there a better way to do this?
-			if (eval_result.target_knot == "END") {
+			if (eval_result.target_knot == "END" || eval_result.target_knot == "DONE") {
 				story_state.should_end_story = true;
 			} else if (auto knot = story_data->knots.find(eval_result.target_knot); knot != story_data->knots.end() && !knot->second.objects.empty()) {
 				eval_result.should_continue = knot->second.objects[0]->get_id() == ObjectId::Glue;
@@ -140,17 +143,61 @@ std::string InkStory::continue_story() {
 			eval_result.target_knot.clear();
 			story_state.check_for_glue_divert = false;
 		} else if (!eval_result.target_knot.empty()) {
-			if (auto target_knot = story_data->knots.find(eval_result.target_knot); target_knot != story_data->knots.end()) {
-				story_state.current_knot = &(target_knot->second);
-				story_state.index_in_knot = 0;
+			// [knot].[stitch] divert
+			if (std::size_t dot_index = eval_result.target_knot.find("."); dot_index != eval_result.target_knot.npos) {
+				std::string knot_name = eval_result.target_knot.substr(0, dot_index);
+				if (auto target_knot = story_data->knots.find(knot_name); target_knot != story_data->knots.end()) {
+					const std::vector<Stitch>& knot_stitches = target_knot->second.stitches;
+
+					std::string stitch_name = eval_result.target_knot.substr(dot_index + 1);
+					std::size_t stitch_index = -1;
+					for (const Stitch& stitch : knot_stitches) { // HACK: make this better than linear time
+						if (stitch.name == stitch_name) {
+							stitch_index = stitch.index;
+							break;
+						}
+					}
+
+					if (stitch_index != -1) {
+						story_state.current_knots_stack.back() = {&(target_knot->second), stitch_index};
+						changed_knot = true;
+					} else {
+						throw std::runtime_error("Stitch not found");
+					}
+				} else {
+					throw std::runtime_error("Knot for stitch not found");
+				}
+			// [knot] divert
+			} else if (auto target_knot = story_data->knots.find(eval_result.target_knot); target_knot != story_data->knots.end()) {
+				story_state.current_knots_stack.back() = {&(target_knot->second), 0};
 				changed_knot = true;
+			// [stitch] divert
+			} else {
+				const std::vector<Stitch>& current_stitches = story_state.current_nonchoice_knot().knot->stitches;
+				std::size_t stitch_index = -1;
+				for (const Stitch& stitch : current_stitches) { // HACK: make this better than linear time
+					if (stitch.name == eval_result.target_knot) {
+						stitch_index = stitch.index;
+						break;
+					}
+				}
+
+				if (stitch_index != -1) {
+					story_state.current_nonchoice_knot().index = stitch_index;
+				} else {
+					throw std::runtime_error("Stitch not found");
+				}
 			}
 
 			eval_result.target_knot.clear();
 		}
 
 		if (!changed_knot) {
-			++story_state.index_in_knot;
+			++story_state.current_knot().index;
+		}
+
+		if (story_state.index_in_knot() >= story_state.current_knot_size() && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+			story_state.current_knots_stack.pop_back();
 		}
 	}
 
@@ -171,6 +218,6 @@ const std::vector<std::string>& InkStory::get_current_tags() const {
 void InkStory::choose_choice_index(std::size_t index) {
 	if (story_state.selected_choice == -1) {
 		story_state.selected_choice = index;
-		--story_state.index_in_knot;
+		--story_state.current_knots_stack.back().index;
 	}
 }

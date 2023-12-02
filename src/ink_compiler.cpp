@@ -21,6 +21,7 @@
 #include <unordered_map>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 #include <iostream>
 #include <format>
@@ -421,7 +422,10 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					}
 				} else if (next_token_is(all_tokens, token_index, InkToken::Text)) {
 					std::string new_stitch_name = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
-					story_knots.back().stitches.push_back({new_stitch_name, static_cast<std::uint16_t>(story_knots.back().objects.size())});
+					
+					std::vector<Stitch>& stitches = story_knots.back().stitches;
+					stitches.push_back({new_stitch_name, static_cast<std::uint16_t>(story_knots.back().objects.size())});
+					//std::sort(stitches.begin(), stitches.end(), [](const Stitch& a, const Stitch& b) { return a.index < b.index; });
 
 					while (all_tokens[token_index].token != InkToken::NewLine) {
 						++token_index;
