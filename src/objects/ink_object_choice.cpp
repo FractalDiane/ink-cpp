@@ -60,7 +60,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 
 					story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 					
-					InkStoryEvalResult choice_eval_result = {.should_continue = true};
+					InkStoryEvalResult choice_eval_result;
 					choice_eval_result.result.reserve(50);
 					for (InkObject* object : this_choice.text) {
 						object->execute(story_state, choice_eval_result);
@@ -87,7 +87,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		InkChoiceEntry* selected_choice_struct = story_state.current_choice_structs[story_state.selected_choice];
 
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
-		InkStoryEvalResult choice_eval_result = {.should_continue = true};
+		InkStoryEvalResult choice_eval_result;
 		choice_eval_result.result.reserve(50);
 		for (InkObject* object : selected_choice_struct->text) {
 			object->execute(story_state, choice_eval_result);

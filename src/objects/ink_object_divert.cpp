@@ -12,5 +12,9 @@ InkObject* InkObjectDivert::populate_from_bytes(const std::vector<std::uint8_t>&
 }
 
 void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	//return target_knot;
+	if (target_knot == "END") {
+		story_state.should_end_story = true;
+	} else {
+		eval_result.target_knot = target_knot;
+	}
 }

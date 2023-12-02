@@ -31,6 +31,8 @@ protected:\
 
 FIXTURE(ContentTests);
 FIXTURE(ChoiceTests);
+FIXTURE(KnotTests);
+FIXTURE(DivertTests);
 
 TEST_F(ContentTests, SingleLineText) {
 	STORY("1_content/1a_text.ink");
@@ -97,6 +99,21 @@ TEST_F(ChoiceTests, MultipleChoices) {
 		story.choose_choice_index(i);
 		EXPECT_TEXT(expected_texts[i][0], expected_texts[i][1]);
 	}
+}
+
+TEST_F(KnotTests, Knots) {
+	STORY("3_knots/3a_knot.ink");
+	EXPECT_TEXT("Hello world");
+}
+
+TEST_F(DivertTests, Diverts) {
+	STORY("4_diverts/4a_divert.ink");
+	EXPECT_TEXT("We hurried home to Savile Row as fast as we could.");
+}
+
+TEST_F(DivertTests, DivertsWithGlue) {
+	STORY("4_diverts/4b_glue.ink");
+	EXPECT_TEXT("We hurried home to Savile Row as fast as we could.");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

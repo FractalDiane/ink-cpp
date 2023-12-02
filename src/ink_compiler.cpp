@@ -227,7 +227,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 			} break;
 		}
 
-		if (strip_string_edges(current_text) == "VAR") {
+		if (strip_string_edges(current_text, true, true, true) == "VAR") {
 			this_token.token = InkToken::KeywordVar;
 			current_text.clear();
 		}
@@ -408,7 +408,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			if (at_line_start) {
 				if (next_token_is_sequence(all_tokens, token_index, {InkToken::Equal, InkToken::Equal})) {
 					if (next_token_is(all_tokens, token_index + 2, InkToken::Text)) {
-						std::string new_knot_name = strip_string_edges(all_tokens[token_index + 3].text_contents);
+						std::string new_knot_name = strip_string_edges(all_tokens[token_index + 3].text_contents, true, true, true);
 						story_knots.push_back({new_knot_name, {}});
 
 						while (all_tokens[token_index].token != InkToken::NewLine) {
@@ -420,7 +420,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						throw std::runtime_error("Expected knot name");
 					}
 				} else if (next_token_is(all_tokens, token_index, InkToken::Text)) {
-					std::string new_stitch_name = strip_string_edges(all_tokens[token_index + 1].text_contents);
+					std::string new_stitch_name = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
 					story_knots.back().stitches.push_back({new_stitch_name, static_cast<std::uint16_t>(story_knots.back().objects.size())});
 
 					while (all_tokens[token_index].token != InkToken::NewLine) {
@@ -505,7 +505,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						
 						++token_index;
 
-						if (in_choice_token.token != InkToken::LeftBrace && (in_choice_token.token != InkToken::Text || !strip_string_edges(in_choice_token.text_contents).empty())) {
+						if (in_choice_token.token != InkToken::LeftBrace && (in_choice_token.token != InkToken::Text || !strip_string_edges(in_choice_token.text_contents, true, true, true).empty())) {
 							past_choice_initial_braces = true;
 						} 
 					}
@@ -603,7 +603,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			} else {
 				if (is_conditional) {
 					// TODO: change to actual thing
-					result_object = new InkObjectConditional(strip_string_edges(items[0][0]->to_string()), items_if, items_else);
+					result_object = new InkObjectConditional(strip_string_edges(items[0][0]->to_string(), true, true, true), items_if, items_else);
 				} else if (found_pipe || sequence_type != InkSequenceType::Sequence) {
 					result_object = new InkObjectSequence(sequence_type, items, current_sequence_index);
 					++current_sequence_index;
@@ -623,7 +623,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 		case InkToken::Arrow: {
 			if (next_token_is(all_tokens, token_index, InkToken::Text)) {
-				const std::string& target = strip_string_edges(all_tokens[token_index + 1].text_contents);
+				const std::string& target = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
 				result_object = new InkObjectDivert(target);
 				++token_index;
 			} else if (in_choice_line) {
@@ -662,7 +662,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		} break;
 
 		case InkToken::Text: {
-			if (std::string text_stripped = strip_string_edges(token.text_contents); !text_stripped.empty()) {
+			if (std::string text_stripped = strip_string_edges(token.text_contents, true, true, true); !text_stripped.empty()) {
 				result_object = new InkObjectText(token.text_contents);
 			}
 		} break;

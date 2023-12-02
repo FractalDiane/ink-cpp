@@ -21,6 +21,8 @@ struct InkStoryState {
 	std::string_view current_stitch;
 	std::size_t index_in_knot = 0;
 
+	bool should_end_story = false;
+
 	std::string_view new_knot_target;
 	bool new_knot_from_choice = false;
 
@@ -34,6 +36,7 @@ struct InkStoryState {
 	std::size_t total_choices_taken = 0;
 
 	bool in_glue = false;
+	bool check_for_glue_divert = false;
 	bool in_choice_text = false;
 	bool at_choice = false;
 
@@ -43,5 +46,6 @@ struct InkStoryState {
 
 struct InkStoryEvalResult {
 	std::string result;
-	bool should_continue;
+	bool should_continue = true;
+	std::string target_knot;
 };

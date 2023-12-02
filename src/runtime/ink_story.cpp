@@ -117,16 +117,41 @@ void InkStory::init_story() {
 std::string InkStory::continue_story() {
 	story_state.current_tags.clear();
 
-	InkStoryEvalResult eval_result = {.should_continue = true};
+	InkStoryEvalResult eval_result;
 	eval_result.result.reserve(512);
-	while (eval_result.should_continue && story_state.index_in_knot < story_state.current_knot->objects.size()) {
+	eval_result.target_knot.reserve(32);
+	while (eval_result.should_continue && !story_state.should_end_story && story_state.index_in_knot < story_state.current_knot->objects.size()) {
+		bool changed_knot = false;
 		InkObject* current_object = story_state.current_knot->objects[story_state.index_in_knot];
 		current_object->execute(story_state, eval_result);
 
-		++story_state.index_in_knot;
+		if (story_state.check_for_glue_divert) { // HACK: is there a better way to do this?
+			if (auto knot = story_data->knots.find(eval_result.target_knot); knot != story_data->knots.end() && !knot->second.objects.empty()) {
+				eval_result.should_continue = knot->second.objects[0]->get_id() == ObjectId::Glue;
+			}
+
+			eval_result.target_knot.clear();
+			story_state.check_for_glue_divert = false;
+		} else if (!eval_result.target_knot.empty()) {
+			if (auto target_knot = story_data->knots.find(eval_result.target_knot); target_knot != story_data->knots.end()) {
+				story_state.current_knot = &(target_knot->second);
+				story_state.index_in_knot = 0;
+				changed_knot = true;
+			}
+
+			eval_result.target_knot.clear();
+		}
+
+		if (!changed_knot) {
+			++story_state.index_in_knot;
+		}
 	}
 
 	return remove_duplicate_spaces(strip_string_edges(eval_result.result, true, true, true));
+}
+
+std::string InkStory::continue_story_maximally() {
+	return std::string();
 }
 
 const std::vector<std::string>& InkStory::get_current_choices() const {
