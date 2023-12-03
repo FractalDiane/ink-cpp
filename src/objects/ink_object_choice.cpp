@@ -97,9 +97,8 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		}
 
 		eval_result.result = choice_eval_result.result;
-		eval_result.should_continue = eval_result.result.empty();
+		eval_result.should_continue = eval_result.result.empty() || selected_choice_struct->immediately_continue_to_result;
 
-		//story_state.current_knot = &(selected_choice_struct->result);
 		story_state.current_knots_stack.push_back({&(selected_choice_struct->result), 0});
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 		story_state.selected_choice = -1;

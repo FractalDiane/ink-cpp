@@ -489,11 +489,13 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 								if (in_choice_object->get_id() == ObjectId::Divert) {
 									if (in_choice_object->has_any_contents()) {
 										--token_index;
+										choice_entry.immediately_continue_to_result = !choice_entry.text.empty();
 									} else {
 										const std::vector<InkObject*>& text_contents = choice_entry.text;
 										bool no_text = text_contents.empty() || text_contents.size() == 1 && !text_contents[0]->has_any_contents();
 										choice_entry.fallback = no_text;
 										++token_index;
+										choice_entry.immediately_continue_to_result = true;
 									}
 								}
 

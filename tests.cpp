@@ -35,6 +35,7 @@ FIXTURE(KnotTests);
 FIXTURE(DivertTests);
 FIXTURE(BranchingTests);
 FIXTURE(StitchTests);
+FIXTURE(VaryingChoiceTests);
 
 TEST_F(ContentTests, SingleLineText) {
 	STORY("1_content/1a_text.ink");
@@ -184,6 +185,29 @@ TEST_F(StitchTests, StitchesWithLocalDiverts) {
 	EXPECT_CHOICES("Move to third class");
 	story.choose_choice_index(0);
 	EXPECT_TEXT("I put myself in third.");
+}
+
+TEST_F(VaryingChoiceTests, ChoicesBeingUsedUp) {
+	STORY("7_varying/7a_fallback_choice.ink");
+	EXPECT_TEXT("You search desperately for a friendly face in the crowd.");
+	EXPECT_CHOICES("The woman in the hat?", "The man with the briefcase?");
+
+	story.choose_choice_index(0);
+	EXPECT_TEXT("The woman in the hat pushes you roughly aside. You search desperately for a friendly face in the crowd.");
+	EXPECT_CHOICES("The man with the briefcase?");
+}
+
+TEST_F(VaryingChoiceTests, FallbackChoices) {
+	STORY("7_varying/7a_fallback_choice.ink");
+	EXPECT_TEXT("You search desperately for a friendly face in the crowd.");
+	EXPECT_CHOICES("The woman in the hat?", "The man with the briefcase?");
+
+	story.choose_choice_index(1);
+	EXPECT_TEXT("The man with the briefcase looks disgusted as you stumble past him. You search desperately for a friendly face in the crowd.");
+	EXPECT_CHOICES("The woman in the hat?");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("The woman in the hat pushes you roughly aside. You search desperately for a friendly face in the crowd.");
+	EXPECT_TEXT("But it is too late: you collapse onto the station platform. This is the end.");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

@@ -24,12 +24,14 @@ int main() {
 	std::string test = strip_string_edges("\t");
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("6_stitches/6c_stitches_local_divert.ink"));
+	InkStory story = compiler.compile_file(TEST_PATH("7_varying/7a_fallback_choice.ink"));
 	//story.print_info();
 	//compiler.save_data_to_file(story.get_story_data(), "../test.inkb");
 
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(1);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 

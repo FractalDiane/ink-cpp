@@ -169,6 +169,10 @@ std::string InkStory::continue_story() {
 				}
 			// [knot] divert
 			} else if (auto target_knot = story_data->knots.find(eval_result.target_knot); target_knot != story_data->knots.end()) {
+				while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot == story_state.current_nonchoice_knot().knot) {
+					story_state.current_knots_stack.pop_back();
+				}
+
 				story_state.current_knots_stack.back() = {&(target_knot->second), 0};
 				changed_knot = true;
 			// [stitch] divert
