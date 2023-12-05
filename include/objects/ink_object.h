@@ -31,6 +31,8 @@ public:
 	virtual bool has_any_contents() const { return true; }
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) = 0;
+
+	virtual bool will_choice_take_fallback(InkStoryState& story_state) { return false; }
 	
 	std::vector<std::uint8_t> get_serialized_bytes() const;
 	//InkObject* populate_from_bytes() const;

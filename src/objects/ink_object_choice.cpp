@@ -79,7 +79,8 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		if (!story_state.current_choices.empty()) {
 			eval_result.should_continue = false;
 			story_state.at_choice = true;
-		} else {
+		} else if (fallback_index != -1) {
+			story_state.current_knots_stack.push_back({&(choices[fallback_index].result), 0});
 			story_state.at_choice = false;
 		}
 	} else {
@@ -105,4 +106,19 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		++story_state.total_choices_taken;
 		story_state.at_choice = false;
 	}
+}
+bool InkObjectChoice::will_choice_take_fallback(InkStoryState& story_state) {
+	std::size_t fallback_index = -1;
+	for (std::size_t i = 0; i < choices.size(); ++i) {
+		InkChoiceEntry& this_choice = choices[i];
+		if (this_choice.sticky || !story_state.has_choice_been_taken(i)) {
+			if (!this_choice.fallback) {
+				return false;
+			} else {
+				fallback_index = i;
+			}
+		}
+	}
+
+	return fallback_index != -1;
 }

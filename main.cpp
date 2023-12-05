@@ -34,6 +34,7 @@ int main() {
 	story.choose_choice_index(1);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
 
 	/*for (int i = 0; i < 3; ++i) {
 		InkCompiler compiler;
