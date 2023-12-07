@@ -210,6 +210,22 @@ TEST_F(VaryingChoiceTests, FallbackChoices) {
 	EXPECT_TEXT("But it is too late: you collapse onto the station platform. This is the end.");
 }
 
+TEST_F(VaryingChoiceTests, StickyChoices) {
+	STORY("7_varying/7b_sticky_choice.ink");
+	EXPECT_TEXT("You are on the couch.", "");
+	EXPECT_CHOICES("Eat another donut", "Get off the couch");
+
+	story.choose_choice_index(0);
+	EXPECT_TEXT("You eat another donut.");
+	EXPECT_CHOICES("Eat another donut", "Get off the couch");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("You eat another donut.");
+	EXPECT_CHOICES("Eat another donut", "Get off the couch");
+	story.choose_choice_index(1);
+	EXPECT_TEXT("You struggle up off the couch to go and compose epic poetry.");
+	EXPECT_CHOICES("Eat another donut");
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {

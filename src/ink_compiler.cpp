@@ -447,6 +447,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				++choice_level;
 				std::vector<InkChoiceEntry> choice_options;
 				bool has_gather = false;
+				bool current_choice_sticky = token.token == InkToken::Plus;
 
 				while (token_index < all_tokens.size()) {
 					if (all_tokens[token_index].token == InkToken::NewLine) {
@@ -468,7 +469,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					past_choice_initial_braces = false;
 					++token_index;
 
-					choice_stack.push_back({.sticky = token.token == InkToken::Plus});
+					choice_stack.push_back({.sticky = current_choice_sticky});
 					InkChoiceEntry& choice_entry = choice_stack.back();
 
 					while (token_index < all_tokens.size()) {
@@ -478,6 +479,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 								break;
 							} else if (next_token_is(all_tokens, token_index, InkToken::Asterisk) || next_token_is(all_tokens, token_index, InkToken::Plus)) {
 								++token_index;
+								current_choice_sticky = all_tokens[token_index].token == InkToken::Plus;
 								break;
 							}
 						}

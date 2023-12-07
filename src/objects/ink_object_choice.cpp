@@ -107,6 +107,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.at_choice = false;
 	}
 }
+
 bool InkObjectChoice::will_choice_take_fallback(InkStoryState& story_state) {
 	std::size_t fallback_index = -1;
 	for (std::size_t i = 0; i < choices.size(); ++i) {
