@@ -36,6 +36,7 @@ FIXTURE(DivertTests);
 FIXTURE(BranchingTests);
 FIXTURE(StitchTests);
 FIXTURE(VaryingChoiceTests);
+FIXTURE(VariableTextTests);
 
 TEST_F(ContentTests, SingleLineText) {
 	STORY("1_content/1a_text.ink");
@@ -234,6 +235,71 @@ TEST_F(VaryingChoiceTests, ConditionalChoices) {
 	story.choose_choice_index(1);
 	EXPECT_TEXT("Hello 2", "Hello 3", "");
 	EXPECT_CHOICES("Choice 1", "Choice 2", "Choice 3");
+}
+
+TEST_F(VariableTextTests, Sequences) {
+	STORY("8_variable_text/8a_sequence.ink");
+	EXPECT_TEXT("I bought a coffee with my five-pound note.");
+	EXPECT_CHOICES("Buy another one");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I bought a second coffee for my friend.");
+	EXPECT_CHOICES("Buy another one");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I didn't have enough money to buy any more coffee.");
+	EXPECT_CHOICES("Buy another one");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I didn't have enough money to buy any more coffee.");
+}
+
+TEST_F(VariableTextTests, Cycles) {
+	STORY("8_variable_text/8b_cycle.ink");
+	EXPECT_TEXT("It was Monday today.");
+	EXPECT_CHOICES("Tomorrow?");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("It was Tuesday today.");
+	EXPECT_CHOICES("Tomorrow?");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("It was Wednesday today.");
+	EXPECT_CHOICES("Tomorrow?");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("It was Thursday today.");
+	EXPECT_CHOICES("Tomorrow?");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("It was Friday today.");
+	EXPECT_CHOICES("Tomorrow?");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("It was Saturday today.");
+	EXPECT_CHOICES("Tomorrow?");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("It was Sunday today.");
+	EXPECT_CHOICES("Tomorrow?");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("It was Monday today.");
+	EXPECT_CHOICES("Tomorrow?");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("It was Tuesday today.");
+	EXPECT_CHOICES("Tomorrow?");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("It was Wednesday today.");
+	EXPECT_CHOICES("Tomorrow?");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("It was Thursday today.");
+	EXPECT_CHOICES("Tomorrow?");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("It was Friday today.");
+}
+
+TEST_F(VariableTextTests, OnceOnly) {
+	STORY("8_variable_text/8c_onceonly.ink");
+	EXPECT_TEXT("He told me a joke. I laughed politely.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("He told me a joke. I smiled.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("He told me a joke. I grimaced.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("He told me a joke. I promised myself to not react again.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("He told me a joke.");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

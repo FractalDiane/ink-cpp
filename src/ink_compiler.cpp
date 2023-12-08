@@ -563,7 +563,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				} break;
 			}
 
-			std::vector<std::vector<InkObject*>> items;
+			std::vector<std::vector<InkObject*>> items = {{}};
 			std::vector<InkObject*> items_if;
 			std::vector<InkObject*> items_else;
 			std::vector<std::string> text_items;

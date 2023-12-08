@@ -5,12 +5,15 @@
 //#include "exprtk/exprtk.hpp"
 
 #include <iostream>
+#include <format>
 
 #ifdef _WIN32
 #define TEST_PATH(path) R"(C:/Users/Duncan Sparks/Desktop/Programming/ink-cpp/tests/)" path
 #else
 #define TEST_PATH(path) R"(/home/diane/Programming/ink-cpp/tests/)" path
 #endif
+
+#define print(fmt, ...) std::cout << std::format(fmt __VA_OPT__(,) __VA_ARGS__) << std::endl
 
 int main() {
 	/*std::string story = R"(Once upon a time...
@@ -34,16 +37,18 @@ int main() {
 	//std::string test = strip_string_edges("\t");
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("7_varying/7c_conditional_choice.ink"));
+	InkStory story = compiler.compile_file(TEST_PATH("8_variable_text/8d_shuffle.ink"));
 	//story.print_info();
 	//compiler.save_data_to_file(story.get_story_data(), "../test.inkb");
 
 	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(1);
+	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
-	
+	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
 	/*story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;

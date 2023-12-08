@@ -4,6 +4,8 @@ cmake_policy(SET CMP0135 NEW)
 project(ink_compiler)
 set(CMAKE_CXX_STANDARD 20)
 
+set(SRC_UTIL src/ink_utils.cpp)
+
 set(SRC_COMPILER src/ink_compiler.cpp)
 
 set(SRC_RUNTIME 
@@ -37,18 +39,18 @@ FetchContent_Declare(
 
 if(WIN32)
 	set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-	add_compile_options(/bigobj)
+	add_compile_options(/bigobj /Zc:preprocessor)
 endif()
 
 FetchContent_MakeAvailable(googletest)
 
-add_library(ink_backend STATIC ${SRC_OBJECTS} ${SRC_RUNTIME})
+add_library(ink_backend STATIC ${SRC_OBJECTS} ${SRC_RUNTIME} ${SRC_UTIL})
 
-add_executable(ink_compiler main.cpp ${SRC_COMPILER})
+add_executable(ink_compiler main.cpp ${SRC_COMPILER} ${SRC_UTIL})
 add_dependencies(ink_compiler ink_backend)
 target_link_libraries(ink_compiler PUBLIC ink_backend)
 
-add_executable(ink_tests tests.cpp ${SRC_COMPILER})
+add_executable(ink_tests tests.cpp ${SRC_COMPILER} ${SRC_UTIL})
 add_dependencies(ink_tests ink_backend)
 target_link_libraries(ink_tests ink_backend GTest::gtest_main)
 
