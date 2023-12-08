@@ -1,6 +1,7 @@
 #include "objects/ink_object_choice.h"
 
 #include "ink_utils.h"
+#include "exprtk/exprtk.hpp"
 
 /*std::vector<std::uint8_t> InkObjectChoice::to_bytes() const {
 	return {}
@@ -56,18 +57,40 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			InkChoiceEntry& this_choice = choices[i];
 			if (this_choice.sticky || !story_state.has_choice_been_taken(i)) {
 				if (!this_choice.fallback) {
-					// TODO: choice conditions
+					bool include_choice = true;
+					const std::vector<std::string>& conditions = this_choice.conditions;
+					if (!conditions.empty()) {
+						for (const std::string& condition : conditions) {
+							exprtk::symbol_table<double> symbol_table;
+							exprtk::expression<double> expression;
+							exprtk::parser<double> parser;
 
-					story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
-					
-					InkStoryEvalResult choice_eval_result;
-					choice_eval_result.result.reserve(50);
-					for (InkObject* object : this_choice.text) {
-						object->execute(story_state, choice_eval_result);
+							for (const auto& entry : story_state.knot_visit_counts) {
+								symbol_table.add_constant(entry.first, static_cast<double>(entry.second));
+							}
+
+							expression.register_symbol_table(symbol_table);
+							parser.compile(condition, expression);
+							double result = expression.value();
+							if (result == 0.0) {
+								include_choice = false;
+								break;
+							}
+						}
 					}
 
-					story_state.current_choices.push_back(strip_string_edges(choice_eval_result.result, true, true, true));
-					story_state.current_choice_structs.push_back(&this_choice);
+					if (include_choice) {
+						story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
+					
+						InkStoryEvalResult choice_eval_result;
+						choice_eval_result.result.reserve(50);
+						for (InkObject* object : this_choice.text) {
+							object->execute(story_state, choice_eval_result);
+						}
+
+						story_state.current_choices.push_back(strip_string_edges(choice_eval_result.result, true, true, true));
+						story_state.current_choice_structs.push_back(&this_choice);
+					}
 				} else {
 					fallback_index = i;
 				}

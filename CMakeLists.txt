@@ -37,6 +37,7 @@ FetchContent_Declare(
 
 if(WIN32)
 	set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+	add_compile_options(/bigobj)
 endif()
 
 FetchContent_MakeAvailable(googletest)
@@ -54,3 +55,4 @@ target_link_libraries(ink_tests ink_backend GTest::gtest_main)
 add_compile_definitions(INKB_VERSION=0)
 
 include_directories(include)
+target_precompile_headers(ink_backend PUBLIC "include/exprtk/exprtk.hpp")

@@ -226,6 +226,16 @@ TEST_F(VaryingChoiceTests, StickyChoices) {
 	EXPECT_CHOICES("Eat another donut");
 }
 
+TEST_F(VaryingChoiceTests, ConditionalChoices) {
+	STORY("7_varying/7c_conditional_choice.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("Choice 1", "Choice 2");
+
+	story.choose_choice_index(1);
+	EXPECT_TEXT("Hello 2", "Hello 3", "");
+	EXPECT_CHOICES("Choice 1", "Choice 2", "Choice 3");
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {

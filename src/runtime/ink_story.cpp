@@ -18,6 +18,7 @@
 #include <fstream>
 #include <filesystem>
 #include <algorithm>
+#include <format>
 
 #include <stdexcept>
 #include <iostream>
@@ -113,6 +114,14 @@ void InkStory::print_info() const {
 }
 
 void InkStory::init_story() {
+	for (auto& knot : story_data->knots) {
+		story_state.knot_visit_counts[knot.first] = 0; // TODO: why is this pair.first const
+		for (const Stitch& stitch : knot.second.stitches) {
+			std::string stitch_name = std::format("{}.{}", knot.first, stitch.name);
+			story_state.knot_visit_counts[stitch_name] = 0;
+		}
+	}
+
 	story_state.current_knots_stack = {{&(story_data->knots[story_data->knot_order[0]]), 0}};
 }
 
@@ -160,6 +169,7 @@ std::string InkStory::continue_story() {
 
 					if (stitch_index != -1) {
 						story_state.current_knots_stack.back() = {&(target_knot->second), stitch_index};
+						++story_state.knot_visit_counts[std::format("{}.{}", knot_name, stitch_name)];
 						changed_knot = true;
 					} else {
 						throw std::runtime_error("Stitch not found");
@@ -174,6 +184,7 @@ std::string InkStory::continue_story() {
 				}
 
 				story_state.current_knots_stack.back() = {&(target_knot->second), 0};
+				++story_state.knot_visit_counts[target_knot->first];
 				changed_knot = true;
 			// [stitch] divert
 			} else {
@@ -188,6 +199,11 @@ std::string InkStory::continue_story() {
 
 				if (stitch_index != -1) {
 					story_state.current_nonchoice_knot().index = stitch_index;
+					std::string full_name = std::format("{}.{}", story_state.current_nonchoice_knot().knot->name, eval_result.target_knot);
+					++story_state.knot_visit_counts[full_name];
+					if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
+						changed_knot = true;
+					}
 				} else {
 					throw std::runtime_error("Stitch not found");
 				}
@@ -198,7 +214,11 @@ std::string InkStory::continue_story() {
 
 		if (!changed_knot) {
 			++story_state.current_knot().index;
+		}/* else if (const std::string& knot_name = story_state.current_knot().knot->name; !knot_name.empty()) {
+			++story_state.knot_visit_counts[knot_name];
 		}
+
+		if (story_data->knots[story_state.current_knot().knot->name] story_state.current_knot().index)*/
 
 		if (story_state.index_in_knot() >= story_state.current_knot_size() && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
 			story_state.current_knots_stack.pop_back();

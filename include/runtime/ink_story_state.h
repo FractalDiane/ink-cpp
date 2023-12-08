@@ -45,6 +45,8 @@ struct InkStoryState {
 	bool in_choice_text = false;
 	bool at_choice = false;
 
+	std::unordered_map<std::string, std::size_t> knot_visit_counts;
+
 	class InkObject* get_current_object(std::int64_t index_offset);
 	bool has_choice_been_taken(std::size_t index);
 	inline std::size_t index_in_knot() const { return current_knots_stack.back().index; }

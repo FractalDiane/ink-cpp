@@ -610,8 +610,14 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			--brace_level;
 
 			if (in_choice_line && !past_choice_initial_braces) {
-				//choice_stack.back().conditions.push_back(join_string_vector(items_if, std::string()));
-				// TODO: ???
+				std::string condition;
+				condition.reserve(items_if.size() * 10);
+				for (InkObject* object : items_if) {
+					condition += object->to_string();
+					delete object;
+				}
+
+				choice_stack.back().conditions.push_back(condition);
 			} else {
 				if (is_conditional) {
 					// TODO: change to actual thing
