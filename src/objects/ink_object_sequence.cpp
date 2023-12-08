@@ -2,6 +2,14 @@
 
 #include "ink_utils.h"
 
+InkObjectSequence::~InkObjectSequence() {
+	for (const auto& item : items) {
+		for (InkObject* object : item) {
+			delete object;
+		}
+	}
+}
+
 void InkObjectSequence::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	std::size_t index = sequence_type == InkSequenceType::Shuffle ? randi_range(0, items.size() - 1) : current_index;
 	if (sequence_type != InkSequenceType::OnceOnly || index < items.size()) {

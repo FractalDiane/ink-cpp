@@ -599,6 +599,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 								target_array.push_back(compiled_object);
 							} else if (!items.empty()) {
 								items.back().push_back(compiled_object);
+							} else {
+								delete compiled_object;
 							}
 						} break;
 					}

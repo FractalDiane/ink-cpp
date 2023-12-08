@@ -23,6 +23,8 @@ public:
 	InkObjectSequence(InkSequenceType type, const std::vector<std::vector<InkObject*>>& items, std::size_t index)
 		: sequence_type{type}, items{items}, current_index{index} {}
 
+	virtual ~InkObjectSequence() override;
+
 	virtual ObjectId get_id() const override { return ObjectId::Sequence; }
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
