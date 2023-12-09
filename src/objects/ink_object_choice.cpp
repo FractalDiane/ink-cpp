@@ -1,7 +1,9 @@
 #include "objects/ink_object_choice.h"
 
 #include "ink_utils.h"
-#include "exprtk/exprtk.hpp"
+
+#include "shunting-yard.h"
+#include "builtin-features.inc"
 
 /*std::vector<std::uint8_t> InkObjectChoice::to_bytes() const {
 	return {}
@@ -63,18 +65,8 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 					const std::vector<std::string>& conditions = this_choice.conditions;
 					if (!conditions.empty()) {
 						for (const std::string& condition : conditions) {
-							exprtk::symbol_table<double> symbol_table;
-							exprtk::expression<double> expression;
-							exprtk::parser<double> parser;
-
-							for (const auto& entry : story_state.knot_visit_counts) {
-								symbol_table.add_constant(entry.first, static_cast<double>(entry.second));
-							}
-
-							expression.register_symbol_table(symbol_table);
-							parser.compile(condition, expression);
-							double result = expression.value();
-							if (result == 0.0) {
+							cparse::packToken result = cparse::calculator::calculate(condition.c_str(), story_state.variables);
+							if (!result.asBool()) {
 								include_choice = false;
 								break;
 							}

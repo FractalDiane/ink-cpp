@@ -3,6 +3,10 @@
 #include "ink_compiler.h"
 #include "runtime/ink_story.h"
 
+#include "builtin-features.inc"
+
+#include <utility>
+
 #define FIXTURE(name) class name : public testing::Test {\
 protected:\
 	InkCompiler compiler;\
@@ -387,9 +391,26 @@ TEST_F(VariableTextTests, AlternativeAtChoiceStart) {
 	EXPECT_TEXT("The party followed the old road South");
 }
 
+TEST_F(VariableTextTests, ConditionalText) {
+	std::vector<std::pair<bool ,bool>> var_values = {{false, false}, {true, false}, {true, true}};
+	std::vector<std::pair<std::string, std::string>> expected_text = {
+		{"There was a man.", "I missed him. Was he particularly evil?"},
+		{"There was a man. He had a peculiar face.", "I saw him. Only for a moment. His real name was kept a secret."},
+		{"There was a man. He had a peculiar face.", "I saw him. Only for a moment. His real name was Franz."},
+	};
+
+	for (int i = 0; i < expected_text.size(); ++i) {
+		STORY("8_variable_text/8k_conditional_text.ink");
+		story.set_variable("met_blofeld", var_values[i].first);
+		story.set_variable("learned_his_name", var_values[i].second);
+		EXPECT_TEXT(expected_text[i].first, expected_text[i].second);
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {
+	cparse_startup();
 	testing::InitGoogleTest();
 	return RUN_ALL_TESTS();
 }

@@ -15,6 +15,8 @@
 
 #include "ink_utils.h"
 
+#include "shunting-yard.h"
+
 #include <fstream>
 #include <filesystem>
 #include <algorithm>
@@ -114,11 +116,23 @@ void InkStory::print_info() const {
 }
 
 void InkStory::init_story() {
-	for (auto& knot : story_data->knots) {
+	/*for (auto& knot : story_data->knots) {
 		story_state.knot_visit_counts[knot.first] = 0; // TODO: why is this pair.first const
 		for (const Stitch& stitch : knot.second.stitches) {
 			std::string stitch_name = std::format("{}.{}", knot.first, stitch.name);
 			story_state.knot_visit_counts[stitch_name] = 0;
+		}
+	}*/
+
+	/*for (const auto& entry : story_state.knot_visit_counts) {
+		token_map[entry.first] = entry.second;
+	}*/
+
+	for (const auto& knot : story_data->knots) {
+		story_state.variables[knot.first] = 0;
+		for (const Stitch& stitch : knot.second.stitches) {
+			std::string stitch_name = std::format("{}.{}", knot.first, stitch.name);
+			story_state.variables[stitch_name] = 0;
 		}
 	}
 
@@ -169,7 +183,8 @@ std::string InkStory::continue_story() {
 
 					if (stitch_index != -1) {
 						story_state.current_knots_stack.back() = {&(target_knot->second), stitch_index};
-						++story_state.knot_visit_counts[std::format("{}.{}", knot_name, stitch_name)];
+						//++story_state.knot_visit_counts[std::format("{}.{}", knot_name, stitch_name)];
+						story_state.increment_visit_count(std::format("{}.{}", knot_name, stitch_name));
 						changed_knot = true;
 					} else {
 						throw std::runtime_error("Stitch not found");
@@ -184,7 +199,8 @@ std::string InkStory::continue_story() {
 				}
 
 				story_state.current_knots_stack.back() = {&(target_knot->second), 0};
-				++story_state.knot_visit_counts[target_knot->first];
+				//++story_state.knot_visit_counts[target_knot->first];
+				story_state.increment_visit_count(target_knot->first);
 				changed_knot = true;
 			// [stitch] divert
 			} else {
@@ -200,7 +216,8 @@ std::string InkStory::continue_story() {
 				if (stitch_index != -1) {
 					story_state.current_nonchoice_knot().index = stitch_index;
 					std::string full_name = std::format("{}.{}", story_state.current_nonchoice_knot().knot->name, eval_result.target_knot);
-					++story_state.knot_visit_counts[full_name];
+					//++story_state.knot_visit_counts[full_name];
+					story_state.increment_visit_count(full_name);
 					if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
 						changed_knot = true;
 					}
@@ -239,9 +256,14 @@ const std::vector<std::string>& InkStory::get_current_choices() const {
 const std::vector<std::string>& InkStory::get_current_tags() const {
 	return story_state.current_tags;
 }
+
 void InkStory::choose_choice_index(std::size_t index) {
 	if (story_state.selected_choice == -1) {
 		story_state.selected_choice = index;
 		--story_state.current_knots_stack.back().index;
 	}
+}
+
+void InkStory::set_variable(const std::string& name, const cparse::packToken& value) {
+	story_state.variables[name] = value;
 }

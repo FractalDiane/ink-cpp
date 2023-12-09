@@ -622,11 +622,9 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				choice_stack.back().conditions.push_back(condition);
 			} else {
 				if (is_conditional) {
-					// TODO: change to actual thing
 					result_object = new InkObjectConditional(strip_string_edges(items[0][0]->to_string(), true, true, true), items_if, items_else);
 				} else if (found_pipe || sequence_type != InkSequenceType::Sequence) {
 					result_object = new InkObjectSequence(sequence_type, items);
-					//++current_sequence_index;
 				} else if (!text_items.empty()) {
 					std::string all_text = join_string_vector(text_items, std::string());
 					result_object = new InkObjectInterpolation(all_text);

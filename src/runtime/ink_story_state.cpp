@@ -2,6 +2,8 @@
 
 #include "objects/ink_object.h"
 
+#include "shunting-yard.h"
+
 InkObject* InkStoryState::get_current_object(std::int64_t index_offset) {
 	std::int64_t index = index_in_knot() + index_offset;
 	if (index >= 0 && index < current_knot_size()) {
@@ -26,4 +28,9 @@ InkStoryState::KnotStatus& InkStoryState::current_nonchoice_knot() {
 	}
 
 	return current_knots_stack.front();
+}
+
+void InkStoryState::increment_visit_count(const std::string& knot) {
+	std::size_t current_count = variables[knot].asInt();
+	variables[knot] = current_count + 1;
 }
