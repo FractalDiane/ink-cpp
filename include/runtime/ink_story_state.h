@@ -8,6 +8,7 @@
 #include <cstdint>
 
 #include "runtime/ink_story_structs.h"
+#include "shunting-yard.h"
 
 struct InkStoryState {
 	enum class ChoiceMixPosition {
@@ -46,7 +47,7 @@ struct InkStoryState {
 	bool in_choice_text = false;
 	bool at_choice = false;
 
-	std::unordered_map<std::string, std::size_t> knot_visit_counts;
+	cparse::TokenMap variables;
 
 	class InkObject* get_current_object(std::int64_t index_offset);
 	bool has_choice_been_taken(std::size_t index);
@@ -54,6 +55,8 @@ struct InkStoryState {
 	inline KnotStatus& current_knot() { return current_knots_stack.back(); }
 	inline std::size_t current_knot_size() const { return current_knots_stack.back().knot->objects.size(); }
 	KnotStatus& current_nonchoice_knot();
+
+	void increment_visit_count(const std::string& knot);
 };
 
 struct InkStoryEvalResult {

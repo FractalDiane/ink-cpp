@@ -8,8 +8,6 @@
 #include <vector>
 #include <string_view>
 
-
-
 class InkStory {
 private:
 	InkStoryData* story_data;
@@ -35,4 +33,5 @@ public:
 
 	void choose_choice_index(std::size_t index);
 
+	void set_variable(const std::string& name, const class cparse::packToken& value);
 };
