@@ -336,6 +336,57 @@ TEST_F(VariableTextTests, CycleNested) {
 	EXPECT_TEXT("The Ratbear swipes at you.");
 }
 
+TEST_F(VariableTextTests, AlternativeWithDivert) {
+	STORY("8_variable_text/8g_alternative_divert.ink");
+	EXPECT_TEXT("I waited.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I waited some more.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I snoozed.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I woke up and waited more.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I gave up and left. I walked away in frustration.");
+}
+
+TEST_F(VariableTextTests, AlternativeInChoice) {
+	STORY("8_variable_text/8h_alternative_in_choice.ink");
+	EXPECT_TEXT(R"("Hello, boy," Monsieur Fogg proclaimed.)");
+	EXPECT_CHOICES(R"("Hello, Master!")", "Say nothing");
+
+	story.choose_choice_index(0);
+	EXPECT_TEXT(R"("Hello, Monsieur Fogg!" I declared.)", R"("Hello, boy," Monsieur Fogg proclaimed.)");
+	EXPECT_CHOICES(R"("Hello, you!")", "Say nothing");
+	story.choose_choice_index(0);
+	EXPECT_TEXT(R"("Hello, brown-eyes!" I declared.)", R"("Hello, boy," Monsieur Fogg proclaimed.)");
+	EXPECT_CHOICES(R"("Hello, Master!")", "Say nothing");
+	story.choose_choice_index(0);
+	EXPECT_TEXT(R"("Hello, Monsieur Fogg!" I declared.)", R"("Hello, boy," Monsieur Fogg proclaimed.)");
+	EXPECT_CHOICES(R"("Hello, you!")", "Say nothing");
+	story.choose_choice_index(0);
+	EXPECT_TEXT(R"("Hello, brown-eyes!" I declared.)", R"("Hello, boy," Monsieur Fogg proclaimed.)");
+	EXPECT_CHOICES(R"("Hello, Master!")", "Say nothing");
+	story.choose_choice_index(0);
+	EXPECT_TEXT(R"("Hello, Monsieur Fogg!" I declared.)", R"("Hello, boy," Monsieur Fogg proclaimed.)");
+	EXPECT_CHOICES(R"("Hello, you!")", "Say nothing");
+	story.choose_choice_index(1);
+	EXPECT_TEXT("You remain silent.", R"("Hello, boy," Monsieur Fogg proclaimed.)");
+}
+
+TEST_F(VariableTextTests, AlternativeAtChoiceStart) {
+	STORY("8_variable_text/8i_alternative_at_choice_start.ink");
+	story.continue_story();
+	EXPECT_CHOICES("They headed towards the Sandlands");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("They set off for the desert", "");
+	EXPECT_CHOICES("The party followed the old road South");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("They headed towards the Sandlands", "");
+	EXPECT_CHOICES("They set off for the desert",);
+	story.choose_choice_index(0);
+	EXPECT_TEXT("The party followed the old road South");
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {

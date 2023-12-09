@@ -50,6 +50,8 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 	if (story_state.selected_choice == -1 || story_state.current_choices.empty()) {
 		story_state.in_choice_text = true;
 		story_state.current_choices.clear();
+		story_state.current_choice_structs.clear();
+		story_state.current_choice_indices.clear();
 		story_state.selected_choice = -1;
 
 		std::size_t fallback_index = -1;
@@ -90,6 +92,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 
 						story_state.current_choices.push_back(strip_string_edges(choice_eval_result.result, true, true, true));
 						story_state.current_choice_structs.push_back(&this_choice);
+						story_state.current_choice_indices.push_back(i);
 					}
 				} else {
 					fallback_index = i;
@@ -107,7 +110,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			story_state.at_choice = false;
 		}
 	} else {
-		story_state.choices_taken[story_state.current_knot().knot].insert(story_state.selected_choice);
+		story_state.choices_taken[story_state.current_knot().knot].insert(story_state.current_choice_indices[story_state.selected_choice]);
 		InkChoiceEntry* selected_choice_struct = story_state.current_choice_structs[story_state.selected_choice];
 
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
