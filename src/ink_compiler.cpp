@@ -667,8 +667,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		case InkToken::KeywordVar: {
 			if (at_line_start) {
 				if (next_token_is_sequence(all_tokens, token_index, {InkToken::Text, InkToken::Equal, InkToken::Text})) {
-					const std::string& identifier = all_tokens[token_index + 1].text_contents;
-					const std::string& expression = all_tokens[token_index + 3].text_contents;
+					const std::string& identifier = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
+					const std::string& expression = strip_string_edges(all_tokens[token_index + 3].text_contents, true, true, true);
 					result_object = new InkObjectGlobalVariable(identifier, expression);
 
 					token_index += 3;
