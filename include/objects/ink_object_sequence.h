@@ -20,8 +20,8 @@ private:
 	std::size_t current_index;
 
 public:
-	InkObjectSequence(InkSequenceType type, const std::vector<std::vector<InkObject*>>& items, std::size_t index)
-		: sequence_type{type}, items{items}, current_index{index} {}
+	InkObjectSequence(InkSequenceType type, const std::vector<std::vector<InkObject*>>& items)
+		: sequence_type{type}, items{items}, current_index{0} {}
 
 	virtual ~InkObjectSequence() override;
 

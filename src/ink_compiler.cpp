@@ -625,8 +625,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					// TODO: change to actual thing
 					result_object = new InkObjectConditional(strip_string_edges(items[0][0]->to_string(), true, true, true), items_if, items_else);
 				} else if (found_pipe || sequence_type != InkSequenceType::Sequence) {
-					result_object = new InkObjectSequence(sequence_type, items, current_sequence_index);
-					++current_sequence_index;
+					result_object = new InkObjectSequence(sequence_type, items);
+					//++current_sequence_index;
 				} else if (!text_items.empty()) {
 					std::string all_text = join_string_vector(text_items, std::string());
 					result_object = new InkObjectInterpolation(all_text);
@@ -682,7 +682,9 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		} break;
 
 		case InkToken::Text: {
-			if (std::string text_stripped = strip_string_edges(token.text_contents, true, true, true); !text_stripped.empty()) {
+			std::string text_stripped = strip_string_edges(token.text_contents, true, true, true);
+			std::string text_notabs = strip_string_edges(token.text_contents);
+			if (!text_notabs.empty() && (!text_stripped.empty() || !in_choice_line || !at_line_start)) {
 				result_object = new InkObjectText(token.text_contents);
 			}
 		} break;

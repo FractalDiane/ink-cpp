@@ -302,6 +302,40 @@ TEST_F(VariableTextTests, OnceOnly) {
 	EXPECT_TEXT("He told me a joke.");
 }
 
+TEST_F(VariableTextTests, OnceOnlyWithEmptyEntries) {
+	STORY("8_variable_text/8e_onceonly_empty.ink");
+	EXPECT_TEXT("I took a step forward.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I took a step forward.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I took a step forward.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I took a step forward.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I took a step forward. Then the lights went out.");
+}
+
+TEST_F(VariableTextTests, CycleNested) {
+	STORY("8_variable_text/8f_cycle_nested.ink");
+	EXPECT_TEXT("The Ratbear wastes no time and swipes at you.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("The Ratbear scratches into your leg.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("The Ratbear swipes at you.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("The Ratbear scratches into your arm.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("The Ratbear swipes at you.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("The Ratbear scratches into your cheek.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("The Ratbear swipes at you.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("The Ratbear scratches into your leg.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("The Ratbear swipes at you.");
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {
