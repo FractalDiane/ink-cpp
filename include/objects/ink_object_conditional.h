@@ -14,6 +14,8 @@ public:
 	InkObjectConditional(const std::string& condition, const std::vector<InkObject*>& objects_if, const std::vector<InkObject*>& objects_else)
 		: condition{condition}, branch_if{objects_if}, branch_else{objects_else} {}
  
+	virtual ~InkObjectConditional() override;
+
 	virtual ObjectId get_id() const override { return ObjectId::Conditional; }
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;

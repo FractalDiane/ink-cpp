@@ -2,6 +2,16 @@
 
 #include "shunting-yard.h"
 
+InkObjectConditional::~InkObjectConditional() {
+	for (InkObject* object : branch_if) {
+		delete object;
+	}
+
+	for (InkObject* object : branch_else) {
+		delete object;
+	}
+}
+
 void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	cparse::packToken result = cparse::calculator::calculate(condition.c_str(), story_state.variables);
 	const std::vector<InkObject*>& result_array = result.asBool() ? branch_if : branch_else;
