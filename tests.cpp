@@ -3,6 +3,8 @@
 #include "ink_compiler.h"
 #include "runtime/ink_story.h"
 
+#include "builtin-features.inc"
+
 #define FIXTURE(name) class name : public testing::Test {\
 protected:\
 	InkCompiler compiler;\
@@ -390,6 +392,7 @@ TEST_F(VariableTextTests, AlternativeAtChoiceStart) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {
+	cparse_startup();
 	testing::InitGoogleTest();
 	return RUN_ALL_TESTS();
 }

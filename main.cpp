@@ -3,6 +3,8 @@
 
 #include "ink_utils.h"
 //#include "exprtk/exprtk.hpp"
+#include "shunting-yard.h"
+#include "builtin-features.inc"
 
 #include <iostream>
 #include <format>
@@ -25,23 +27,25 @@ int main() {
     -> END
 )";*/
 
+	cparse_startup();
+
 	/*exprtk::expression<double> expression;
 	exprtk::symbol_table<double> symbol_table;
 	exprtk::parser<double> parser;
 
 	symbol_table.add_constant("main.s3", 5);
 	expression.register_symbol_table(symbol_table);
-	parser.compile("main.s3 > 2", expression);
+	parser.compile("'hello'", expression);
 	std::cout << expression.value() << std::endl;*/
 
 	//std::string test = strip_string_edges("\t");
 
-	InkCompiler compiler;
+	/*InkCompiler compiler;
 	InkStory story = compiler.compile_file(TEST_PATH("8_variable_text/8k_conditional_text.ink"));
 	//story.print_info();
 	//compiler.save_data_to_file(story.get_story_data(), "../test.inkb");
 
-	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;*/
 
 	/*story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
