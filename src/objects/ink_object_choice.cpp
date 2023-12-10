@@ -92,12 +92,13 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			}
 		}
 
+
 		story_state.in_choice_text = false;
 
 		if (!story_state.current_choices.empty()) {
 			eval_result.should_continue = false;
 			story_state.at_choice = true;
-		} else if (fallback_index != -1) {
+		} else if (fallback_index != SIZE_MAX) {
 			story_state.current_knots_stack.push_back({&(choices[fallback_index].result), 0});
 			story_state.at_choice = false;
 		}

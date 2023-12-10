@@ -82,7 +82,7 @@ add_compile_definitions(INKB_VERSION=0)
 include_directories(include)
 
 if(WIN32)
-	set(INK_COMPILE_OPTIONS /Zc:preprocessor /W4 /WX /wd4100)#) /wd5045 /wd4820  /wd4514 /wd4061)
+	set(INK_COMPILE_OPTIONS /Zc:preprocessor /W4 /WX /wd4100)# /wd4820 /wd5045 /wd4514 /wd4061)
 	#set(INK_COMPILE_OPTIONS_NW /w)
 else()
 	set(INK_COMPILE_OPTIONS -Wall -Wpedantic -Werror)

@@ -6,7 +6,7 @@
 
 InkObject* InkStoryState::get_current_object(std::int64_t index_offset) {
 	std::int64_t index = index_in_knot() + index_offset;
-	if (index >= 0 && index < current_knot_size()) {
+	if (index >= 0 && index < static_cast<std::int64_t>(current_knot_size())) {
 		return current_knot().knot->objects[static_cast<std::size_t>(index)];
 	}
 
