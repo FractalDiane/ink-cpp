@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 cmake_policy(SET CMP0135 NEW)
 
-project(inkc)
+project(ink_cpp)
 set(CMAKE_CXX_STANDARD 23)
 
 set(SRC_CPARSE
@@ -38,6 +38,7 @@ set(SRC_OBJECTS
 
 set(CMAKE_BUILD_TYPE Debug)
 
+################ GOOGLE TEST
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -46,13 +47,13 @@ FetchContent_Declare(
 
 if(WIN32)
 	set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-	add_compile_options(/bigobj /Zc:preprocessor)
 endif()
 
 FetchContent_MakeAvailable(googletest)
+################ GOOGLE TEST
 
 add_library(cparse STATIC ${SRC_CPARSE})
-include_directories(SYSTEM cparse)
+include_directories(SYSTEM cparse cparse/builtin-features)
 
 add_library(ink_backend STATIC ${SRC_OBJECTS} ${SRC_RUNTIME} ${SRC_UTIL})
 add_dependencies(ink_backend cparse)
@@ -79,3 +80,15 @@ target_link_libraries(tests ink_backend GTest::gtest_main)
 add_compile_definitions(INKB_VERSION=0)
 
 include_directories(include)
+
+if(WIN32)
+	set(INK_COMPILE_OPTIONS /Zc:preprocessor /W4 /WX /wd4100)# /wd4820 /wd5045 /wd4514 /wd4061)
+	#set(INK_COMPILE_OPTIONS_NW /w)
+else()
+	set(INK_COMPILE_OPTIONS -Wall -Wpedantic -Werror)
+	#set(INK_COMPILE_OPTIONS_NW -w)
+endif()
+
+target_compile_options(ink_backend PUBLIC ${INK_COMPILE_OPTIONS})
+target_compile_options(ink PUBLIC ${INK_COMPILE_OPTIONS})
+target_compile_options(inkc PUBLIC ${INK_COMPILE_OPTIONS})

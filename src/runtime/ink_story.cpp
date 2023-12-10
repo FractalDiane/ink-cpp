@@ -28,7 +28,7 @@
 InkStory::InkStory(const std::string& inkb_file) {
 	std::ifstream infile{inkb_file, std::ios::binary};
 
-	std::size_t infile_size = std::filesystem::file_size(inkb_file);
+	std::size_t infile_size = static_cast<std::size_t>(std::filesystem::file_size(inkb_file));
 	std::vector<std::uint8_t> bytes(infile_size);
 
 	infile.read(reinterpret_cast<char*>(bytes.data()), infile_size);
@@ -39,14 +39,15 @@ InkStory::InkStory(const std::string& inkb_file) {
 	constexpr const char* expected_header = "INKB";
 	std::string header;
 	for (std::size_t i = 0; i < 4; ++i) {
-		header += bytes[index++];
+		header += static_cast<signed char>(bytes[index++]);
 	}
 
 	if (header != expected_header) {
 		throw std::runtime_error("Not a valid inkb file (incorrect header)");
 	}
 
-	std::uint8_t version = bytes[index++];
+	//std::uint8_t version = bytes[index++];
+	++index;
 
 	Serializer<std::uint16_t> dssize;
 	std::uint16_t knots_count = dssize(bytes, index);
@@ -61,7 +62,7 @@ InkStory::InkStory(const std::string& inkb_file) {
 		std::vector<InkObject*> this_knot_contents;
 		this_knot_contents.reserve(this_knot_size);
 
-		for (std::size_t i = 0; i < this_knot_size; ++i) {
+		for (std::size_t j = 0; j < this_knot_size; ++j) {
 			InkObject* this_object = nullptr;
 			ObjectId this_id = static_cast<ObjectId>(bytes[index++]);
 			// TODO: find out if there's a better way to do this
@@ -81,6 +82,8 @@ InkStory::InkStory(const std::string& inkb_file) {
 				case ObjectId::Divert: {
 					this_object = (new InkObjectDivert(""))->populate_from_bytes(bytes, index);
 				} break;
+
+				default: break;
 			}
 
 			if (this_object) {
@@ -146,7 +149,7 @@ bool InkStory::can_continue() {
 	InkStoryState::KnotStatus& current_knot_status = story_state.current_knot();
 	return !story_state.should_end_story
 	&& (current_knot_status.index < current_knot_status.knot->objects.size() || !story_state.current_knots_stack.empty())
-	&& (!story_state.at_choice || story_state.selected_choice >= 0);
+	&& (!story_state.at_choice || story_state.selected_choice != SIZE_MAX);
 }
 
 std::string InkStory::continue_story() {
@@ -183,7 +186,7 @@ std::string InkStory::continue_story() {
 					const std::vector<Stitch>& knot_stitches = target_knot->second.stitches;
 
 					std::string stitch_name = eval_result.target_knot.substr(dot_index + 1);
-					std::size_t stitch_index = -1;
+					std::size_t stitch_index = SIZE_MAX;
 					for (const Stitch& stitch : knot_stitches) { // HACK: make this better than linear time
 						if (stitch.name == stitch_name) {
 							stitch_index = stitch.index;
@@ -191,7 +194,7 @@ std::string InkStory::continue_story() {
 						}
 					}
 
-					if (stitch_index != -1) {
+					if (stitch_index != SIZE_MAX) {
 						story_state.current_knots_stack.back() = {&(target_knot->second), stitch_index};
 						story_state.increment_visit_count(std::format("{}.{}", knot_name, stitch_name));
 						changed_knot = true;
@@ -213,7 +216,7 @@ std::string InkStory::continue_story() {
 			// [stitch] divert
 			} else {
 				const std::vector<Stitch>& current_stitches = story_state.current_nonchoice_knot().knot->stitches;
-				std::size_t stitch_index = -1;
+				std::size_t stitch_index = SIZE_MAX;
 				for (const Stitch& stitch : current_stitches) { // HACK: make this better than linear time
 					if (stitch.name == eval_result.target_knot) {
 						stitch_index = stitch.index;
@@ -221,7 +224,7 @@ std::string InkStory::continue_story() {
 					}
 				}
 
-				if (stitch_index != -1) {
+				if (stitch_index != SIZE_MAX) {
 					story_state.current_nonchoice_knot().index = stitch_index;
 					std::string full_name = std::format("{}.{}", story_state.current_nonchoice_knot().knot->name, eval_result.target_knot);
 					story_state.increment_visit_count(full_name);
@@ -261,7 +264,7 @@ const std::vector<std::string>& InkStory::get_current_tags() const {
 }
 
 void InkStory::choose_choice_index(std::size_t index) {
-	if (story_state.selected_choice == -1) {
+	if (story_state.selected_choice == SIZE_MAX) {
 		story_state.selected_choice = index;
 		--story_state.current_knots_stack.back().index;
 	}

@@ -28,7 +28,7 @@ std::vector<std::uint8_t> InkStoryData::get_serialized_bytes() const {
 	result.reserve(2048);
 
 	Serializer<std::uint16_t> ssize;
-	std::vector<std::uint8_t> size_bytes = ssize(knots.size());
+	std::vector<std::uint8_t> size_bytes = ssize(static_cast<std::uint16_t>(knots.size()));
 	result.insert(result.end(), size_bytes.begin(), size_bytes.end());
 
 	for (const auto& entry : knots) {

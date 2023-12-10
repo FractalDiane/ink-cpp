@@ -393,17 +393,17 @@ TEST_F(VariableTextTests, AlternativeAtChoiceStart) {
 
 TEST_F(VariableTextTests, ConditionalText) {
 	std::vector<std::pair<bool ,bool>> var_values = {{false, false}, {true, false}, {true, true}};
-	std::vector<std::pair<std::string, std::string>> expected_text = {
+	std::vector<std::pair<std::string, std::string>> expected_text_outer = {
 		{"There was a man.", "I missed him. Was he particularly evil?"},
 		{"There was a man. He had a peculiar face.", "I saw him. Only for a moment. His real name was kept a secret."},
 		{"There was a man. He had a peculiar face.", "I saw him. Only for a moment. His real name was Franz."},
 	};
 
-	for (int i = 0; i < expected_text.size(); ++i) {
+	for (std::size_t i = 0; i < expected_text_outer.size(); ++i) {
 		STORY("8_variable_text/8k_conditional_text.ink");
 		story.set_variable("met_blofeld", var_values[i].first);
 		story.set_variable("learned_his_name", var_values[i].second);
-		EXPECT_TEXT(expected_text[i].first, expected_text[i].second);
+		EXPECT_TEXT(expected_text_outer[i].first, expected_text_outer[i].second);
 	}
 }
 

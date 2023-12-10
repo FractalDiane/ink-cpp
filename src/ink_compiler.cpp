@@ -60,28 +60,6 @@ namespace {
 		}
 	}
 
-	const InkLexer::Token next_token(const std::vector<InkLexer::Token>& tokens, size_t index) {
-		if (index + 1 < tokens.size()) {
-			return tokens[index + 1];
-		} else {
-			return InkLexer::Token();
-		}
-	}
-
-	bool next_token_is(const std::vector<InkLexer::Token>& tokens, size_t index, InkToken what) {
-		return next_token(tokens, index).token == what;
-	}
-
-	bool next_token_is_sequence(const std::vector<InkLexer::Token>& tokens, size_t index, const std::vector<InkToken>& what) {
-		for (size_t i = 0; i < what.size(); ++i) {
-			if (!next_token_is(tokens, index + i, what[i])) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
 	const InkLexer::Token last_token(const std::vector<InkLexer::Token>& tokens) {
 		return !tokens.empty() ? tokens.back() : InkLexer::Token();
 	}
@@ -91,37 +69,6 @@ namespace {
 		if (!text_token.text_contents.empty()) {
 			result.push_back(text_token);
 		}
-	}
-
-	std::vector<InkLexer::Token> remove_comments(const std::vector<InkLexer::Token>& token_stream) {
-		std::vector<InkLexer::Token> result;
-
-		size_t index = 0;
-		while (index < token_stream.size()) {
-			if (token_stream[index].token == InkToken::Slash) {
-				InkToken next = next_token(token_stream, index).token;
-				if (next == InkToken::Slash) {
-					++index;
-					do {
-						++index;
-					} while (token_stream[index].token != InkToken::NewLine);
-
-					++index;
-				} else if (next == InkToken::Asterisk) {
-					++index;
-					do {
-						++index;
-					} while (token_stream[index].token != InkToken::Asterisk || !next_token_is(token_stream, index, InkToken::Slash));
-
-					index += 2;
-				}
-			}
-
-			result.push_back(token_stream[index]);
-			++index;
-		}
-
-		return result;
 	}
 }
 
@@ -371,7 +318,6 @@ InkStoryData *InkCompiler::compile(const std::string &script)
 
 InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots)
 {
-	bool end_text = true;
 	bool end_line = false;
 	InkObject* result_object = nullptr;
 
@@ -383,7 +329,6 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 		case InkToken::Slash: {
 			result_object = new InkObjectText("/");
-			end_text = false;
 		} break;
 
 		case InkToken::Hash: {
@@ -437,7 +382,6 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				}
 			} else {
 				result_object = new InkObjectText("=");
-				end_text = false;
 			}
 		} break;
 
@@ -494,7 +438,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 										choice_entry.immediately_continue_to_result = !choice_entry.text.empty();
 									} else {
 										const std::vector<InkObject*>& text_contents = choice_entry.text;
-										bool no_text = text_contents.empty() || text_contents.size() == 1 && !text_contents[0]->has_any_contents(true);
+										bool no_text = text_contents.empty() || (text_contents.size() == 1 && !text_contents[0]->has_any_contents(true));
 										choice_entry.fallback = no_text;
 										++token_index;
 										choice_entry.immediately_continue_to_result = true;
@@ -530,7 +474,6 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				--choice_level;
 			} else {
 				result_object = new InkObjectText(token.token == InkToken::Plus ? "+" : "*");
-				end_text = false;
 			}
 		} break;
 
@@ -561,6 +504,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					sequence_type = InkSequenceType::Shuffle;
 					++token_index;
 				} break;
+				default: break;
 			}
 
 			std::vector<std::vector<InkObject*>> items = {{}};
@@ -642,7 +586,6 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		case InkToken::Colon: {
 			if (brace_level == 0) {
 				result_object = new InkObjectText(":");
-				end_text = false;
 			}
 		} break;
 
@@ -665,7 +608,6 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		case InkToken::Dash: {
 			if (!at_line_start) {
 				result_object = new InkObjectText("-");
-				end_text = false;
 			}
 		} break;
 
@@ -674,7 +616,6 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 			} else {
 				result_object = new InkObjectText("(");
-				end_text = false;
 			}
 		} break;
 
@@ -683,7 +624,6 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 			} else {
 				result_object = new InkObjectText(")");
-				end_text = false;
 			}
 		} break;
 
@@ -706,7 +646,6 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				}
 			} else {
 				result_object = new InkObjectText("VAR");
-				end_text = false;
 			}
 		} break;
 
@@ -717,6 +656,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				result_object = new InkObjectText(token.text_contents);
 			}
 		} break;
+
+		default: break;
 	}
 
 	at_line_start = end_line;
