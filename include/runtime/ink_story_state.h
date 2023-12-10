@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <cstdint>
+#include <random>
 
 #include "runtime/ink_story_structs.h"
 #include "shunting-yard.h"
@@ -21,6 +22,8 @@ struct InkStoryState {
 		Knot* knot;
 		std::size_t index;
 	};
+
+	std::mt19937 rng{std::random_device()()};
 
 	std::vector<KnotStatus> current_knots_stack;
 	//std::string_view current_knot_name;

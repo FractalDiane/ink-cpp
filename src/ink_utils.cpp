@@ -2,12 +2,6 @@
 
 #include <numeric>
 #include <algorithm>
-#include <random>
-
-namespace {
-	static std::random_device random_device;
-	static std::mt19937 rng{random_device()};
-}
 
 std::string strip_string_edges(const std::string& string, bool left, bool right, bool include_spaces) noexcept {
 	std::string result;
@@ -57,7 +51,7 @@ std::string join_string_vector(const std::vector<std::string>& vector, std::stri
 	}
 }
 
-std::size_t randi_range(std::size_t from, std::size_t to) noexcept {
-	std::uniform_int_distribution<std::size_t> distribution{from, to};
-	return distribution(rng);
+std::int64_t randi_range(std::int64_t from, std::int64_t to, std::mt19937& generator) noexcept {
+	std::uniform_int_distribution<std::int64_t> distribution{from, to};
+	return distribution(generator);
 }

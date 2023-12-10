@@ -15,6 +15,7 @@ private:
 
 private:
 	void init_story();
+	void bind_ink_functions();
 
 public:
 	explicit InkStory(InkStoryData* data) : story_data{data} { init_story(); }

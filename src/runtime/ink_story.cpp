@@ -119,18 +119,6 @@ void InkStory::print_info() const {
 }
 
 void InkStory::init_story() {
-	/*for (auto& knot : story_data->knots) {
-		story_state.knot_visit_counts[knot.first] = 0; // TODO: why is this pair.first const
-		for (const Stitch& stitch : knot.second.stitches) {
-			std::string stitch_name = std::format("{}.{}", knot.first, stitch.name);
-			story_state.knot_visit_counts[stitch_name] = 0;
-		}
-	}*/
-
-	/*for (const auto& entry : story_state.knot_visit_counts) {
-		token_map[entry.first] = entry.second;
-	}*/
-
 	for (const auto& knot : story_data->knots) {
 		story_state.variables[knot.first] = 0;
 		for (const Stitch& stitch : knot.second.stitches) {
@@ -139,11 +127,37 @@ void InkStory::init_story() {
 		}
 	}
 
-	auto choice_count = [this](cparse::TokenMap scope) -> cparse::packToken { return story_state.current_choices.size(); };
-	story_state.variables["CHOICE_COUNT"] = cparse::CppFunction(choice_count, {}, "");
+	bind_ink_functions();
 
 	story_state.current_knots_stack = {{&(story_data->knots[story_data->knot_order[0]]), 0}};
 }
+
+void InkStory::bind_ink_functions() {
+	#define CP_FUNC(name, body, ...) {\
+		auto func_##name = [this](cparse::TokenMap scope) -> cparse::packToken body;\
+		story_state.variables[#name] = cparse::CppFunction(func_##name, {__VA_ARGS__}, "");\
+	}
+
+	CP_FUNC(CHOICE_COUNT, { return story_state.current_choices.size(); });
+	CP_FUNC(TURNS, { return 0; });
+	CP_FUNC(TURNS_SINCE, { return 0; }, "__knot");
+	CP_FUNC(SEED_RANDOM, { 
+		story_state.rng.seed(static_cast<unsigned int>(scope["__knot"].asInt()));
+		return cparse::packToken::None();
+	}, "__seed");
+
+	CP_FUNC(RANDOM, {
+		return randi_range(scope["__from"].asInt(), scope["__to"].asInt(), story_state.rng);
+	}, "__from", "__to");
+
+	CP_FUNC(INT, { return scope["__what"].asInt(); }, "__what");
+	CP_FUNC(FLOOR, { return std::floor(scope["__what"].asDouble()); }, "__what");
+	CP_FUNC(FLOAT, { return scope["__what"].asDouble(); }, "__what");
+
+	#undef CP_FUNC
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool InkStory::can_continue() {
 	InkStoryState::KnotStatus& current_knot_status = story_state.current_knot();

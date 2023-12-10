@@ -40,8 +40,8 @@ int main() {
 
 	//std::string test = strip_string_edges("\t");
 
-	std::string script = R"(VAR test = CHOICE_COUNT()
-This should be zero: {test})";
+	std::string script = R"(VAR test = RANDOM(1, 100)
+Random number: {test})";
 
 	InkCompiler compiler;
 	InkStory story = compiler.compile_script(script);
