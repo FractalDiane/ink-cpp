@@ -5,7 +5,7 @@
 using std::print;
 #else
 #include <format>
-#define print(fmt, ...) std::cout << std::format(fmt __VA_OPT__(,) __VA_ARGS__) << std::endl
+#define print(fmt, ...) std::cout << std::format(fmt __VA_OPT__(,) __VA_ARGS__)
 #endif
 
 int main(int argc, char* argv[]) {

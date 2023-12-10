@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
 		while (story.can_continue()) {
 			std::string result = story.continue_story();
 			if (!result.empty()) {
-				println("{}\n", result);
+				print("{}\n\n", result);
 			}
 		}
 
