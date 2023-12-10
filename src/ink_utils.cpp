@@ -14,9 +14,9 @@ std::string strip_string_edges(const std::string& string, bool left, bool right,
 	result.reserve(string.length());
 
 	bool stripped_left = false;
-	size_t first_left_index = 0;
-	size_t last_right_index = 0;
-	for (size_t i = 0; i < string.length(); ++i) {
+	std::size_t first_left_index = 0;
+	std::size_t last_right_index = 0;
+	for (std::size_t i = 0; i < string.length(); ++i) {
 		char chr = string[i];
 		bool whitespace = chr < 32 + include_spaces;
 		if (!left || stripped_left) {

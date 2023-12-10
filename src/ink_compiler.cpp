@@ -561,6 +561,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					sequence_type = InkSequenceType::Shuffle;
 					++token_index;
 				} break;
+				default: break;
 			}
 
 			std::vector<std::vector<InkObject*>> items = {{}};
@@ -717,6 +718,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				result_object = new InkObjectText(token.text_contents);
 			}
 		} break;
+
+		default: break;
 	}
 
 	at_line_start = end_line;

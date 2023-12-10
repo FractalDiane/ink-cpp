@@ -32,8 +32,8 @@ template <>
 struct Serializer<std::uint16_t> {
 	std::vector<std::uint8_t> operator()(const std::uint16_t& value) noexcept {
 		std::vector<std::uint8_t> result;
-		result.push_back(value & 0xff);
-		result.push_back((value & 0xff00) >> 8);
+		result.push_back(static_cast<std::uint8_t>(value & 0xffu));
+		result.push_back(static_cast<std::uint8_t>(value & 0xff00u >> 8));
 		return result;
 	}
 
@@ -49,10 +49,10 @@ template <>
 struct Serializer<std::uint32_t> {
 	std::vector<std::uint8_t> operator()(const std::uint32_t& value) noexcept {
 		std::vector<std::uint8_t> result;
-		result.push_back(value & 0xff);
-		result.push_back((value & 0xff00) >> 8);
-		result.push_back((value & 0xff0000) >> 16);
-		result.push_back((value & 0xff000000) >> 24);
+		result.push_back(static_cast<std::uint8_t>(value & 0xff00u));
+		result.push_back(static_cast<std::uint8_t>(value & 0xff00u >> 8));
+		result.push_back(static_cast<std::uint8_t>(value & 0xff0000u >> 16));
+		result.push_back(static_cast<std::uint8_t>(value & 0xff000000u >> 24));
 		return result;
 	}
 
@@ -70,14 +70,14 @@ template <>
 struct Serializer<std::uint64_t> {
 	std::vector<std::uint8_t> operator()(const std::uint64_t& value) noexcept {
 		std::vector<std::uint8_t> result;
-		result.push_back(value & 0xff);
-		result.push_back((value & 0xff00) >> 8);
-		result.push_back((value & 0xff0000) >> 16);
-		result.push_back((value & 0xff000000) >> 24);
-		result.push_back((value & 0xff00000000) >> 32);
-		result.push_back((value & 0xff0000000000) >> 40);
-		result.push_back((value & 0xff000000000000) >> 48);
-		result.push_back((value & 0xff00000000000000) >> 56);
+		result.push_back(static_cast<std::uint8_t>(value & 0xffu));
+		result.push_back(static_cast<std::uint8_t>(value & 0xff00u >> 8));
+		result.push_back(static_cast<std::uint8_t>(value & 0xff0000u >> 16));
+		result.push_back(static_cast<std::uint8_t>(value & 0xff000000u >> 24));
+		result.push_back(static_cast<std::uint8_t>(value & 0xff00000000u >> 32));
+		result.push_back(static_cast<std::uint8_t>(value & 0xff0000000000u >> 40));
+		result.push_back(static_cast<std::uint8_t>(value & 0xff000000000000u >> 48));
+		result.push_back(static_cast<std::uint8_t>(value & 0xff00000000000000u >> 56));
 		return result;
 	}
 
@@ -122,12 +122,12 @@ struct Serializer<std::string> {
 		std::vector<std::uint8_t> result;
 		result.reserve(string.length() + 2);
 		
-		std::uint16_t length = string.length();
-		result.push_back(length & 0xff);
-		result.push_back((length & 0xff00) >> 8);
+		std::uint16_t length = static_cast<std::uint16_t>(string.length());
+		result.push_back(length & 0xffu);
+		result.push_back((length & 0xff00u) >> 8);
 
 		for (const char& byte : string) {
-			result.push_back(byte);
+			result.push_back(static_cast<std::uint8_t>(byte));
 		}
 
 		return result;
@@ -138,10 +138,10 @@ struct Serializer<std::string> {
 		
 		Serializer<std::uint16_t> ds;
 		std::uint16_t length = ds(bytes, index);
-		result.reserve(length + 1);
+		result.reserve(length + 1u);
 
 		for (std::size_t i = 0; i < length; ++i) {
-			result += bytes[index + i];
+			result += static_cast<signed char>(bytes[index + i]);
 		}
 
 		index += length;

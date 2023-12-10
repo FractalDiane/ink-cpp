@@ -34,19 +34,19 @@ int main(int argc, char* argv[]) {
 
 		const std::vector<std::string>& current_choices = story.get_current_choices();
 		if (!current_choices.empty()) {
-			for (int i = 0; i < current_choices.size(); ++i) {
+			for (std::size_t i = 0; i < current_choices.size(); ++i) {
 				print("{}: {}\n", i + 1, current_choices[i]);
 			}
 
 			print("\n");
 
-			int choice = -1;
-			while (choice <= 0 || choice > current_choices.size()) {
+			std::size_t choice = SIZE_MAX;
+			while (choice > current_choices.size()) {
 				print("> ");
 				std::cin >> choice;
 			}
 
-			story.choose_choice_index(choice - 1);
+			story.choose_choice_index(static_cast<std::size_t>(choice - 1));
 		} else {
 			break;
 		}

@@ -27,7 +27,7 @@ InkObjectChoice::~InkObjectChoice() {
 
 std::string InkObjectChoice::to_string() const {
 	std::string result = "Choice (\n";
-	for (int i = 0; i < choices.size(); ++i) {
+	for (std::size_t i = 0; i < choices.size(); ++i) {
 		const InkChoiceEntry& choice = choices[i];
 		for (InkObject* object : choice.text) {
 			result += object->to_string();
@@ -49,14 +49,14 @@ std::string InkObjectChoice::to_string() const {
 }
 
 void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	if (story_state.selected_choice == -1 || story_state.current_choices.empty()) {
+	if (story_state.selected_choice == SIZE_MAX || story_state.current_choices.empty()) {
 		story_state.in_choice_text = true;
 		story_state.current_choices.clear();
 		story_state.current_choice_structs.clear();
 		story_state.current_choice_indices.clear();
-		story_state.selected_choice = -1;
+		story_state.selected_choice = SIZE_MAX;
 
-		std::size_t fallback_index = -1;
+		std::size_t fallback_index = SIZE_MAX;
 		for (std::size_t i = 0; i < choices.size(); ++i) {
 			InkChoiceEntry& this_choice = choices[i];
 			if (this_choice.sticky || !story_state.has_choice_been_taken(i)) {
@@ -102,7 +102,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			story_state.at_choice = false;
 		}
 	} else {
-		story_state.choices_taken[story_state.current_knot().knot].insert(story_state.current_choice_indices[story_state.selected_choice]);
+		story_state.choices_taken[story_state.current_knot().knot].insert(static_cast<std::size_t>(story_state.current_choice_indices[story_state.selected_choice]));
 		InkChoiceEntry* selected_choice_struct = story_state.current_choice_structs[story_state.selected_choice];
 
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
@@ -122,14 +122,14 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 
 		story_state.current_choices.clear();
-		story_state.selected_choice = -1;
+		story_state.selected_choice = SIZE_MAX;
 		++story_state.total_choices_taken;
 		story_state.at_choice = false;
 	}
 }
 
 bool InkObjectChoice::will_choice_take_fallback(InkStoryState& story_state) {
-	std::size_t fallback_index = -1;
+	std::size_t fallback_index = SIZE_MAX;
 	for (std::size_t i = 0; i < choices.size(); ++i) {
 		InkChoiceEntry& this_choice = choices[i];
 		if (this_choice.sticky || !story_state.has_choice_been_taken(i)) {
@@ -141,5 +141,5 @@ bool InkObjectChoice::will_choice_take_fallback(InkStoryState& story_state) {
 		}
 	}
 
-	return fallback_index != -1;
+	return fallback_index != SIZE_MAX;
 }
