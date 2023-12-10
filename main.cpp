@@ -40,7 +40,15 @@ int main() {
 
 	//std::string test = strip_string_edges("\t");
 
+	std::string script = R"(VAR test = CHOICE_COUNT()
+This should be zero: {test})";
+
 	InkCompiler compiler;
+	InkStory story = compiler.compile_script(script);
+
+	std::cout << story.continue_story() << std::endl;
+
+	/*InkCompiler compiler;
 	InkStory story = compiler.compile_file(TEST_PATH("8_variable_text/8j_whackamole.ink"));
 	story.set_variable("met_blofeld", true);
 	story.set_variable("learned_his_name", false);
@@ -76,7 +84,7 @@ int main() {
 	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
+	story.choose_choice_index(0);*/
 
 	/*story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;

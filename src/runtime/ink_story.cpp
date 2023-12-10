@@ -136,6 +136,9 @@ void InkStory::init_story() {
 		}
 	}
 
+	auto choice_count = [this](cparse::TokenMap scope) -> cparse::packToken { return story_state.current_choices.size(); };
+	story_state.variables["CHOICE_COUNT"] = cparse::CppFunction(choice_count, {}, "");
+
 	story_state.current_knots_stack = {{&(story_data->knots[story_data->knot_order[0]]), 0}};
 }
 

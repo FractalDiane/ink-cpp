@@ -669,14 +669,38 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			}
 		} break;
 
+		case InkToken::LeftParen: {
+			if (false) {
+
+			} else {
+				result_object = new InkObjectText("(");
+				end_text = false;
+			}
+		} break;
+
+		case InkToken::RightParen: {
+			if (false) {
+
+			} else {
+				result_object = new InkObjectText(")");
+				end_text = false;
+			}
+		} break;
+
 		case InkToken::KeywordVar: {
 			if (at_line_start) {
-				if (next_token_is_sequence(all_tokens, token_index, {InkToken::Text, InkToken::Equal, InkToken::Text})) {
+				if (next_token_is_sequence(all_tokens, token_index, {InkToken::Text, InkToken::Equal})) {
 					const std::string& identifier = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
-					const std::string& expression = strip_string_edges(all_tokens[token_index + 3].text_contents, true, true, true);
-					result_object = new InkObjectGlobalVariable(identifier, expression);
-
+					
 					token_index += 3;
+					std::string expression;
+					expression.reserve(50);
+					while (all_tokens[token_index].token != InkToken::NewLine) {
+						expression += all_tokens[token_index].text_contents;
+						++token_index;
+					}
+
+					result_object = new InkObjectGlobalVariable(identifier, strip_string_edges(expression, true, true, true));
 				} else {
 					throw std::runtime_error("Malformed VAR statement");
 				}

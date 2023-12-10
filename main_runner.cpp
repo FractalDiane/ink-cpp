@@ -1,6 +1,8 @@
 #include "runtime/ink_story.h"
 #include "ink_compiler.h"
 
+#include "builtin-features.inc"
+
 #include <iostream>
 #if __has_include(<print>)
 #include <print>
@@ -17,6 +19,8 @@ int main(int argc, char* argv[]) {
 	}
 
 	std::string infile = argv[1];
+
+	cparse_startup();
 
 	InkCompiler compiler;
 	InkStory story = compiler.compile_file(infile);
