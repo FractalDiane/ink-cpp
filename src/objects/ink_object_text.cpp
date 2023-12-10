@@ -22,6 +22,10 @@ void InkObjectText::execute(InkStoryState& story_state, InkStoryEvalResult& eval
 	}
 }
 
+bool InkObjectText::has_any_contents(bool strip) const {
+	return strip ? !strip_string_edges(text_contents, true, true, true).empty() : !text_contents.empty();
+}
+
 void InkObjectText::append_text(const std::string& text) {
 	text_contents += text;
 }

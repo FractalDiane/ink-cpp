@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 cmake_policy(SET CMP0135 NEW)
 
-project(ink_compiler)
-set(CMAKE_CXX_STANDARD 20)
+project(inkc)
+set(CMAKE_CXX_STANDARD 23)
 
 set(SRC_CPARSE
 	cparse/shunting-yard.cpp
@@ -58,13 +58,23 @@ add_library(ink_backend STATIC ${SRC_OBJECTS} ${SRC_RUNTIME} ${SRC_UTIL})
 add_dependencies(ink_backend cparse)
 target_link_libraries(ink_backend PUBLIC cparse)
 
-add_executable(ink_compiler main.cpp ${SRC_COMPILER} ${SRC_UTIL})
-add_dependencies(ink_compiler ink_backend)
-target_link_libraries(ink_compiler PUBLIC ink_backend)
+add_executable(inkc main_compiler.cpp ${SRC_COMPILER} ${SRC_UTIL})
+add_dependencies(inkc ink_backend)
+target_link_libraries(inkc PUBLIC ink_backend)
 
-add_executable(ink_tests tests.cpp ${SRC_COMPILER} ${SRC_UTIL})
-add_dependencies(ink_tests ink_backend)
-target_link_libraries(ink_tests ink_backend GTest::gtest_main)
+add_executable(ink main_runner.cpp ${SRC_COMPILER})
+add_dependencies(ink ink_backend)
+target_link_libraries(ink PUBLIC ink_backend)
+
+#if(CMAKE_BUILD_TYPE EQUAL Debug)
+	add_executable(ink_main main.cpp ${SRC_COMPILER} ${SRC_UTIL})
+	add_dependencies(ink_main ink_backend)
+	target_link_libraries(ink_main PUBLIC ink_backend)
+#endif()
+
+add_executable(tests tests.cpp ${SRC_COMPILER} ${SRC_UTIL})
+add_dependencies(tests ink_backend)
+target_link_libraries(tests ink_backend GTest::gtest_main)
 
 add_compile_definitions(INKB_VERSION=0)
 

@@ -328,7 +328,7 @@ InkStoryData *InkCompiler::compile(const std::string &script)
 		const InkLexer::Token& this_token = token_stream[token_index];
 		if (InkObject* this_token_object = compile_token(token_stream, this_token, result_knots)) {
 			bool add_this_object = true;
-			if (!this_token_object->has_any_contents()) {
+			if (!this_token_object->has_any_contents(false)) {
 				add_this_object = false;
 			} else if (this_token_object->get_id() == ObjectId::LineBreak && result_knots.back().objects.empty()) {
 				add_this_object = false;
@@ -489,12 +489,12 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 								in_result = true;
 								in_choice_line = false;
 								if (in_choice_object->get_id() == ObjectId::Divert) {
-									if (in_choice_object->has_any_contents()) {
+									if (in_choice_object->has_any_contents(false)) {
 										--token_index;
 										choice_entry.immediately_continue_to_result = !choice_entry.text.empty();
 									} else {
 										const std::vector<InkObject*>& text_contents = choice_entry.text;
-										bool no_text = text_contents.empty() || text_contents.size() == 1 && !text_contents[0]->has_any_contents();
+										bool no_text = text_contents.empty() || text_contents.size() == 1 && !text_contents[0]->has_any_contents(true);
 										choice_entry.fallback = no_text;
 										++token_index;
 										choice_entry.immediately_continue_to_result = true;
@@ -510,7 +510,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 							}
 
 							std::vector<InkObject*>& target_array = !in_result ? choice_entry.text : choice_entry.result.objects;
-							if (in_choice_object->has_any_contents()) {
+							if (in_choice_object->has_any_contents(false)) {
 								target_array.push_back(in_choice_object);
 							}
 						}

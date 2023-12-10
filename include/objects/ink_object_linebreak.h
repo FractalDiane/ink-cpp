@@ -8,7 +8,6 @@ class InkObjectLineBreak : public InkObject {
 public:
 	virtual ObjectId get_id() const override { return ObjectId::LineBreak; }
 	virtual std::string to_string() const override { return "Line break"; }
-	virtual bool has_any_contents() const override { return true; }
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 };

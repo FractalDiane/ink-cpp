@@ -139,6 +139,13 @@ void InkStory::init_story() {
 	story_state.current_knots_stack = {{&(story_data->knots[story_data->knot_order[0]]), 0}};
 }
 
+bool InkStory::can_continue() {
+	InkStoryState::KnotStatus& current_knot_status = story_state.current_knot();
+	return !story_state.should_end_story
+	&& (current_knot_status.index < current_knot_status.knot->objects.size() || !story_state.current_knots_stack.empty())
+	&& (!story_state.at_choice || story_state.selected_choice >= 0);
+}
+
 std::string InkStory::continue_story() {
 	story_state.current_tags.clear();
 
@@ -183,7 +190,6 @@ std::string InkStory::continue_story() {
 
 					if (stitch_index != -1) {
 						story_state.current_knots_stack.back() = {&(target_knot->second), stitch_index};
-						//++story_state.knot_visit_counts[std::format("{}.{}", knot_name, stitch_name)];
 						story_state.increment_visit_count(std::format("{}.{}", knot_name, stitch_name));
 						changed_knot = true;
 					} else {
@@ -199,7 +205,6 @@ std::string InkStory::continue_story() {
 				}
 
 				story_state.current_knots_stack.back() = {&(target_knot->second), 0};
-				//++story_state.knot_visit_counts[target_knot->first];
 				story_state.increment_visit_count(target_knot->first);
 				changed_knot = true;
 			// [stitch] divert
@@ -216,7 +221,6 @@ std::string InkStory::continue_story() {
 				if (stitch_index != -1) {
 					story_state.current_nonchoice_knot().index = stitch_index;
 					std::string full_name = std::format("{}.{}", story_state.current_nonchoice_knot().knot->name, eval_result.target_knot);
-					//++story_state.knot_visit_counts[full_name];
 					story_state.increment_visit_count(full_name);
 					if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
 						changed_knot = true;
@@ -231,11 +235,7 @@ std::string InkStory::continue_story() {
 
 		if (!changed_knot) {
 			++story_state.current_knot().index;
-		}/* else if (const std::string& knot_name = story_state.current_knot().knot->name; !knot_name.empty()) {
-			++story_state.knot_visit_counts[knot_name];
 		}
-
-		if (story_data->knots[story_state.current_knot().knot->name] story_state.current_knot().index)*/
 
 		if (story_state.index_in_knot() >= story_state.current_knot_size() && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
 			story_state.current_knots_stack.pop_back();

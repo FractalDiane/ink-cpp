@@ -24,7 +24,7 @@ public:
 	InkStoryData* get_story_data() const { return story_data; }
 	void print_info() const;
 
-	bool can_continue() const;
+	bool can_continue();
 	std::string continue_story();
 	std::string continue_story_maximally();
 

@@ -120,6 +120,8 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 
 		story_state.current_knots_stack.push_back({&(selected_choice_struct->result), 0});
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
+
+		story_state.current_choices.clear();
 		story_state.selected_choice = -1;
 		++story_state.total_choices_taken;
 		story_state.at_choice = false;
