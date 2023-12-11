@@ -581,6 +581,12 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				} else if (!text_items.empty()) {
 					std::string all_text = join_string_vector(text_items, std::string());
 					result_object = new InkObjectInterpolation(all_text);
+
+					for (auto& vec : items) {
+						for (InkObject* object : vec) {
+							delete object;
+						}
+					}
 				}
 			}
 		} break;

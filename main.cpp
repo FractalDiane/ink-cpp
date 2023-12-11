@@ -22,27 +22,7 @@ cparse::packToken test_func(cparse::TokenMap scope) {
 }
 
 int main() {
-	/*std::string story = R"(Once upon a time...
-
- * There were two choices.
- * There were four lines of content.
-
-- They lived happily ever after.
-    -> END
-)";*/
-
 	cparse_startup();
-
-	/*exprtk::expression<double> expression;
-	exprtk::symbol_table<double> symbol_table;
-	exprtk::parser<double> parser;
-
-	symbol_table.add_constant("main.s3", 5);
-	expression.register_symbol_table(symbol_table);
-	parser.compile("'hello'", expression);
-	std::cout << expression.value() << std::endl;*/
-
-	//std::string test = strip_string_edges("\t");
 
 	std::string script = R"(It's been {TURNS_SINCE(-> main)} turns now
 -> main
@@ -65,73 +45,4 @@ It's been {TURNS_SINCE(-> main)} turn now)";
 	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
-
-	/*InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("8_variable_text/8j_whackamole.ink"));
-	story.set_variable("met_blofeld", true);
-	story.set_variable("learned_his_name", false);
-	//story.print_info();
-	//compiler.save_data_to_file(story.get_story_data(), "../test.inkb");
-
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(1);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	
-	//std::cout << story.continue_story() << std::endl;
-
-	for (int i = 0; i < 3; ++i) {
-		InkCompiler compiler;
-		InkStory story = compiler.compile_file(TEST_PATH("2_choices/2d_choice_multiple.ink"));
-		EXPECT_TEXT(R"("What's that?" my master asked.)");
-
-		EXPECT_CHOICES(R"("I am somewhat tired.")", R"("Nothing, Monsieur!")", R"("I said, this journey is appalling.")");
-		story.choose_choice_index(i);
-		EXPECT_TEXT(expected_texts[i][0], expected_texts[i][1]);
-	}
-
-	//std::cout << "=====================================" << std::endl;
-
-	/*InkStory story2{"../test.inkb"};
-	//story2.print_info();
-	std::cout << story2.continue_story() << std::endl;
-	std::cout << story2.continue_story() << std::endl;*/
 }
