@@ -34,4 +34,6 @@ InkStoryState::KnotStatus& InkStoryState::current_nonchoice_knot() {
 void InkStoryState::increment_visit_count(const std::string& knot) {
 	std::size_t current_count = static_cast<std::size_t>(variables[knot].asInt());
 	variables[knot] = current_count + 1;
+
+	turns_since_knots[knot] = 0;
 }

@@ -31,6 +31,7 @@ set(SRC_OBJECTS
 	src/objects/ink_object_glue.cpp
 	src/objects/ink_object_interpolation.cpp
 	src/objects/ink_object_linebreak.cpp
+	src/objects/ink_object_logic.cpp
 	src/objects/ink_object_sequence.cpp
 	src/objects/ink_object_tag.cpp
 	src/objects/ink_object_text.cpp
@@ -75,7 +76,7 @@ target_link_libraries(ink PUBLIC ink_backend)
 
 add_executable(tests tests.cpp ${SRC_COMPILER} ${SRC_UTIL})
 add_dependencies(tests ink_backend)
-target_link_libraries(tests ink_backend GTest::gtest_main)
+target_link_libraries(tests PUBLIC ink_backend GTest::gtest_main)
 
 add_compile_definitions(INKB_VERSION=0)
 

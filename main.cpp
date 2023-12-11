@@ -17,6 +17,10 @@
 
 #define print(fmt, ...) std::cout << std::format(fmt __VA_OPT__(,) __VA_ARGS__) << std::endl
 
+cparse::packToken test_func(cparse::TokenMap scope) {
+	return scope["a"].asInt() + scope["b"].asInt();
+}
+
 int main() {
 	/*std::string story = R"(Once upon a time...
 
@@ -40,12 +44,26 @@ int main() {
 
 	//std::string test = strip_string_edges("\t");
 
-	std::string script = R"(VAR test = RANDOM(1, 100)
-Random number: {test})";
+	std::string script = R"(It's been {TURNS_SINCE(-> main)} turns now
+-> main
+=== main ===
+HELLO THERE
+It's been {TURNS_SINCE(-> main)} turns now
+* [1] -> two
+* [2] -> two
+* [3] -> two
+
+=== two ===
+It's been {TURNS_SINCE(-> main)} turn now)";
 
 	InkCompiler compiler;
 	InkStory story = compiler.compile_script(script);
 
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 
 	/*InkCompiler compiler;
@@ -84,23 +102,23 @@ Random number: {test})";
 	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);*/
+	story.choose_choice_index(0);
 
-	/*story.choose_choice_index(0);
+	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;*/
-	/*story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(1);
 	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;*/
+	std::cout << story.continue_story() << std::endl;
 	
 	//std::cout << story.continue_story() << std::endl;
 
-	/*for (int i = 0; i < 3; ++i) {
+	for (int i = 0; i < 3; ++i) {
 		InkCompiler compiler;
 		InkStory story = compiler.compile_file(TEST_PATH("2_choices/2d_choice_multiple.ink"));
 		EXPECT_TEXT(R"("What's that?" my master asked.)");
@@ -108,7 +126,7 @@ Random number: {test})";
 		EXPECT_CHOICES(R"("I am somewhat tired.")", R"("Nothing, Monsieur!")", R"("I said, this journey is appalling.")");
 		story.choose_choice_index(i);
 		EXPECT_TEXT(expected_texts[i][0], expected_texts[i][1]);
-	}*/
+	}
 
 	//std::cout << "=====================================" << std::endl;
 

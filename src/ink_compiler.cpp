@@ -14,6 +14,7 @@
 #include "objects/ink_object_glue.h"
 #include "objects/ink_object_interpolation.h"
 #include "objects/ink_object_linebreak.h"
+#include "objects/ink_object_logic.h"
 #include "objects/ink_object_sequence.h"
 #include "objects/ink_object_tag.h"
 #include "objects/ink_object_text.h"
@@ -122,6 +123,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 			case '-': {
 				if (next_char(script_text, index) == '>') {
 					this_token.token = InkToken::Arrow;
+					this_token.text_contents = "->";
 					++index;
 				} else {
 					this_token.token = InkToken::Dash;
@@ -592,8 +594,12 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		case InkToken::Arrow: {
 			if (next_token_is(all_tokens, token_index, InkToken::Text)) {
 				const std::string& target = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
-				result_object = new InkObjectDivert(target);
-				++token_index;
+				if (!in_parens) {
+					result_object = new InkObjectDivert(target);
+					++token_index;
+				} else {
+					result_object = new InkObjectText("->");
+				}
 			} else if (in_choice_line) {
 				result_object = new InkObjectDivert();
 			} else {
@@ -611,7 +617,25 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			}
 		} break;
 
+		case InkToken::Tilde: {
+			if (at_line_start) {
+				++token_index;
+
+				std::string expression;
+				expression.reserve(50);
+				while (all_tokens[token_index].token != InkToken::NewLine) {
+					expression += all_tokens[token_index].text_contents;
+					++token_index;
+				}
+
+				result_object = new InkObjectLogic(expression);
+			} else {
+				result_object = new InkObjectText("~");
+			}
+		} break;
+
 		case InkToken::LeftParen: {
+			in_parens = true;
 			if (false) {
 
 			} else {
@@ -620,6 +644,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		} break;
 
 		case InkToken::RightParen: {
+			in_parens = false;
 			if (false) {
 
 			} else {

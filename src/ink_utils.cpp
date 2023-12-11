@@ -55,3 +55,34 @@ std::int64_t randi_range(std::int64_t from, std::int64_t to, std::mt19937& gener
 	std::uniform_int_distribution<std::int64_t> distribution{from, to};
 	return distribution(generator);
 }
+
+std::string deinkify_expression(const std::string& expression) noexcept {
+	std::string result;
+	result.reserve(expression.size());
+
+	bool looking_for_knot = false;
+	bool found_knot_word = false;
+	for (std::size_t i = 0; i < expression.size(); ++i) {
+		if (expression.substr(i, 2) == "->") {
+			looking_for_knot = true;
+			++i;
+		} else if (looking_for_knot) {
+			if (!found_knot_word && expression[i] > 32) {
+				result.push_back('"');
+				result.push_back(expression[i]);
+				found_knot_word = true;
+				looking_for_knot = false;
+			}
+		} else {
+			if (!found_knot_word || (expression[i] > 32 && expression[i] != ')')) {
+				result.push_back(expression[i]);
+			} else {
+				result.push_back('"');
+				result.push_back(')');
+				found_knot_word = false;
+			}
+		}
+	}
+
+	return result;
+}

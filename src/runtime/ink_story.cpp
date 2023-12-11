@@ -139,10 +139,17 @@ void InkStory::bind_ink_functions() {
 	}
 
 	CP_FUNC(CHOICE_COUNT, { return story_state.current_choices.size(); });
-	CP_FUNC(TURNS, { return 0; });
-	CP_FUNC(TURNS_SINCE, { return 0; }, "__knot");
+	CP_FUNC(TURNS, { return story_state.total_choices_taken; });
+	CP_FUNC(TURNS_SINCE, {
+		if (auto entry = story_state.turns_since_knots.find(scope["__knot"].asString()); entry != story_state.turns_since_knots.end()) {
+			return static_cast<std::int64_t>(entry->second);
+		} else {
+			return -1;
+		}
+	}, "__knot");
+
 	CP_FUNC(SEED_RANDOM, { 
-		story_state.rng.seed(static_cast<unsigned int>(scope["__knot"].asInt()));
+		story_state.rng.seed(static_cast<unsigned int>(scope["__seed"].asInt()));
 		return cparse::packToken::None();
 	}, "__seed");
 

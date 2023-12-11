@@ -41,6 +41,7 @@ FIXTURE(BranchingTests);
 FIXTURE(StitchTests);
 FIXTURE(VaryingChoiceTests);
 FIXTURE(VariableTextTests);
+FIXTURE(GameQueriesTests);
 
 TEST_F(ContentTests, SingleLineText) {
 	STORY("1_content/1a_text.ink");
@@ -405,6 +406,35 @@ TEST_F(VariableTextTests, ConditionalText) {
 		story.set_variable("learned_his_name", var_values[i].second);
 		EXPECT_TEXT(expected_text_outer[i].first, expected_text_outer[i].second);
 	}
+}
+
+TEST_F(GameQueriesTests, ChoiceCountFunction) {
+	STORY("9_game_queries/9a_choice_count.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("Option B", "Option C");
+}
+
+TEST_F(GameQueriesTests, TurnsFunction) {
+	STORY("9_game_queries/9b_turns.ink");
+	EXPECT_TEXT("0 turns");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("1: 1", "1 turns");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("1: 2");
+}
+
+TEST_F(GameQueriesTests, TurnsSinceFunction) {
+	STORY("9_game_queries/9c_turns_since.ink");
+	EXPECT_TEXT("It's been -1 turns now", "HELLO THERE", "It's been 0 turns now");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("It's been 1 turn now");
+}
+
+TEST_F(GameQueriesTests, SeedRandomFunction) {
+	STORY("9_game_queries/9d_seed_random.ink");
+	std::string text1 = story.continue_story();
+	std::string text2 = story.continue_story();
+	EXPECT_EQ(text1, text2);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

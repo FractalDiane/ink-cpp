@@ -45,6 +45,8 @@ struct InkStoryState {
 	std::unordered_map<Knot*, std::unordered_set<std::size_t>> choices_taken;
 	std::size_t total_choices_taken = 0;
 
+	std::unordered_map<std::string, std::size_t> turns_since_knots;
+
 	bool in_glue = false;
 	bool check_for_glue_divert = false;
 	bool in_choice_text = false;

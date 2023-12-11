@@ -35,41 +35,4 @@ void InkObjectSequence::execute(InkStoryState& story_state, InkStoryEvalResult& 
 			default: break;
 		}
 	}
-	
-
-	/*switch (sequence_type) {
-		case InkSequenceType::Sequence: {
-			for (InkObject* object : items[current_index]) {
-				object->execute(story_state, eval_result);
-			}
-
-			if (current_index < items.size() - 1) {
-				++current_index;
-			}
-		} break;
-
-		case InkSequenceType::Cycle: {
-			for (InkObject* object : items[current_index]) {
-				object->execute(story_state, eval_result);
-			}
-
-			current_index = (current_index + 1) % items.size();
-		} break;
-
-		case InkSequenceType::OnceOnly: {
-			if (current_index < items.size()) {
-				for (InkObject* object : items[current_index]) {
-					object->execute(story_state, eval_result);
-				}
-
-				++current_index;
-			}
-		} break;
-
-		case InkSequenceType::Shuffle: {
-			for (InkObject* object : items[randi_range(0, items.size() - 1)]) {
-				object->execute(story_state, eval_result);
-			}
-		} break;
-	}*/
 }

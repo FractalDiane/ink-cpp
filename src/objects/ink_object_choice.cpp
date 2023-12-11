@@ -65,7 +65,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 					const std::vector<std::string>& conditions = this_choice.conditions;
 					if (!conditions.empty()) {
 						for (const std::string& condition : conditions) {
-							cparse::packToken result = cparse::calculator::calculate(condition.c_str(), story_state.variables);
+							cparse::packToken result = cparse::calculator::calculate(deinkify_expression(condition).c_str(), story_state.variables);
 							if (!result.asBool()) {
 								include_choice = false;
 								break;
@@ -121,6 +121,10 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 
 		story_state.current_knots_stack.push_back({&(selected_choice_struct->result), 0});
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
+
+		for (auto& entry : story_state.turns_since_knots) {
+			++entry.second;
+		}
 
 		story_state.current_choices.clear();
 		story_state.selected_choice = SIZE_MAX;
