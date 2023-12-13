@@ -265,20 +265,13 @@ std::string InkStory::continue_story() {
 		}
 
 		if (story_state.index_in_knot() >= story_state.current_knot_size() && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+			bool was_empty = story_state.current_knots_stack.back().knot->objects.empty();
 			story_state.current_knots_stack.pop_back();
-			if (story_state.in_glue) {
+			if (was_empty || story_state.in_glue) {
 				++story_state.current_knot().index;
 			}
 		}
 	}
-
-	/*if (!story_state.choice_gather_stack.empty()) {
-		if (story_state.choice_gather_stack.back()) {
-			story_state.current_knots_stack.pop_back();
-		}
-		
-		story_state.choice_gather_stack.pop_back();
-	}*/
 
 	return remove_duplicate_spaces(strip_string_edges(eval_result.result, true, true, true));
 }
