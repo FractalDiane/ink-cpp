@@ -42,8 +42,9 @@ struct InkStoryState {
 	std::vector<std::size_t> current_choice_indices;
 	std::size_t selected_choice = SIZE_MAX;
 	ChoiceMixPosition choice_mix_position = ChoiceMixPosition::Before;
-	std::unordered_map<Knot*, std::unordered_set<std::size_t>> choices_taken;
+	std::unordered_map<Knot*, std::unordered_map<class InkObject*, std::unordered_set<std::size_t>>> choices_taken;
 	std::size_t total_choices_taken = 0;
+	std::vector<bool> choice_gather_stack = {};
 
 	std::unordered_map<std::string, std::size_t> turns_since_knots;
 
@@ -55,7 +56,8 @@ struct InkStoryState {
 	cparse::TokenMap variables;
 
 	class InkObject* get_current_object(std::int64_t index_offset);
-	bool has_choice_been_taken(std::size_t index);
+	bool has_choice_been_taken(class InkObject* choice_object, std::size_t index);
+	void add_choice_taken(class InkObject* choice_object, std::size_t index);
 	inline std::size_t index_in_knot() const { return current_knots_stack.back().index; }
 	inline KnotStatus& current_knot() { return current_knots_stack.back(); }
 	inline std::size_t current_knot_size() const { return current_knots_stack.back().knot->objects.size(); }

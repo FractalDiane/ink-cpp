@@ -5,6 +5,7 @@ void InkObjectLineBreak::execute(InkStoryState& story, InkStoryEvalResult& eval_
 	ObjectId next_object_type = next_object ? next_object->get_id() : static_cast<ObjectId>(-1);
 	eval_result.should_continue = eval_result.result.empty() || story.in_glue || next_object_type == ObjectId::Glue;
 	story.in_glue = false;
+	story.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 
 	if (!eval_result.should_continue) {
 		if (next_object_type == ObjectId::Divert) {

@@ -42,6 +42,7 @@ FIXTURE(StitchTests);
 FIXTURE(VaryingChoiceTests);
 FIXTURE(VariableTextTests);
 FIXTURE(GameQueriesTests);
+FIXTURE(GatherTests);
 
 TEST_F(ContentTests, SingleLineText) {
 	STORY("1_content/1a_text.ink");
@@ -435,6 +436,52 @@ TEST_F(GameQueriesTests, SeedRandomFunction) {
 	std::string text1 = story.continue_story();
 	std::string text2 = story.continue_story();
 	EXPECT_EQ(text1, text2);
+}
+
+TEST_F(GatherTests, Gathers) {
+	std::vector<std::vector<std::string>> expected_texts = {
+		{R"("I am somewhat tired," I repeated.)", R"("Really," he responded. "How deleterious.")"},
+		{R"("Nothing, Monsieur!" I replied.)", R"("Very good, then.")"},
+		{R"("I said, this journey is appalling and I want no more of it.")", R"("Ah," he replied, not unkindly. "I see you are feeling frustrated. Tomorrow, things will improve.")"},
+	};
+
+	for (int i = 0; i < 3; ++i) {
+		STORY("10_gathers/10a_gather.ink");
+		EXPECT_TEXT(R"("What's that?" my master asked.)");
+
+		EXPECT_CHOICES(R"("I am somewhat tired.")", R"("Nothing, Monsieur!")", R"("I said, this journey is appalling.")");
+		story.choose_choice_index(i);
+		EXPECT_TEXT(expected_texts[i][0], expected_texts[i][1], "With that Monsieur Fogg left the room.");
+	}
+}
+
+TEST_F(GatherTests, MultipleGathers) {
+	std::vector<std::string> expected_texts_1 = {
+		"I checked the jewels were still in my pocket, and the feel of them brought a spring to my step. ",
+		"I did not pause for breath but kept on running. ",
+		"I cheered with joy. ",
+	};
+
+	std::vector<std::string> expected_texts_2 = {
+		"I reached the road and looked about. And would you believe it?",
+		"I should interrupt to say Mackie is normally very reliable. He's never once let me down. Or rather, never once, previously to that night.",
+	};
+
+	for (int i = 0; i < 3; ++i) {
+		for (int j = 0; j < 2; j++) {
+			STORY("10_gathers/10b_multi_gather.ink");
+			EXPECT_TEXT("I ran through the forest, the dogs snapping at my heels.");
+
+			EXPECT_CHOICES("I checked the jewels", "I did not pause for breath", "I cheered with joy.");
+			story.choose_choice_index(i);
+			std::string text1 = expected_texts_1[i] + "The road could not be much further! Mackie would have the engine running, and then I'd be safe.";
+			EXPECT_TEXT(text1);
+
+			EXPECT_CHOICES("I reached the road and looked about", "I should interrupt to say Mackie is normally very reliable");
+			story.choose_choice_index(j);
+			EXPECT_TEXT(expected_texts_2[j], "The road was empty. Mackie was nowhere to be seen.");
+		}
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

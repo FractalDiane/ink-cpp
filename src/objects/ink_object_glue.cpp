@@ -1,5 +1,7 @@
 #include "objects/ink_object_glue.h"
 
 void InkObjectGlue::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	story_state.in_glue = true;
+	if (!story_state.in_choice_text) {
+		story_state.in_glue = true;
+	}
 }
