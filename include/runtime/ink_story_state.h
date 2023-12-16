@@ -44,7 +44,7 @@ struct InkStoryState {
 	ChoiceMixPosition choice_mix_position = ChoiceMixPosition::Before;
 	std::unordered_map<Knot*, std::unordered_map<class InkObject*, std::unordered_set<std::size_t>>> choices_taken;
 	std::size_t total_choices_taken = 0;
-	std::vector<bool> choice_gather_stack = {};
+	//std::vector<bool> choice_gather_stack = {};
 
 	std::unordered_map<std::string, std::size_t> turns_since_knots;
 

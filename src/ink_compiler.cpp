@@ -389,7 +389,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 		case InkToken::Asterisk:
 		case InkToken::Plus: {
-			if (at_line_start) {
+			if (at_line_start && token.count > choice_level) {
 				++choice_level;
 				std::vector<InkChoiceEntry> choice_options;
 				bool has_gather = false;
@@ -400,11 +400,11 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						if (next_token_is(all_tokens, token_index, InkToken::Equal)) {
 							end_line = true;
 							break;
-						} else if (next_token_is(all_tokens, token_index, InkToken::Dash)) { // TODO: nested choices
+						} else if (next_token_is(all_tokens, token_index, InkToken::Dash)) {
 							has_gather = true;
 							end_line = true;
 							break;
-						} else if ((next_token_is(all_tokens, token_index, InkToken::Asterisk) || next_token_is(all_tokens, token_index, InkToken::Plus)) && next_token(all_tokens, token_index).count < choice_level) { // TODO: nested choices
+						} else if ((next_token_is(all_tokens, token_index, InkToken::Asterisk) || next_token_is(all_tokens, token_index, InkToken::Plus)) && next_token(all_tokens, token_index).count < choice_level) {
 							end_line = true;
 							break;
 						}
@@ -472,7 +472,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					choice_stack.pop_back();
 				}
 
-				result_object = new InkObjectChoice(choice_options, has_gather);
+				//result_object = new InkObjectChoice(choice_options, has_gather);
+				result_object = new InkObjectChoice(choice_options);
 				--choice_level;
 			} else {
 				result_object = new InkObjectText(token.token == InkToken::Plus ? "+" : "*");
@@ -618,7 +619,15 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		} break;
 
 		case InkToken::Dash: {
-			if (!at_line_start) {
+			if (at_line_start) {
+				std::vector<GatherPoint>& gather_points = 
+				!story_knots.back().stitches.empty() && story_knots.back().objects.size() > story_knots.back().stitches[0].index
+				? story_knots.back().stitches.back().gather_points
+				: story_knots.back().gather_points;
+				
+				GatherPoint new_gather_point = {std::string(), static_cast<std::uint16_t>(story_knots.back().objects.size()), token.count};
+				gather_points.push_back(new_gather_point);
+			} else {
 				result_object = new InkObjectText("-");
 			}
 		} break;

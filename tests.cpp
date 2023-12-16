@@ -12,12 +12,7 @@ protected:\
 	InkCompiler compiler;\
 }
 
-#ifdef _WIN32
-#define STORY(path) InkStory story = compiler.compile_file(R"(C:/Users/Duncan Sparks/Desktop/Programming/ink-cpp/tests/)" path)
-#else
-#define STORY(path) InkStory story = compiler.compile_file(R"(/home/diane/Programming/ink-cpp/tests/)" path)
-#endif
-
+#define STORY(path) InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path)
 
 #define EXPECT_TEXT(...) {\
 		std::vector<std::string> seq = {__VA_ARGS__};\

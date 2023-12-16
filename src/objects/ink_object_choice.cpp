@@ -95,7 +95,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.in_choice_text = false;
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 
-		story_state.choice_gather_stack.push_back(has_gather);
+		//story_state.choice_gather_stack.push_back(has_gather);
 
 		if (!story_state.current_choices.empty()) {
 			eval_result.should_continue = false;

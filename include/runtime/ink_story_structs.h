@@ -2,18 +2,27 @@
 
 #include <string>
 #include <vector>
+#include <cstdint>
 
 #include "serialization.h"
+
+struct GatherPoint {
+	std::string name;
+	std::uint16_t index;
+	std::uint8_t level;
+};
 
 struct Stitch {
 	std::string name;
 	std::uint16_t index;
+	std::vector<GatherPoint> gather_points;
 };
 
 struct Knot {
 	std::string name;
 	std::vector<class InkObject*> objects;
 	std::vector<Stitch> stitches;
+	std::vector<GatherPoint> gather_points;
 };
 
 template <>
