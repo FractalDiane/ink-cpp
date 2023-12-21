@@ -3,11 +3,11 @@
 
 #include "builtin-features.inc"
 
-#include <iostream>
 #if __has_include(<print>)
 #include <print>
 using std::print;
 #else
+#include <iostream>
 #include <format>
 #define print(fmt, ...) std::cout << std::format(fmt __VA_OPT__(,) __VA_ARGS__)
 #endif

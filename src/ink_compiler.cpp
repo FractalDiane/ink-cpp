@@ -283,11 +283,13 @@ InkStoryData *InkCompiler::compile(const std::string &script)
 				add_this_object = false;
 			}
 
+			bool appended_text = false;
 			if (add_this_object) {
 				if (this_token_object->get_id() == ObjectId::Text && last_token_object && last_token_object->get_id() == ObjectId::Text) {
 					static_cast<InkObjectText*>(result_knots.back().objects.back())->append_text(static_cast<InkObjectText*>(this_token_object)->get_text_contents());
 					delete this_token_object;
 					this_token_object = nullptr;
+					appended_text = true;
 				} else if (!(this_token_object->get_id() == ObjectId::LineBreak && (result_knots.back().objects.empty() || (last_token_object && last_token_object->get_id() == ObjectId::LineBreak)))) {
 					result_knots.back().objects.push_back(this_token_object);
 				} else {
@@ -299,7 +301,9 @@ InkStoryData *InkCompiler::compile(const std::string &script)
 				this_token_object = nullptr;
 			}
 
-			last_token_object = this_token_object;
+			if (!appended_text) {
+				last_token_object = this_token_object;
+			}
 		} else {
 			last_token_object = nullptr;
 		}
@@ -389,7 +393,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 		case InkToken::Asterisk:
 		case InkToken::Plus: {
-			if (at_line_start) {
+			if (at_line_start && token.count > choice_level) {
 				++choice_level;
 				std::vector<InkChoiceEntry> choice_options;
 				bool has_gather = false;
@@ -400,11 +404,11 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						if (next_token_is(all_tokens, token_index, InkToken::Equal)) {
 							end_line = true;
 							break;
-						} else if (next_token_is(all_tokens, token_index, InkToken::Dash)) { // TODO: nested choices
+						} else if (next_token_is(all_tokens, token_index, InkToken::Dash)) {
 							has_gather = true;
 							end_line = true;
 							break;
-						} else if ((next_token_is(all_tokens, token_index, InkToken::Asterisk) || next_token_is(all_tokens, token_index, InkToken::Plus)) && next_token(all_tokens, token_index).count < choice_level) { // TODO: nested choices
+						} else if ((next_token_is(all_tokens, token_index, InkToken::Asterisk) || next_token_is(all_tokens, token_index, InkToken::Plus)) && next_token(all_tokens, token_index).count <= choice_level) {
 							end_line = true;
 							break;
 						}
@@ -416,21 +420,29 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					++token_index;
 
 					choice_stack.push_back({.sticky = current_choice_sticky});
-					InkChoiceEntry& choice_entry = choice_stack.back();
 
 					while (token_index < all_tokens.size()) {
 						const InkLexer::Token& in_choice_token = all_tokens[token_index];
 						if (in_choice_token.token == InkToken::NewLine) {
-							if (next_token_is(all_tokens, token_index, InkToken::Dash) || next_token_is(all_tokens, token_index, InkToken::Equal)) {
+							InkLexer::Token next = next_token(all_tokens, token_index);
+							if (next.token == InkToken::Equal) {
 								break;
-							} else if (next_token_is(all_tokens, token_index, InkToken::Asterisk) || next_token_is(all_tokens, token_index, InkToken::Plus)) {
-								++token_index;
-								current_choice_sticky = all_tokens[token_index].token == InkToken::Plus;
+							} else if (next.token == InkToken::Dash && next.count <= choice_level) {
 								break;
+							} else if (next.token == InkToken::Asterisk || next.token == InkToken::Plus) {
+								if (next.count == choice_level) {
+									++token_index;
+									current_choice_sticky = all_tokens[token_index].token == InkToken::Plus;
+									break;
+								} else if (next.count < choice_level) {
+									//--token_index;
+									break;
+								}
 							}
 						}
 
 						if (InkObject* in_choice_object = compile_token(all_tokens, in_choice_token, story_knots)) {
+							InkChoiceEntry& choice_entry = choice_stack.back();
 							if (!in_result && (in_choice_object->get_id() == ObjectId::LineBreak || in_choice_object->get_id() == ObjectId::Divert)) {
 								in_result = true;
 								in_choice_line = false;
@@ -459,20 +471,25 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 							if (in_choice_object->has_any_contents(false)) {
 								target_array.push_back(in_choice_object);
 							}
+
+							if (in_choice_object->get_id() == ObjectId::Choice) {
+								--token_index;
+							}
 						}
 						
 						++token_index;
 
-						if (in_choice_token.token != InkToken::LeftBrace && (in_choice_token.token != InkToken::Text || !strip_string_edges(in_choice_token.text_contents, true, true, true).empty())) {
+						if (!past_choice_initial_braces && in_choice_token.token != InkToken::LeftBrace && (in_choice_token.token != InkToken::Text || !strip_string_edges(in_choice_token.text_contents, true, true, true).empty())) {
 							past_choice_initial_braces = true;
-						} 
+						}
 					}
 
-					choice_options.push_back(choice_entry);
+					choice_options.push_back(choice_stack.back());
 					choice_stack.pop_back();
 				}
 
-				result_object = new InkObjectChoice(choice_options, has_gather);
+				//result_object = new InkObjectChoice(choice_options, has_gather);
+				result_object = new InkObjectChoice(choice_options);
 				--choice_level;
 			} else {
 				result_object = new InkObjectText(token.token == InkToken::Plus ? "+" : "*");
@@ -618,7 +635,15 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		} break;
 
 		case InkToken::Dash: {
-			if (!at_line_start) {
+			if (at_line_start) {
+				std::vector<GatherPoint>& gather_points = 
+				!story_knots.back().stitches.empty() && story_knots.back().objects.size() > story_knots.back().stitches[0].index
+				? story_knots.back().stitches.back().gather_points
+				: story_knots.back().gather_points;
+				
+				GatherPoint new_gather_point = {std::string(), static_cast<std::uint16_t>(story_knots.back().objects.size()), token.count};
+				gather_points.push_back(new_gather_point);
+			} else {
 				result_object = new InkObjectText("-");
 			}
 		} break;

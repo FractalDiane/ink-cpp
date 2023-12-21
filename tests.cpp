@@ -12,12 +12,7 @@ protected:\
 	InkCompiler compiler;\
 }
 
-#ifdef _WIN32
-#define STORY(path) InkStory story = compiler.compile_file(R"(C:/Users/Duncan Sparks/Desktop/Programming/ink-cpp/tests/)" path)
-#else
-#define STORY(path) InkStory story = compiler.compile_file(R"(/home/diane/Programming/ink-cpp/tests/)" path)
-#endif
-
+#define STORY(path) InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path)
 
 #define EXPECT_TEXT(...) {\
 		std::vector<std::string> seq = {__VA_ARGS__};\
@@ -43,6 +38,7 @@ FIXTURE(VaryingChoiceTests);
 FIXTURE(VariableTextTests);
 FIXTURE(GameQueriesTests);
 FIXTURE(GatherTests);
+FIXTURE(NestedFlowTests);
 
 TEST_F(ContentTests, SingleLineText) {
 	STORY("1_content/1a_text.ink");
@@ -481,6 +477,103 @@ TEST_F(GatherTests, MultipleGathers) {
 			story.choose_choice_index(j);
 			EXPECT_TEXT(expected_texts_2[j], "The road was empty. Mackie was nowhere to be seen.");
 		}
+	}
+}
+
+TEST_F(NestedFlowTests, NestedChoices) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("11_nested_flow/11a_nested_choice.ink");
+		EXPECT_TEXT(R"("Well, Poirot? Murder or suicide?")");
+
+		EXPECT_CHOICES(R"("Murder!")", R"("Suicide!")");
+		story.choose_choice_index(i);
+		if (i == 0) {
+			EXPECT_TEXT(R"("Murder!")", R"("And who did it?")");
+			EXPECT_CHOICES(R"("Detective-Inspector Japp!")", R"("Captain Hastings!")", R"("Myself!")");
+			story.choose_choice_index(1);
+			EXPECT_TEXT(R"("Captain Hastings!")");
+		} else {
+			EXPECT_TEXT(R"("Suicide!")");
+		}
+
+		EXPECT_TEXT("Mrs. Christie lowered her manuscript a moment. The rest of the writing group sat, open-mouthed.");
+	}
+}
+
+TEST_F(NestedFlowTests, NestedChoicesInBoth) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("11_nested_flow/11b_nested_choices_in_both.ink");
+		EXPECT_TEXT(R"("Well, Poirot? Murder or suicide?")");
+
+		EXPECT_CHOICES(R"("Murder!")", R"("Suicide!")");
+		story.choose_choice_index(i);
+		if (i == 0) {
+			EXPECT_TEXT(R"("Murder!")", R"("And who did it?")");
+			EXPECT_CHOICES(R"("Detective-Inspector Japp!")", R"("Captain Hastings!")", R"("Myself!")");
+			story.choose_choice_index(1);
+			EXPECT_TEXT(R"("Captain Hastings!")");
+		} else {
+			EXPECT_TEXT(R"("Suicide!")", R"("Really, Poirot? Are you quite sure?")");
+			EXPECT_CHOICES(R"("Quite sure.")", R"("It is perfectly obvious.")")
+			story.choose_choice_index(0);
+			EXPECT_TEXT(R"("Quite sure.")");
+		}
+
+		EXPECT_TEXT("Mrs. Christie lowered her manuscript a moment. The rest of the writing group sat, open-mouthed.");
+	}
+}
+
+TEST_F(NestedFlowTests, NestedGathers) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("11_nested_flow/11c_nested_gathers.ink");
+		EXPECT_TEXT(R"("Well, Poirot? Murder or suicide?")");
+
+		EXPECT_CHOICES(R"("Murder!")", R"("Suicide!")");
+		story.choose_choice_index(i);
+		if (i == 0) {
+			EXPECT_TEXT(R"("Murder!")", R"("And who did it?")");
+			EXPECT_CHOICES(R"("Detective-Inspector Japp!")", R"("Captain Hastings!")", R"("Myself!")");
+			story.choose_choice_index(1);
+			EXPECT_TEXT(R"("Captain Hastings!")", R"("You must be joking!")");
+			EXPECT_CHOICES(R"("Mon ami, I am deadly serious.")", R"("If only...")");
+			story.choose_choice_index(0);
+			EXPECT_TEXT(R"("Mon ami, I am deadly serious.")");
+		} else {
+			EXPECT_TEXT(R"("Suicide!")", R"("Really, Poirot? Are you quite sure?")");
+			EXPECT_CHOICES(R"("Quite sure.")", R"("It is perfectly obvious.")")
+			story.choose_choice_index(0);
+			EXPECT_TEXT(R"("Quite sure.")");
+		}
+
+		EXPECT_TEXT("Mrs. Christie lowered her manuscript a moment. The rest of the writing group sat, open-mouthed.");
+	}
+}
+
+TEST_F(NestedFlowTests, DeepNesting) {
+	std::vector<std::string> texts = {
+		R"("It was a dark and stormy night...")",
+		R"("...and the crew were restless...")",
+		R"("... and they said to their Captain...")",
+		R"("...Tell us a tale Captain!")",
+	};
+
+	for (int i = 0; i < 2; ++i) {
+		STORY("11_nested_flow/11d_deep_nesting.ink");
+		EXPECT_TEXT(R"("Tell us a tale, Captain!")");
+		EXPECT_CHOICES(R"("Very well, you sea-dogs. Here's a tale...")", R"("No, it's past your bed-time.")");
+		story.choose_choice_index(i);
+		if (i == 0) {
+			EXPECT_TEXT(R"("Very well, you sea-dogs. Here's a tale...")");
+			for (const std::string& text : texts) {
+				EXPECT_CHOICES(text);
+				story.choose_choice_index(0);
+				EXPECT_TEXT(text);
+			}
+		} else {
+			EXPECT_TEXT(R"("No, it's past your bed-time.")");
+		}
+
+		EXPECT_TEXT("To a man, the crew began to yawn.");
 	}
 }
 

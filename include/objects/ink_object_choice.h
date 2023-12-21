@@ -11,15 +11,18 @@ struct InkChoiceEntry {
 	std::vector<std::string> conditions;
 	bool fallback = false;
 	bool immediately_continue_to_result = false;
+
+	std::string label;
 };
 
 class InkObjectChoice : public InkObject {
 private:
 	std::vector<InkChoiceEntry> choices;
-	bool has_gather = false;
+	//bool has_gather = false;
 
 public:
-	InkObjectChoice(const std::vector<InkChoiceEntry>& choices, bool has_gather) : choices{choices}, has_gather{has_gather} {}
+	//InkObjectChoice(const std::vector<InkChoiceEntry>& choices, bool has_gather) : choices{choices}, has_gather{has_gather} {}
+	InkObjectChoice(const std::vector<InkChoiceEntry>& choices) : choices{choices} {}
 	virtual ~InkObjectChoice() override;
 
 	virtual std::string to_string() const override;

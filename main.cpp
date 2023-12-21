@@ -9,30 +9,32 @@
 #include <iostream>
 #include <format>
 
-#ifdef _WIN32
-#define TEST_PATH(path) R"(C:/Users/Duncan Sparks/Desktop/Programming/ink-cpp/tests/)" path
-#else
-#define TEST_PATH(path) R"(/home/diane/Programming/ink-cpp/tests/)" path
-#endif
+#define TEST_PATH(path) INKCPP_WORKING_DIR "/tests/" path
 
 #define print(fmt, ...) std::cout << std::format(fmt __VA_OPT__(,) __VA_ARGS__) << std::endl
 
-cparse::packToken test_func(cparse::TokenMap scope) {
-	return scope["a"].asInt() + scope["b"].asInt();
-}
-
 int main() {
 	cparse_startup();
+	std::cout << INKCPP_WORKING_DIR << std::endl;
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(R"(C:\Users\Duncan Sparks\Desktop\Programming\ink-cpp\tests\10_gathers\10b_multi_gather.ink)");
+	InkStory story = compiler.compile_file(TEST_PATH("11_nested_flow/11c_nested_gathers.ink"));
 
 	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(1);
 	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(1);
+	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
+	/*story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;*/
 }
