@@ -31,7 +31,7 @@ public:
 	virtual ObjectId get_id() const = 0;
 	virtual bool has_any_contents(bool strip) const { return true; }
 
-	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) = 0;
+	virtual void execute(class InkStoryData* const story_data, InkStoryState& story_state, InkStoryEvalResult& eval_result) = 0;
 
 	virtual bool will_choice_take_fallback(InkStoryState& story_state) { return false; }
 	
@@ -45,3 +45,5 @@ struct Serializer<InkObject*> {
 		return object->get_serialized_bytes();
 	}
 };
+
+#include "runtime/ink_story_data.h"

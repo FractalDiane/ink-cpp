@@ -12,7 +12,7 @@ struct InkChoiceEntry {
 	bool fallback = false;
 	bool immediately_continue_to_result = false;
 
-	std::string label;
+	GatherPoint label;
 };
 
 class InkObjectChoice : public InkObject {
@@ -28,7 +28,7 @@ public:
 	virtual std::string to_string() const override;
 	virtual ObjectId get_id() const override { return ObjectId::Choice; }
 
-	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
+	virtual void execute(InkStoryData* const story_data, InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 
 	virtual bool will_choice_take_fallback(InkStoryState& story_state) override;
 };

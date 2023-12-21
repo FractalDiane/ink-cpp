@@ -39,6 +39,7 @@ FIXTURE(VariableTextTests);
 FIXTURE(GameQueriesTests);
 FIXTURE(GatherTests);
 FIXTURE(NestedFlowTests);
+FIXTURE(TrackingWeaveTests);
 
 TEST_F(ContentTests, SingleLineText) {
 	STORY("1_content/1a_text.ink");
@@ -602,6 +603,29 @@ TEST_F(NestedFlowTests, ComplexNesting) {
 				story.choose_choice_index(2);
 				EXPECT_TEXT("I asked nothing further of him then, and after a final, polite cough, he offered nothing more to me. After that, we passed the day in silence.");
 			}
+		}
+	}
+}
+
+TEST_F(TrackingWeaveTests, ChoiceLabels) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("12_tracking_weave/12a_choice_labels.ink");
+		EXPECT_TEXT("The guard frowns at you.");
+		EXPECT_CHOICES("Greet him", "'Get out of my way.'");
+
+		if (i == 0) {
+			story.choose_choice_index(0);
+			EXPECT_TEXT("'Greetings.'", "'Hmm,' replies the guard.");
+			EXPECT_CHOICES("'Having a nice day?'", "'Hmm?'");
+			story.choose_choice_index(0);
+			EXPECT_TEXT("'Having a nice day?'", "'Mff,' the guard replies, and then offers you a paper bag. 'Toffee?'");
+		} else {
+			story.choose_choice_index(1);
+			EXPECT_TEXT("'Get out of my way,' you tell the guard.", "'Hmm,' replies the guard.");
+			EXPECT_CHOICES("'Hmm?'", "Shove him aside");
+			story.choose_choice_index(1);
+			EXPECT_TEXT("You shove him sharply. He stares in reply, and draws his sword!",
+			"The guard thrusts his sword through your chest. That didn't go as planned.");
 		}
 	}
 }

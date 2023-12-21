@@ -15,7 +15,7 @@ InkObject* InkObjectText::populate_from_bytes(const std::vector<std::uint8_t>& b
 	return this;
 }
 
-void InkObjectText::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
+void InkObjectText::execute(InkStoryData* const story_data, InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	if ((story_state.selected_choice == SIZE_MAX && story_state.choice_mix_position != InkStoryState::ChoiceMixPosition::After)
 	|| (story_state.selected_choice != SIZE_MAX && story_state.choice_mix_position != InkStoryState::ChoiceMixPosition::In)) {
 		eval_result.result += text_contents;

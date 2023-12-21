@@ -268,7 +268,7 @@ void InkCompiler::init_compiler() {
 	current_sequence_index = 0;
 }
 
-InkStoryData *InkCompiler::compile(const std::string &script)
+InkStoryData* InkCompiler::compile(const std::string& script)
 {
 	init_compiler();
 
@@ -381,7 +381,10 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					std::string new_stitch_name = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
 					
 					std::vector<Stitch>& stitches = story_knots.back().stitches;
-					stitches.push_back({new_stitch_name, static_cast<std::uint16_t>(story_knots.back().objects.size())});
+					Stitch new_stitch;
+					new_stitch.name = new_stitch_name;
+					new_stitch.index = static_cast<std::uint16_t>(story_knots.back().objects.size());
+					stitches.push_back(new_stitch);
 					//std::sort(stitches.begin(), stitches.end(), [](const Stitch& a, const Stitch& b) { return a.index < b.index; });
 
 					while (all_tokens[token_index].token != InkToken::NewLine) {
@@ -427,6 +430,11 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 					choice_stack.push_back({.sticky = current_choice_sticky});
 
+					if (next_token_is_sequence(all_tokens, token_index, {InkToken::LeftParen, InkToken::Text, InkToken::RightParen})) {
+						choice_stack.back().label = {all_tokens[token_index + 2].text_contents, 0, 0, 0};
+						token_index += 4;
+					}
+
 					while (token_index < all_tokens.size()) {
 						const InkLexer::Token& in_choice_token = all_tokens[token_index];
 						if (in_choice_token.token == InkToken::NewLine) {
@@ -441,7 +449,6 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 									current_choice_sticky = all_tokens[token_index].token == InkToken::Plus;
 									break;
 								} else if (next.count < choice_level) {
-									//--token_index;
 									break;
 								}
 							}
@@ -494,7 +501,6 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					choice_stack.pop_back();
 				}
 
-				//result_object = new InkObjectChoice(choice_options, has_gather);
 				result_object = new InkObjectChoice(choice_options);
 				--choice_level;
 			} else {
@@ -647,7 +653,9 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				? story_knots.back().stitches.back().gather_points
 				: story_knots.back().gather_points;
 				
-				GatherPoint new_gather_point = {std::string(), static_cast<std::uint16_t>(story_knots.back().objects.size()), token.count};
+				GatherPoint new_gather_point;// = {std::string(), static_cast<std::uint16_t>(story_knots.back().objects.size()), token.count};
+				new_gather_point.index = static_cast<std::uint16_t>(story_knots.back().objects.size());
+				new_gather_point.level = token.count;
 				gather_points.push_back(new_gather_point);
 			} else {
 				result_object = new InkObjectText("-");

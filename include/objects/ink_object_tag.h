@@ -17,7 +17,7 @@ public:
 	virtual InkObject* populate_from_bytes(const std::vector<std::uint8_t>& bytes, std::size_t& index) override;
 	virtual bool has_any_contents(bool strip) const override { return !tag.empty(); }
 
-	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
+	virtual void execute(InkStoryData* const story_data, InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 	
 	virtual std::string to_string() const override { return std::format("Tag ({})", tag); }
 };

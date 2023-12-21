@@ -48,7 +48,7 @@ std::string InkObjectChoice::to_string() const {
 	return result;
 }
 
-void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
+void InkObjectChoice::execute(InkStoryData* const story_data, InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	if (story_state.selected_choice == SIZE_MAX || story_state.current_choices.empty()) {
 		story_state.in_choice_text = true;
 		story_state.current_choices.clear();
@@ -65,7 +65,8 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 					const std::vector<std::string>& conditions = this_choice.conditions;
 					if (!conditions.empty()) {
 						for (const std::string& condition : conditions) {
-							cparse::packToken result = cparse::calculator::calculate(deinkify_expression(condition).c_str(), story_state.variables);
+							cparse::TokenMap vars = story_data->add_visit_count_variables(story_state.variables);
+							cparse::packToken result = cparse::calculator::calculate(deinkify_expression(condition).c_str(), vars);
 							if (!result.asBool()) {
 								include_choice = false;
 								break;
@@ -79,7 +80,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 						InkStoryEvalResult choice_eval_result;
 						choice_eval_result.result.reserve(50);
 						for (InkObject* object : this_choice.text) {
-							object->execute(story_state, choice_eval_result);
+							object->execute(story_data, story_state, choice_eval_result);
 						}
 
 						story_state.current_choices.push_back(strip_string_edges(choice_eval_result.result, true, true, true));
@@ -112,7 +113,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		InkStoryEvalResult choice_eval_result;
 		choice_eval_result.result.reserve(50);
 		for (InkObject* object : selected_choice_struct->text) {
-			object->execute(story_state, choice_eval_result);
+			object->execute(story_data, story_state, choice_eval_result);
 			if (object->get_id() == ObjectId::LineBreak) {
 				choice_eval_result.should_continue = story_state.in_glue;
 			}
@@ -127,9 +128,15 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.current_knots_stack.push_back({&(selected_choice_struct->result), 0});
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 
-		for (auto& entry : story_state.turns_since_knots) {
-			++entry.second;
+		if (!selected_choice_struct->label.name.empty()) {
+			story_data->increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, &selected_choice_struct->label);
 		}
+
+		/*for (auto& entry : story_state.turns_since_knots) {
+			++entry.second;
+		}*/
+		
+		story_data->increment_turns_since();
 
 		story_state.current_choices.clear();
 		story_state.selected_choice = SIZE_MAX;

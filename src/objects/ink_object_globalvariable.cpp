@@ -4,6 +4,6 @@
 
 #include "shunting-yard.h"
 
-void InkObjectGlobalVariable::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	story_state.variables[name] = cparse::calculator::calculate(deinkify_expression(value).c_str(), story_state.variables);
+void InkObjectGlobalVariable::execute(InkStoryData* const story_data, InkStoryState& story_state, InkStoryEvalResult& eval_result) {
+	story_state.variables[name] = cparse::calculator::calculate(deinkify_expression(value).c_str(), story_state.get_variables_with_locals());
 }

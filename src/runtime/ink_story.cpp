@@ -107,7 +107,11 @@ InkStory::InkStory(const std::string& inkb_file) {
 		//Serializer<std::vector<Stitch>> dsstitches;
 		//dsstitches(bytes, index);
 	
-		knots.push_back({this_knot_name, this_knot_contents, this_knot_stitches});
+		Knot knot;
+		knot.name = this_knot_name;
+		knot.objects = this_knot_contents;
+		knot.stitches = this_knot_stitches;
+		knots.push_back(knot);
 	}
 
 	story_data = new InkStoryData(knots);
@@ -119,13 +123,23 @@ void InkStory::print_info() const {
 }
 
 void InkStory::init_story() {
-	for (const auto& knot : story_data->knots) {
+	/*for (const auto& knot : story_data->knots) {
 		story_state.variables[knot.first] = 0;
 		for (const Stitch& stitch : knot.second.stitches) {
 			std::string stitch_name = std::format("{}.{}", knot.first, stitch.name);
 			story_state.variables[stitch_name] = 0;
+
+			for (const GatherPoint& gather_point : stitch.gather_points) {
+				std::string gather_point_name = std::format("{}.{}.{}", knot.first, stitch.name, gather_point.name);
+				story_state.variables[gather_point_name] = 0;
+			}
 		}
-	}
+
+		for (const GatherPoint& gather_point : knot.second.gather_points) {
+			std::string gather_point_name = std::format("{}.{}", knot.first, gather_point.name);
+			story_state.variables[gather_point_name] = 0;
+		}
+	}*/
 
 	bind_ink_functions();
 
@@ -141,8 +155,8 @@ void InkStory::bind_ink_functions() {
 	CP_FUNC(CHOICE_COUNT, { return story_state.current_choices.size(); });
 	CP_FUNC(TURNS, { return story_state.total_choices_taken; });
 	CP_FUNC(TURNS_SINCE, {
-		if (auto entry = story_state.turns_since_knots.find(scope["__knot"].asString()); entry != story_state.turns_since_knots.end()) {
-			return static_cast<std::int64_t>(entry->second);
+		if (auto content = story_data->get_content(scope["__knot"].asString(), story_state.current_knot().knot, story_state.current_stitch)) {
+			return content->turns_since;
 		} else {
 			return -1;
 		}
@@ -183,7 +197,7 @@ std::string InkStory::continue_story() {
 		Knot* knot_before_object = story_state.current_knot().knot;
 		bool changed_knot = false;
 		InkObject* current_object = story_state.current_knot().knot->objects[story_state.index_in_knot()];
-		current_object->execute(story_state, eval_result);
+		current_object->execute(story_data, story_state, eval_result);
 
 		if (story_state.current_knot().knot != knot_before_object) {
 			changed_knot = true;
@@ -204,20 +218,21 @@ std::string InkStory::continue_story() {
 			if (std::size_t dot_index = eval_result.target_knot.find("."); dot_index != eval_result.target_knot.npos) {
 				std::string knot_name = eval_result.target_knot.substr(0, dot_index);
 				if (auto target_knot = story_data->knots.find(knot_name); target_knot != story_data->knots.end()) {
-					const std::vector<Stitch>& knot_stitches = target_knot->second.stitches;
+					std::vector<Stitch>& knot_stitches = target_knot->second.stitches;
 
 					std::string stitch_name = eval_result.target_knot.substr(dot_index + 1);
 					std::size_t stitch_index = SIZE_MAX;
-					for (const Stitch& stitch : knot_stitches) { // HACK: make this better than linear time
+					for (Stitch& stitch : knot_stitches) { // HACK: make this better than linear time
 						if (stitch.name == stitch_name) {
 							stitch_index = stitch.index;
+							story_state.current_stitch = &stitch;
 							break;
 						}
 					}
 
 					if (stitch_index != SIZE_MAX) {
-						story_state.current_knots_stack.back() = {&(target_knot->second), stitch_index};
-						story_state.increment_visit_count(std::format("{}.{}", knot_name, stitch_name));
+						story_state.current_knots_stack.back() = {&target_knot->second, stitch_index};
+						story_data->increment_visit_count(&target_knot->second, story_state.current_stitch);
 						changed_knot = true;
 					} else {
 						throw std::runtime_error("Stitch not found");
@@ -231,15 +246,17 @@ std::string InkStory::continue_story() {
 					story_state.current_knots_stack.pop_back();
 				}
 
-				story_state.current_knots_stack.back() = {&(target_knot->second), 0};
-				story_state.increment_visit_count(target_knot->first);
+				story_state.current_knots_stack.back() = {&target_knot->second, 0};
+				story_data->increment_visit_count(&target_knot->second);
+				story_state.current_stitch = nullptr;
 				changed_knot = true;
 			// [stitch] divert
 			} else {
-				const std::vector<Stitch>& current_stitches = story_state.current_nonchoice_knot().knot->stitches;
+				std::vector<Stitch>& current_stitches = story_state.current_nonchoice_knot().knot->stitches;
 				std::size_t stitch_index = SIZE_MAX;
-				for (const Stitch& stitch : current_stitches) { // HACK: make this better than linear time
+				for (Stitch& stitch : current_stitches) { // HACK: make this better than linear time
 					if (stitch.name == eval_result.target_knot) {
+						story_state.current_stitch = &stitch;
 						stitch_index = stitch.index;
 						break;
 					}
@@ -247,8 +264,7 @@ std::string InkStory::continue_story() {
 
 				if (stitch_index != SIZE_MAX) {
 					story_state.current_nonchoice_knot().index = stitch_index;
-					std::string full_name = std::format("{}.{}", story_state.current_nonchoice_knot().knot->name, eval_result.target_knot);
-					story_state.increment_visit_count(full_name);
+					story_data->increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 					if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
 						changed_knot = true;
 					}
@@ -258,6 +274,13 @@ std::string InkStory::continue_story() {
 			}
 
 			eval_result.target_knot.clear();
+		}
+
+		for (GatherPoint& gather_point : story_state.current_knot().knot->gather_points) {
+			if (gather_point.index == story_state.index_in_knot() && !gather_point.name.empty()) {
+				story_data->increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, &gather_point);
+				break;
+			}
 		}
 
 		if (!changed_knot) {
