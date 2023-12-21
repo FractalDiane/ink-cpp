@@ -141,6 +141,12 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 						++index;
 					}
 
+					// for weird gather + divert cases like - -> END
+					if (next_char(script_text, index - 1) == '>') {
+						--this_token.count;
+						--index;
+					}
+
 					--index;
 				}
 			} break;

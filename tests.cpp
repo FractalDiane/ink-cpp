@@ -577,6 +577,35 @@ TEST_F(NestedFlowTests, DeepNesting) {
 	}
 }
 
+TEST_F(NestedFlowTests, ComplexNesting) {
+	for (int i = 0; i < 3; ++i) {
+		STORY("11_nested_flow/11e_complex_nesting.ink");
+		EXPECT_TEXT("I looked at Monsieur Fogg");
+		EXPECT_CHOICES("... and I could contain myself no longer.", "... but I said nothing");
+		if (i == 0) {
+			story.choose_choice_index(1);
+			EXPECT_TEXT("... but I said nothing and we passed the day in silence.");
+		} else {
+			story.choose_choice_index(0);
+			EXPECT_TEXT("... and I could contain myself no longer.", "'What is the purpose of our journey, Monsieur?'", "'A wager,' he replied.");
+			EXPECT_CHOICES("'A wager!'", "'Ah.'");
+			story.choose_choice_index(0);
+			EXPECT_TEXT("'A wager!' I returned.", "He nodded.");
+			EXPECT_CHOICES("'But surely that is foolishness!'", "'A most serious matter then!'");
+			story.choose_choice_index(1);
+			EXPECT_TEXT("'A most serious matter then!'", "He nodded again.");
+			EXPECT_CHOICES("'But can we win?'", "'A modest wager, I trust?'", "I asked nothing further of him then.");
+			if (i == 1) {
+				story.choose_choice_index(1);
+				EXPECT_TEXT("'A modest wager, I trust?'", "'Twenty thousand pounds,' he replied, quite flatly.", "After that, we passed the day in silence.");
+			} else {
+				story.choose_choice_index(2);
+				EXPECT_TEXT("I asked nothing further of him then, and after a final, polite cough, he offered nothing more to me. After that, we passed the day in silence.");
+			}
+		}
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {

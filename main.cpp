@@ -18,7 +18,7 @@ int main() {
 	std::cout << INKCPP_WORKING_DIR << std::endl;
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("11_nested_flow/11c_nested_gathers.ink"));
+	InkStory story = compiler.compile_file(TEST_PATH("11_nested_flow/11e_complex_nesting.ink"));
 
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
