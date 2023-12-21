@@ -105,7 +105,6 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			story_state.at_choice = false;
 		}
 	} else {
-		//story_state.choices_taken[story_state.current_knot().knot].insert(static_cast<std::size_t>(story_state.current_choice_indices[story_state.selected_choice]));
 		story_state.add_choice_taken(this, static_cast<std::size_t>(story_state.current_choice_indices[story_state.selected_choice]));
 		InkChoiceEntry* selected_choice_struct = story_state.current_choice_structs[story_state.selected_choice];
 
@@ -120,7 +119,10 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		}
 
 		eval_result.result = choice_eval_result.result;
-		eval_result.should_continue = story_state.in_glue || strip_string_edges(eval_result.result, true, true, true).empty() || selected_choice_struct->immediately_continue_to_result;
+		eval_result.should_continue = story_state.in_glue
+									  || strip_string_edges(eval_result.result, true, true, true).empty()
+									  || selected_choice_struct->immediately_continue_to_result
+									  || (!selected_choice_struct->result.objects.empty() && selected_choice_struct->result.objects[0]->get_id() == ObjectId::Choice);
 
 		story_state.current_knots_stack.push_back({&(selected_choice_struct->result), 0});
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
