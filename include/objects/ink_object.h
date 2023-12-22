@@ -45,3 +45,5 @@ struct Serializer<InkObject*> {
 		return object->get_serialized_bytes();
 	}
 };
+
+#include "runtime/ink_story_data.h"

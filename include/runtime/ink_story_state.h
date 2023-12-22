@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <string_view>
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
@@ -9,6 +8,7 @@
 #include <random>
 
 #include "runtime/ink_story_structs.h"
+#include "runtime/ink_story_tracking.h"
 #include "shunting-yard.h"
 
 struct InkStoryState {
@@ -26,14 +26,9 @@ struct InkStoryState {
 	std::mt19937 rng{std::random_device()()};
 
 	std::vector<KnotStatus> current_knots_stack;
-	//std::string_view current_knot_name;
-	//std::string_view current_stitch;
-	//std::vector<std::size_t> knot_index_stack;
+	Stitch* current_stitch = nullptr;
 
 	bool should_end_story = false;
-
-	std::string_view new_knot_target;
-	bool new_knot_from_choice = false;
 
 	std::vector<std::string> current_tags;
 
@@ -44,9 +39,13 @@ struct InkStoryState {
 	ChoiceMixPosition choice_mix_position = ChoiceMixPosition::Before;
 	std::unordered_map<Knot*, std::unordered_map<class InkObject*, std::unordered_set<std::size_t>>> choices_taken;
 	std::size_t total_choices_taken = 0;
-	//std::vector<bool> choice_gather_stack = {};
 
-	std::unordered_map<std::string, std::size_t> turns_since_knots;
+	/*std::unordered_map<Knot*, std::size_t> knot_visit_counts;
+	std::unordered_map<Stitch*, std::size_t> stitch_visit_counts;
+	std::unordered_map<std::string, std::size_t> gather_point_visit_counts;*/
+	//std::unordered_map<std::string, std::size_t> turns_since_knots;
+
+	InkStoryTracking story_tracking;
 
 	bool in_glue = false;
 	bool check_for_glue_divert = false;
@@ -63,7 +62,7 @@ struct InkStoryState {
 	inline std::size_t current_knot_size() const { return current_knots_stack.back().knot->objects.size(); }
 	KnotStatus& current_nonchoice_knot();
 
-	void increment_visit_count(const std::string& knot);
+	cparse::TokenMap get_variables_with_locals();
 };
 
 struct InkStoryEvalResult {

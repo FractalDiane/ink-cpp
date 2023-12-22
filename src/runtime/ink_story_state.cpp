@@ -4,6 +4,8 @@
 
 #include "shunting-yard.h"
 
+#include <format>
+
 InkObject* InkStoryState::get_current_object(std::int64_t index_offset) {
 	std::int64_t index = index_in_knot() + index_offset;
 	if (index >= 0 && index < static_cast<std::int64_t>(current_knot_size())) {
@@ -39,9 +41,26 @@ InkStoryState::KnotStatus& InkStoryState::current_nonchoice_knot() {
 	return current_knots_stack.front();
 }
 
-void InkStoryState::increment_visit_count(const std::string& knot) {
-	std::size_t current_count = static_cast<std::size_t>(variables[knot].asInt());
-	variables[knot] = current_count + 1;
+cparse::TokenMap InkStoryState::get_variables_with_locals() {
+	cparse::TokenMap result = variables;
 
-	turns_since_knots[knot] = 0;
+	/*Knot* knot = current_knot().knot;
+	for (const Stitch& stitch : knot->stitches) {
+		std::string stitch_name_full = std::format("{}.{}", knot->name, stitch.name);
+		result[stitch.name] = result[stitch_name_full];
+		if (stitch.name == current_stitch) {
+			for (const GatherPoint& gather_point : stitch.gather_points) {
+				std::string gather_point_full = std::format("{}.{}.{}", knot->name, stitch.name, gather_point.name);
+				std::string gather_point_short = std::format("{}.{}", stitch.name, gather_point.name);
+				result[gather_point_short] = result[gather_point_full];
+			}
+		}
+	}
+
+	for (const GatherPoint& gather_point : knot->gather_points) {
+		std::string gather_point_full = std::format("{}.{}", knot->name, gather_point.name);
+		result[gather_point.name] = result[gather_point_full];
+	}*/
+
+	return result;
 }

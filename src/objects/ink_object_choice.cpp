@@ -65,7 +65,8 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 					const std::vector<std::string>& conditions = this_choice.conditions;
 					if (!conditions.empty()) {
 						for (const std::string& condition : conditions) {
-							cparse::packToken result = cparse::calculator::calculate(deinkify_expression(condition).c_str(), story_state.variables);
+							cparse::TokenMap vars = story_state.story_tracking.add_visit_count_variables(story_state.variables, story_state.current_knot().knot, story_state.current_stitch);
+							cparse::packToken result = cparse::calculator::calculate(deinkify_expression(condition).c_str(), vars);
 							if (!result.asBool()) {
 								include_choice = false;
 								break;
@@ -127,9 +128,15 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.current_knots_stack.push_back({&(selected_choice_struct->result), 0});
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 
-		for (auto& entry : story_state.turns_since_knots) {
-			++entry.second;
+		if (!selected_choice_struct->label.name.empty()) {
+			story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, &selected_choice_struct->label);
 		}
+
+		/*for (auto& entry : story_state.turns_since_knots) {
+			++entry.second;
+		}*/
+		
+		story_state.story_tracking.increment_turns_since();
 
 		story_state.current_choices.clear();
 		story_state.selected_choice = SIZE_MAX;

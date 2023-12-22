@@ -4,6 +4,8 @@
 #include "serialization.h"
 #include "runtime/ink_story_structs.h"
 
+#include "shunting-yard.h"
+
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -22,4 +24,6 @@ public:
 	std::vector<std::uint8_t> get_serialized_bytes() const;
 
 	void print_info() const;
+
+	InkWeaveContent* get_content(const std::string& path, Knot* current_knot, Stitch* current_stitch);
 };

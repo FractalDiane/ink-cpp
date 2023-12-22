@@ -12,7 +12,7 @@ struct InkChoiceEntry {
 	bool fallback = false;
 	bool immediately_continue_to_result = false;
 
-	std::string label;
+	GatherPoint label;
 };
 
 class InkObjectChoice : public InkObject {

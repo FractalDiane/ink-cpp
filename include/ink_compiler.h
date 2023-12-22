@@ -62,6 +62,8 @@ private:
 	std::vector<InkChoiceEntry> choice_stack;
 
 	std::size_t current_sequence_index = 0;
+
+	std::uint32_t current_uuid = 0;
 	
 public:
 	InkStory compile_script(const std::string& script);
