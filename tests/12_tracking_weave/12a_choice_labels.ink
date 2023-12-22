@@ -20,5 +20,12 @@ The guard frowns at you.
 -> END
 
 === fight_guard ===
-The guard thrusts his sword through your chest. That didn't go as planned.
+You appear to be in trouble.
+= throw_something
+*	(rock) [Throw rock at guard] -> throw
+* 	(sand) [Throw sand at guard] -> throw
+
+= throw
+You hurl {throw_something.rock:a rock|a handful of sand} at the guard.
+The guard thrusts his sword through your chest. That went about as well as you expected.
 -> END

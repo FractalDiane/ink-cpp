@@ -624,8 +624,7 @@ TEST_F(TrackingWeaveTests, ChoiceLabels) {
 			EXPECT_TEXT("'Get out of my way,' you tell the guard.", "'Hmm,' replies the guard.");
 			EXPECT_CHOICES("'Hmm?'", "Shove him aside");
 			story.choose_choice_index(1);
-			EXPECT_TEXT("You shove him sharply. He stares in reply, and draws his sword!",
-			"The guard thrusts his sword through your chest. That didn't go as planned.");
+			EXPECT_TEXT("You shove him sharply. He stares in reply, and draws his sword!", "You appear to be in trouble.");
 		}
 	}
 }
@@ -642,6 +641,48 @@ TEST_F(TrackingWeaveTests, WeaveScope) {
 	EXPECT_CHOICES("Option");
 	story.choose_choice_index(0);
 	EXPECT_TEXT("Option", "");
+}
+
+TEST_F(TrackingWeaveTests, ChoiceOptionLabels) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("12_tracking_weave/12a_choice_labels.ink");
+		EXPECT_TEXT("The guard frowns at you.");
+		EXPECT_CHOICES("Greet him", "'Get out of my way.'");
+		story.choose_choice_index(1);
+		EXPECT_TEXT("'Get out of my way,' you tell the guard.", "'Hmm,' replies the guard.");
+		EXPECT_CHOICES("'Hmm?'", "Shove him aside");
+		story.choose_choice_index(1);
+		EXPECT_TEXT("You shove him sharply. He stares in reply, and draws his sword!", "You appear to be in trouble.");
+
+		EXPECT_CHOICES("Throw rock at guard", "Throw sand at guard");
+		story.choose_choice_index(i);
+		EXPECT_TEXT(i == 0 ? "You hurl a rock at the guard." : "You hurl a handful of sand at the guard.",
+		"The guard thrusts his sword through your chest. That went about as well as you expected.");
+	}
+}
+
+TEST_F(TrackingWeaveTests, WeaveLoops) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("12_tracking_weave/12d_weave_loops.ink");
+		EXPECT_TEXT("");
+		EXPECT_CHOICES("'Can I get a uniform from somewhere?'", "'Tell me about the security system.'", "'Are there dogs?'");
+		story.choose_choice_index(0);
+		EXPECT_TEXT("'Can I get a uniform from somewhere?' you ask the cheerful guard.",
+		"'Sure. In the locker.' He grins. 'Don't think it'll fit you, though.'");
+
+		EXPECT_CHOICES("'Tell me about the security system.'", "'Are there dogs?'", "Enough talking");
+		if (i == 0) {
+			story.choose_choice_index(2);
+			EXPECT_TEXT("You thank the guard, and move away.");
+		} else {
+			story.choose_choice_index(0);
+			EXPECT_TEXT("'Tell me about the security system.'", "'It's ancient,' the guard assures you. 'Old as coal.'");
+			EXPECT_CHOICES("'Are there dogs?'", "Enough talking");
+			story.choose_choice_index(0);
+			EXPECT_TEXT("'Are there dogs?'", "'Hundreds,' the guard answers, with a toothy grin. 'Hungry devils, too.'",
+			"He scratches his head.", "'Well, can't stand around talking all day,' he declares.", "You thank the guard, and move away.");
+		}
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

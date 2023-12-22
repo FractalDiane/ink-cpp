@@ -287,7 +287,7 @@ std::string InkStory::continue_story() {
 		} | std::views::join;
 
 		for (GatherPoint& gather_point : joint_gather_view) {
-			if (!gather_point.in_choice && gather_point.index == story_state.index_in_knot() && !gather_point.name.empty()) {
+			if (!changed_knot && !gather_point.in_choice && gather_point.index == story_state.index_in_knot() && !gather_point.name.empty()) {
 				story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, &gather_point);
 				break;
 			}
@@ -305,6 +305,7 @@ std::string InkStory::continue_story() {
 				for (GatherPoint& gather_point : it->knot->gather_points) {
 					if (gather_point.level <= story_state.current_knots_stack.size() && gather_point.index > story_state.index_in_knot()) {
 						story_state.current_knot().index = gather_point.index;
+						story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, &gather_point);
 						found_gather = true;
 						break;
 					}
