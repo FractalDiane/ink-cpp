@@ -1,5 +1,7 @@
 #include "runtime/ink_story_data.h"
 
+#include <format>
+
 #include <iostream>
 
 #ifndef INKB_VERSION
@@ -51,42 +53,12 @@ void InkStoryData::print_info() const {
 		std::cout << "=== " << knot.second.name << std::endl;
 		for (InkObject* object : knot.second.objects) {
 			std::cout << object->to_string() << std::endl;
-			//delete object;
 		}
 	}
 
 	std::cout << "Knot Order" << std::endl;
 	for (const std::string& knot : knot_order) {
 		std::cout << knot << std::endl;
-	}
-}
-
-void InkStoryData::increment_visit_count(Knot* knot, Stitch* stitch, GatherPoint* gather_point) {
-	if (gather_point) {
-		++gather_point->visit_count;
-		gather_point->turns_since = 0;
-	} else if (stitch) {
-		++stitch->visit_count;
-		stitch->turns_since = 0;
-	} else if (knot) {
-		++knot->visit_count;
-		knot->turns_since = 0;
-	}
-}
-
-void InkStoryData::increment_turns_since() {
-	for (auto& knot : knots) {
-		++knot.second.turns_since;
-		for (Stitch& stitch : knot.second.stitches) {
-			++stitch.turns_since;
-			for (GatherPoint& gather_point : stitch.gather_points) {
-				++gather_point.turns_since;
-			}
-		}
-
-		for (GatherPoint& gather_point : knot.second.gather_points) {
-			++gather_point.turns_since;
-		}
 	}
 }
 
@@ -151,27 +123,4 @@ InkWeaveContent* InkStoryData::get_content(const std::string& path, Knot* curren
 	}
 
 	return nullptr;
-}
-
-cparse::TokenMap InkStoryData::add_visit_count_variables(const cparse::TokenMap& variables) const {
-	cparse::TokenMap result = variables;
-	for (const auto& knot : knots) {
-		result[knot.first] = knot.second.visit_count;
-		for (const Stitch& stitch : knot.second.stitches) {
-			std::string stitch_name = std::format("{}.{}", knot.first, stitch.name);
-			result[stitch_name] = stitch.visit_count;
-
-			for (const GatherPoint& gather_point : stitch.gather_points) {
-				std::string gather_point_name = std::format("{}.{}.{}", knot.first, stitch.name, gather_point.name);
-				result[gather_point_name] = gather_point.visit_count;
-			}
-		}
-
-		for (const GatherPoint& gather_point : knot.second.gather_points) {
-			std::string gather_point_name = std::format("{}.{}", knot.first, gather_point.name);
-			result[gather_point_name] = gather_point.visit_count;
-		}
-	}
-
-	return result;
 }

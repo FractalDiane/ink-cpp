@@ -123,23 +123,23 @@ void InkStory::print_info() const {
 }
 
 void InkStory::init_story() {
-	/*for (const auto& knot : story_data->knots) {
-		story_state.variables[knot.first] = 0;
-		for (const Stitch& stitch : knot.second.stitches) {
-			std::string stitch_name = std::format("{}.{}", knot.first, stitch.name);
-			story_state.variables[stitch_name] = 0;
+	for (auto& knot : story_data->knots) {
+		auto knot_stats = story_state.story_tracking.knot_stats.insert({knot.second.uuid, InkStoryTracking::KnotStats(knot.second.name)});
+		for (Stitch& stitch : knot.second.stitches) {
+			auto stitch_stats = story_state.story_tracking.stitch_stats.insert({stitch.uuid, InkStoryTracking::StitchStats(stitch.name)});
+			knot_stats.first->second.stitches.push_back(stitch.uuid);
 
-			for (const GatherPoint& gather_point : stitch.gather_points) {
-				std::string gather_point_name = std::format("{}.{}.{}", knot.first, stitch.name, gather_point.name);
-				story_state.variables[gather_point_name] = 0;
+			for (GatherPoint& gather_point : stitch.gather_points) {
+				story_state.story_tracking.gather_point_stats.insert({gather_point.uuid, InkStoryTracking::SubKnotStats(gather_point.name)});
+				stitch_stats.first->second.gather_points.push_back(gather_point.uuid);
 			}
 		}
 
-		for (const GatherPoint& gather_point : knot.second.gather_points) {
-			std::string gather_point_name = std::format("{}.{}", knot.first, gather_point.name);
-			story_state.variables[gather_point_name] = 0;
+		for (GatherPoint& gather_point : knot.second.gather_points) {
+			story_state.story_tracking.gather_point_stats.insert({gather_point.uuid, InkStoryTracking::SubKnotStats(gather_point.name)});
+			knot_stats.first->second.gather_points.push_back(gather_point.uuid);
 		}
-	}*/
+	}
 
 	bind_ink_functions();
 
@@ -156,10 +156,13 @@ void InkStory::bind_ink_functions() {
 	CP_FUNC(TURNS, { return story_state.total_choices_taken; });
 	CP_FUNC(TURNS_SINCE, {
 		if (auto content = story_data->get_content(scope["__knot"].asString(), story_state.current_knot().knot, story_state.current_stitch)) {
-			return content->turns_since;
-		} else {
-			return -1;
+			InkStoryTracking::SubKnotStats stats;
+			if (story_state.story_tracking.get_content_stats(content, stats)) {
+				return stats.turns_since_visited;
+			}
 		}
+		
+		return -1;
 	}, "__knot");
 
 	CP_FUNC(SEED_RANDOM, { 
@@ -197,7 +200,7 @@ std::string InkStory::continue_story() {
 		Knot* knot_before_object = story_state.current_knot().knot;
 		bool changed_knot = false;
 		InkObject* current_object = story_state.current_knot().knot->objects[story_state.index_in_knot()];
-		current_object->execute(story_data, story_state, eval_result);
+		current_object->execute(story_state, eval_result);
 
 		if (story_state.current_knot().knot != knot_before_object) {
 			changed_knot = true;
@@ -232,7 +235,7 @@ std::string InkStory::continue_story() {
 
 					if (stitch_index != SIZE_MAX) {
 						story_state.current_knots_stack.back() = {&target_knot->second, stitch_index};
-						story_data->increment_visit_count(&target_knot->second, story_state.current_stitch);
+						story_state.story_tracking.increment_visit_count(&target_knot->second, story_state.current_stitch);
 						changed_knot = true;
 					} else {
 						throw std::runtime_error("Stitch not found");
@@ -247,7 +250,7 @@ std::string InkStory::continue_story() {
 				}
 
 				story_state.current_knots_stack.back() = {&target_knot->second, 0};
-				story_data->increment_visit_count(&target_knot->second);
+				story_state.story_tracking.increment_visit_count(&target_knot->second);
 				story_state.current_stitch = nullptr;
 				changed_knot = true;
 			// [stitch] divert
@@ -264,7 +267,7 @@ std::string InkStory::continue_story() {
 
 				if (stitch_index != SIZE_MAX) {
 					story_state.current_nonchoice_knot().index = stitch_index;
-					story_data->increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch);
+					story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 					if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
 						changed_knot = true;
 					}
@@ -277,8 +280,8 @@ std::string InkStory::continue_story() {
 		}
 
 		for (GatherPoint& gather_point : story_state.current_knot().knot->gather_points) {
-			if (gather_point.index == story_state.index_in_knot() && !gather_point.name.empty()) {
-				story_data->increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, &gather_point);
+			if (!gather_point.in_choice && gather_point.index == story_state.index_in_knot() && !gather_point.name.empty()) {
+				story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, &gather_point);
 				break;
 			}
 		}

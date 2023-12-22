@@ -12,9 +12,6 @@ struct Serializer {
 	Serializer(Serializer&& other) = delete;
 	Serializer& operator=(const Serializer& other) = delete;
 	Serializer& operator=(Serializer&& other) = delete;
-	
-	//std::vector<std::uint8_t> operator()(const T& what) noexcept;
-	//T operator()(const std::vector<std::uint8_t>& bytes, std::size_t& index) noexcept;
 };
 
 template <>

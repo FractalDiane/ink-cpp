@@ -18,7 +18,7 @@ int main() {
 	std::cout << INKCPP_WORKING_DIR << std::endl;
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("9_game_queries/9c_turns_since.ink"));
+	InkStory story = compiler.compile_file(TEST_PATH("12_tracking_weave/12a_choice_labels.ink"));
 
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(1);

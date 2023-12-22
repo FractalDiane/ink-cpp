@@ -8,17 +8,18 @@
 
 struct InkWeaveContent {
 	std::string name;
-	std::size_t visit_count = 0;
-	std::int64_t turns_since = -1;
+	std::uint32_t uuid;
 };
 
 struct GatherPoint : public InkWeaveContent {
-	std::uint16_t index;
-	std::uint8_t level;
+	std::uint16_t index = 0;
+	std::uint8_t level = 1;
+	bool in_choice = false;
+	std::uint16_t choice_index = 0;
 };
 
 struct Stitch : public InkWeaveContent {
-	std::uint16_t index;
+	std::uint16_t index = 0;
 	std::vector<GatherPoint> gather_points;
 };
 
@@ -57,13 +58,13 @@ struct Serializer<Knot> {
 		Serializer<std::string> sstring;
 		std::vector<std::uint8_t> result = sstring(knot.name);
 
-		Serializer<std::vector<InkObject*>> sobjects;
+		/*Serializer<std::vector<InkObject*>> sobjects;
 		std::vector<std::uint8_t> result2 = sobjects(knot.objects);
 		result.insert(result.end(), result2.begin(), result2.end());
 
 		Serializer<std::vector<Stitch>> sstitches;
 		std::vector<std::uint8_t> result3 = sstitches(knot.stitches);
-		result.insert(result.end(), result3.begin(), result3.end());
+		result.insert(result.end(), result3.begin(), result3.end());*/
 
 		return result;
 	}

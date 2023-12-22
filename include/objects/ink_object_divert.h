@@ -19,5 +19,5 @@ public:
 	virtual std::string to_string() const override { return std::format("Divert ({})", target_knot); }
 	virtual bool has_any_contents(bool strip) const override { return !target_knot.empty(); }
 
-	virtual void execute(InkStoryData* const story_data, InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
+	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 };

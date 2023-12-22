@@ -25,8 +25,5 @@ public:
 
 	void print_info() const;
 
-	void increment_visit_count(Knot* knot, Stitch* stitch = nullptr, GatherPoint* gather_point = nullptr);
-	void increment_turns_since();
 	InkWeaveContent* get_content(const std::string& path, Knot* current_knot, Stitch* current_stitch);
-	cparse::TokenMap add_visit_count_variables(const cparse::TokenMap& variables) const;
 };

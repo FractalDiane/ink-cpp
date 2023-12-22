@@ -19,6 +19,7 @@ set(SRC_RUNTIME
 	src/runtime/ink_story_data.cpp
 	src/runtime/ink_story.cpp
 	src/runtime/ink_story_state.cpp
+	src/runtime/ink_story_tracking.cpp
 )
 
 set(SRC_OBJECTS

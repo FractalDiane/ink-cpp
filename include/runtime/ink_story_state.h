@@ -8,6 +8,7 @@
 #include <random>
 
 #include "runtime/ink_story_structs.h"
+#include "runtime/ink_story_tracking.h"
 #include "shunting-yard.h"
 
 struct InkStoryState {
@@ -43,6 +44,8 @@ struct InkStoryState {
 	std::unordered_map<Stitch*, std::size_t> stitch_visit_counts;
 	std::unordered_map<std::string, std::size_t> gather_point_visit_counts;*/
 	//std::unordered_map<std::string, std::size_t> turns_since_knots;
+
+	InkStoryTracking story_tracking;
 
 	bool in_glue = false;
 	bool check_for_glue_divert = false;
