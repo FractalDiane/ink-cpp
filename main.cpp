@@ -18,7 +18,7 @@ int main() {
 	std::cout << INKCPP_WORKING_DIR << std::endl;
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("10_gathers/10b_multi_gather.ink"));
+	InkStory story = compiler.compile_file(TEST_PATH("12_tracking_weave/12c_weave_scope_2.ink"));
 
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);

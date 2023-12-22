@@ -56,7 +56,7 @@ cparse::TokenMap InkStoryTracking::add_visit_count_variables(const cparse::Token
 					result[gather_point_name_2] = gather_point.times_visited;
 				}
 
-				if (current_stitch->uuid == stitch_id) {
+				if (current_stitch && current_stitch->uuid == stitch_id) {
 					result[gather_point.name] = gather_point.times_visited;
 				}
 			}
