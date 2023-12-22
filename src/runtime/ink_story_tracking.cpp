@@ -1,5 +1,7 @@
 #include "runtime/ink_story_tracking.h"
 
+#include <format>
+
 void InkStoryTracking::increment_visit_count(Knot* knot, Stitch* stitch, GatherPoint* gather_point) {
 	if (gather_point) {
 		auto& entry = gather_point_stats[gather_point->uuid];
@@ -30,7 +32,7 @@ void InkStoryTracking::increment_turns_since() {
 	}
 }
 
-cparse::TokenMap InkStoryTracking::add_visit_count_variables(const cparse::TokenMap& variables) {
+cparse::TokenMap InkStoryTracking::add_visit_count_variables(const cparse::TokenMap& variables, Knot* current_knot, Stitch* current_stitch) {
 	cparse::TokenMap result = variables;
 
 	for (auto& knot : knot_stats) {
@@ -40,10 +42,23 @@ cparse::TokenMap InkStoryTracking::add_visit_count_variables(const cparse::Token
 			std::string stitch_name = std::format("{}.{}", knot.second.name, stitch.name);
 			result[stitch_name] = stitch.times_visited;
 
+			if (current_knot->uuid == knot.first) {
+				result[stitch.name] = stitch.times_visited;
+			}
+
 			for (std::uint32_t gather_id : stitch.gather_points) {
 				SubKnotStats& gather_point = gather_point_stats[gather_id];
 				std::string gather_point_name = std::format("{}.{}.{}", knot.second.name, stitch.name, gather_point.name);
 				result[gather_point_name] = gather_point.times_visited;
+
+				if (current_knot->uuid == knot.first) {
+					std::string gather_point_name_2 = std::format("{}.{}", stitch.name, gather_point.name);
+					result[gather_point_name_2] = gather_point.times_visited;
+				}
+
+				if (current_stitch->uuid == stitch_id) {
+					result[gather_point.name] = gather_point.times_visited;
+				}
 			}
 		}
 
@@ -51,81 +66,12 @@ cparse::TokenMap InkStoryTracking::add_visit_count_variables(const cparse::Token
 			SubKnotStats& gather_point = gather_point_stats[gather_id];
 			std::string gather_point_name = std::format("{}.{}", knot.second.name, gather_point.name);
 			result[gather_point_name] = gather_point.times_visited;
+
+			if (current_knot->uuid == knot.first) {
+				result[gather_point.name] = gather_point.times_visited;
+			}
 		}
 	}
-
-	/*for (auto& knot : knot_stats) {
-		result[knot.first->name] = knot.second.times_visited;
-		for (Stitch* stitch : knot.second.stitches) {
-			std::string stitch_name = std::format("{}.{}", knot.first->name, stitch->name);
-			result[stitch_name] = stitch_stats[stitch].times_visited;
-
-			for (const GatherPoint* gather_point : stitch->gather_points) {
-				std::string gather_point_name = std::format("{}.{}.{}", knot.first, stitch.name, gather_point.name);
-				result[gather_point_name] = gather_point.visit_count;
-			}
-		}
-	}*/
-
-	/*for (auto& knot : knot_stats) {
-		result[knot.second.name] = knot.second.times_visited;
-		for (Stitch* stitch : knot.second.stitches) {
-			std::string stitch_name = std::format("{}.{}", knot.second.name, stitch->name);
-			result[stitch_name] = stitch_stats[stitch->uuid].times_visited;
-
-			for (GatherPoint& gather_point : stitch->gather_points) {
-				std::string gather_point_name = std::format("{}.{}.{}", knot.second.name, stitch->name, gather_point.name);
-				result[gather_point_name] = gather_point_stats[gather_point.uuid].times_visited;
-			}
-		}
-
-		for (GatherPoint* gather_point : knot.second.gather_points) {
-			if (!gather_point->name.empty()) {
-				std::string gather_point_name = std::format("{}.{}", knot.second.name, gather_point->name);
-				result[gather_point_name] = gather_point_stats[gather_point->uuid].times_visited;
-			}
-		}
-	}*/
-
-	/*for (auto& knot : story_data->knots) {
-		result[knot.second.name] = knot_stats[knot.second.uuid].times_visited;
-		for (Stitch& stitch : knot.second.stitches) {
-			std::string stitch_name = std::format("{}.{}", knot.second.name, stitch.name);
-			result[stitch_name] = stitch_stats[stitch.uuid].times_visited;
-
-			for (GatherPoint& gather_point : stitch.gather_points) {
-				std::string gather_point_name = std::format("{}.{}.{}", knot.second.name, stitch.name, gather_point.name);
-				result[gather_point_name] = gather_point_stats[gather_point.uuid].times_visited;
-			}
-		}
-
-		for (GatherPoint& gather_point : knot.second.gather_points) {
-			if (!gather_point.name.empty()) {
-				std::string gather_point_name = std::format("{}.{}", knot.second.name, gather_point.name);
-				result[gather_point_name] = gather_point_stats[gather_point.uuid].times_visited;
-			}
-		}
-	}*/
-
-	/*for (const auto& knot : knots) {
-		result[knot.first] = knot.second.visit_count;
-		for (const Stitch& stitch : knot.second.stitches) {
-			std::string stitch_name = std::format("{}.{}", knot.first, stitch.name);
-			result[stitch_name] = stitch.visit_count;
-
-			for (const GatherPoint& gather_point : stitch.gather_points) {
-				std::string gather_point_name = std::format("{}.{}.{}", knot.first, stitch.name, gather_point.name);
-				result[gather_point_name] = gather_point.visit_count;
-			}
-		}
-
-		for (const GatherPoint& gather_point : knot.second.gather_points) {
-			if (!gather_point.name.empty()) {
-				std::string gather_point_name = std::format("{}.{}", knot.first, gather_point.name);
-				result[gather_point_name] = gather_point.visit_count;
-			}
-		}
-	}*/
 
 	return result;
 }

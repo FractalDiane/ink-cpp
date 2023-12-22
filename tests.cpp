@@ -630,6 +630,20 @@ TEST_F(TrackingWeaveTests, ChoiceLabels) {
 	}
 }
 
+TEST_F(TrackingWeaveTests, WeaveScope) {
+	STORY("12_tracking_weave/12b_weave_scope.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("one");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("Some content.");
+	EXPECT_CHOICES("two", "end");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("two");
+	EXPECT_CHOICES("Option");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("Option", "");
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {

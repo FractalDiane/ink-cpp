@@ -65,7 +65,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 					const std::vector<std::string>& conditions = this_choice.conditions;
 					if (!conditions.empty()) {
 						for (const std::string& condition : conditions) {
-							cparse::TokenMap vars = story_state.story_tracking.add_visit_count_variables(story_state.variables);
+							cparse::TokenMap vars = story_state.story_tracking.add_visit_count_variables(story_state.variables, story_state.current_knot().knot, story_state.current_stitch);
 							cparse::packToken result = cparse::calculator::calculate(deinkify_expression(condition).c_str(), vars);
 							if (!result.asBool()) {
 								include_choice = false;

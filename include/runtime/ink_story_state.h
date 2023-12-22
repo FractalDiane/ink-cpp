@@ -26,7 +26,7 @@ struct InkStoryState {
 	std::mt19937 rng{std::random_device()()};
 
 	std::vector<KnotStatus> current_knots_stack;
-	Stitch* current_stitch;
+	Stitch* current_stitch = nullptr;
 
 	bool should_end_story = false;
 

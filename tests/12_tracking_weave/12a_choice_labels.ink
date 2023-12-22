@@ -8,11 +8,11 @@ The guard frowns at you.
 
 - 	'Hmm,' replies the guard.
 
-*	{meet_guard.greet} 	'Having a nice day?' // only if you greeted him
+*	{greet} 	'Having a nice day?' // only if you greeted him
 
 * 	'Hmm?'[] you reply.
 
-*	{meet_guard.get_out} [Shove him aside] 	 // only if you threatened him
+*	{get_out} [Shove him aside] 	 // only if you threatened him
 	You shove him sharply. He stares in reply, and draws his sword!
 	-> fight_guard 			// this route diverts out of the weave
 
