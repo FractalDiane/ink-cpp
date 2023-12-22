@@ -197,7 +197,7 @@ std::string InkStory::continue_story() {
 	InkStoryEvalResult eval_result;
 	eval_result.result.reserve(512);
 	eval_result.target_knot.reserve(32);
-	while (eval_result.should_continue && !story_state.should_end_story && story_state.index_in_knot() < story_state.current_knot_size()) {
+	while (eval_result.should_continue && !story_state.should_end_story && (!story_state.at_choice || story_state.selected_choice != SIZE_MAX) && story_state.index_in_knot() < story_state.current_knot_size()) {
 		Knot* knot_before_object = story_state.current_knot().knot;
 		bool changed_knot = false;
 		InkObject* current_object = story_state.current_knot().knot->objects[story_state.index_in_knot()];
@@ -298,10 +298,25 @@ std::string InkStory::continue_story() {
 		}
 
 		if (story_state.index_in_knot() >= story_state.current_knot_size() && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
-			bool was_empty = story_state.current_knots_stack.back().knot->objects.empty();
 			story_state.current_knots_stack.pop_back();
-			if (was_empty || story_state.in_glue) {
-				++story_state.current_knot().index;
+
+			bool found_gather = false;
+			for (auto it = story_state.current_knots_stack.rbegin(); it != story_state.current_knots_stack.rend(); ++it) {
+				for (GatherPoint& gather_point : it->knot->gather_points) {
+					if (gather_point.level <= story_state.current_knots_stack.size() && gather_point.index > story_state.index_in_knot()) {
+						story_state.current_knot().index = gather_point.index;
+						found_gather = true;
+						break;
+					}
+				}
+
+				if (found_gather) {
+					break;
+				}
+			}
+
+			if (found_gather) {
+				eval_result.should_continue = story_state.in_glue;
 			}
 		}
 	}
