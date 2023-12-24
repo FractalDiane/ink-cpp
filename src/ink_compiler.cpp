@@ -689,6 +689,12 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					token_index += 3;
 				}
 
+				if (!story_knots.back().objects.empty() && story_knots.back().objects.back()->get_id() == ObjectId::Choice) {
+					while (next_token_is(all_tokens, token_index, InkToken::NewLine)) {
+						++token_index;
+					}
+				}
+
 				gather_points.push_back(new_gather_point);
 			} else {
 				result_object = new InkObjectText("-");

@@ -359,6 +359,10 @@ std::string InkStory::continue_story() {
 
 			if (found_gather) {
 				eval_result.should_continue = story_state.in_glue;
+				if (InkObject* next = story_state.get_current_object(0)) {
+					ObjectId next_type = next->get_id();
+					eval_result.should_continue |= next_type != ObjectId::Text && next_type != ObjectId::LineBreak;
+				}
 			}
 		}
 	}
