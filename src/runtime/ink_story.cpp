@@ -218,12 +218,12 @@ std::string InkStory::continue_story() {
 			eval_result.target_knot.clear();
 			story_state.check_for_glue_divert = false;
 		} else if (!eval_result.target_knot.empty()) {
-			if (GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_knot().knot, story_state.current_stitch); target.found_any) {
+			if (GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_nonchoice_knot().knot, story_state.current_stitch); target.found_any) {
 				switch (target.result_type) {
 					case WeaveContentType::Knot: {
 						while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
-						story_state.current_knots_stack.pop_back();
-					}
+							story_state.current_knots_stack.pop_back();
+						}
 
 						Knot* knot = static_cast<Knot*>(target.knot);
 						story_state.current_knots_stack.back() = {knot, 0};
@@ -236,14 +236,16 @@ std::string InkStory::continue_story() {
 						Stitch* stitch = static_cast<Stitch*>(target.stitch);
 						story_state.current_stitch = stitch;
 
-						if (target.knot != story_state.current_nonchoice_knot().knot) {
-							story_state.current_knots_stack.back() = {target.knot, target.stitch->index};
-						} else {
-							story_state.current_nonchoice_knot().index = target.stitch->index;
+						while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+							story_state.current_knots_stack.pop_back();
 						}
+
+						story_state.current_knots_stack.back() = {target.knot, stitch->index};
 						
 						story_state.story_tracking.increment_visit_count(target.knot ? target.knot : story_state.current_nonchoice_knot().knot, story_state.current_stitch);
-						changed_knot = true;
+						if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
+							changed_knot = true;
+						}
 					} break;
 
 					case WeaveContentType::GatherPoint:

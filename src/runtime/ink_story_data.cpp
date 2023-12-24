@@ -90,6 +90,41 @@ GetContentResult InkStoryData::get_content(const std::string& path, Knot* curren
 				result.found_any = true;
 				return result;
 			}
+
+			if (current_stitch) {
+				for (GatherPoint& gather_point : current_stitch->gather_points) {
+					if (gather_point.name == first) {
+						result.knot = current_knot;
+						result.stitch = current_stitch;
+						result.gather_point = &gather_point;
+						result.result_type = WeaveContentType::GatherPoint;
+						result.found_any = true;
+						return result;
+					}
+				}
+			}
+			
+			if (current_knot) {
+				for (Stitch& stitch : current_knot->stitches) {
+					if (stitch.name == first) {
+						result.knot = current_knot;
+						result.stitch = &stitch;
+						result.result_type = WeaveContentType::Stitch;
+						result.found_any = true;
+						return result;
+					}
+				}
+
+				for (GatherPoint& gather_point : current_knot->gather_points) {
+					if (gather_point.name == first) {
+						result.knot = current_knot;
+						result.gather_point = &gather_point;
+						result.result_type = WeaveContentType::GatherPoint;
+						result.found_any = true;
+						return result;
+					}
+				}
+			}
 		} break;
 
 		case 1: {
