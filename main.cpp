@@ -15,13 +15,14 @@
 
 int main() {
 	cparse_startup();
-	std::cout << INKCPP_WORKING_DIR << std::endl;
+	//std::cout << INKCPP_WORKING_DIR << std::endl;
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("10_gathers/10a_gather.ink"));
+	InkStory story = compiler.compile_file(TEST_PATH("12_tracking_weave/12d_weave_loops.ink"));
 
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	//story.choose_choice_index(0);

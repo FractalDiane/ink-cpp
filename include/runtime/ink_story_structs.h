@@ -6,9 +6,16 @@
 
 #include "serialization.h"
 
+enum class WeaveContentType {
+	Knot,
+	Stitch,
+	GatherPoint,
+};
+
 struct InkWeaveContent {
 	std::string name;
 	std::uint32_t uuid;
+	WeaveContentType type;
 };
 
 struct GatherPoint : public InkWeaveContent {

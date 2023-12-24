@@ -10,6 +10,26 @@
 #include <vector>
 #include <unordered_map>
 
+struct GetContentResult {
+	WeaveContentType result_type = WeaveContentType::Knot;
+	Knot* knot = nullptr;
+	Stitch* stitch = nullptr;
+	GatherPoint* gather_point = nullptr;
+	bool found_any = false;
+
+	InkWeaveContent* get_target() {
+		switch (result_type) {
+			case WeaveContentType::Knot:
+				return knot;
+			case WeaveContentType::Stitch:
+				return stitch;
+			case WeaveContentType::GatherPoint:
+			default:
+				return gather_point;
+		}
+	}
+};
+
 class InkStoryData {
 private:
 	std::unordered_map<std::string, Knot> knots;
@@ -25,5 +45,5 @@ public:
 
 	void print_info() const;
 
-	InkWeaveContent* get_content(const std::string& path, Knot* current_knot, Stitch* current_stitch);
+	GetContentResult get_content(const std::string& path, Knot* current_knot, Stitch* current_stitch);
 };

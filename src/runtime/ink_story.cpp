@@ -156,9 +156,9 @@ void InkStory::bind_ink_functions() {
 	CP_FUNC(CHOICE_COUNT, { return story_state.current_choices.size(); });
 	CP_FUNC(TURNS, { return story_state.total_choices_taken; });
 	CP_FUNC(TURNS_SINCE, {
-		if (auto content = story_data->get_content(scope["__knot"].asString(), story_state.current_knot().knot, story_state.current_stitch)) {
+		if (GetContentResult content = story_data->get_content(scope["__knot"].asString(), story_state.current_knot().knot, story_state.current_stitch); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
-			if (story_state.story_tracking.get_content_stats(content, stats)) {
+			if (story_state.story_tracking.get_content_stats(content.get_target(), stats)) {
 				return stats.turns_since_visited;
 			}
 		}
@@ -218,6 +218,45 @@ std::string InkStory::continue_story() {
 			eval_result.target_knot.clear();
 			story_state.check_for_glue_divert = false;
 		} else if (!eval_result.target_knot.empty()) {
+			if (GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_knot().knot, story_state.current_stitch); target.found_any) {
+				switch (target.result_type) {
+					case WeaveContentType::Knot: {
+						while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+						story_state.current_knots_stack.pop_back();
+					}
+
+						Knot* knot = static_cast<Knot*>(target.knot);
+						story_state.current_knots_stack.back() = {knot, 0};
+						story_state.story_tracking.increment_visit_count(knot);
+						story_state.current_stitch = nullptr;
+						changed_knot = true;
+					} break;
+
+					case WeaveContentType::Stitch: {
+						Stitch* stitch = static_cast<Stitch*>(target.stitch);
+						story_state.current_stitch = stitch;
+
+						if (target.knot != story_state.current_nonchoice_knot().knot) {
+							story_state.current_knots_stack.back() = {target.knot, target.stitch->index};
+						} else {
+							story_state.current_nonchoice_knot().index = target.stitch->index;
+						}
+						
+						story_state.story_tracking.increment_visit_count(target.knot ? target.knot : story_state.current_nonchoice_knot().knot, story_state.current_stitch);
+						changed_knot = true;
+					} break;
+
+					case WeaveContentType::GatherPoint:
+						/*if (target.knot) {
+							story_state.current_knots_stack.back() = {}
+						}*/
+					default: {
+
+					} break;
+				}
+			}
+			
+			/*
 			// [knot].[stitch] divert
 			if (std::size_t dot_index = eval_result.target_knot.find("."); dot_index != eval_result.target_knot.npos) {
 				std::string knot_name = eval_result.target_knot.substr(0, dot_index);
@@ -275,7 +314,7 @@ std::string InkStory::continue_story() {
 				} else {
 					throw std::runtime_error("Stitch not found");
 				}
-			}
+			}*/
 
 			eval_result.target_knot.clear();
 		}
