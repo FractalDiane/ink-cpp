@@ -225,22 +225,20 @@ std::string InkStory::continue_story() {
 							story_state.current_knots_stack.pop_back();
 						}
 
-						Knot* knot = static_cast<Knot*>(target.knot);
-						story_state.current_knots_stack.back() = {knot, 0};
-						story_state.story_tracking.increment_visit_count(knot);
+						story_state.current_knots_stack.back() = {target.knot, 0};
+						story_state.story_tracking.increment_visit_count(target.knot);
 						story_state.current_stitch = nullptr;
 						changed_knot = true;
 					} break;
 
 					case WeaveContentType::Stitch: {
-						Stitch* stitch = static_cast<Stitch*>(target.stitch);
-						story_state.current_stitch = stitch;
+						story_state.current_stitch = target.stitch;
 
 						while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
 							story_state.current_knots_stack.pop_back();
 						}
 
-						story_state.current_knots_stack.back() = {target.knot, stitch->index};
+						story_state.current_knots_stack.back() = {target.knot, target.stitch->index};
 						
 						story_state.story_tracking.increment_visit_count(target.knot ? target.knot : story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 						if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
@@ -248,10 +246,21 @@ std::string InkStory::continue_story() {
 						}
 					} break;
 
-					case WeaveContentType::GatherPoint:
-						/*if (target.knot) {
-							story_state.current_knots_stack.back() = {}
-						}*/
+					case WeaveContentType::GatherPoint: {
+						while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+							story_state.current_knots_stack.pop_back();
+						}
+
+						story_state.current_knots_stack.back() = {target.knot, target.gather_point->index};
+						if (target.stitch) {
+							story_state.current_stitch = target.stitch;
+						}
+
+						if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
+							changed_knot = true;
+						}
+					} break;
+
 					default: {
 
 					} break;

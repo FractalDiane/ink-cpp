@@ -574,7 +574,10 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 			++token_index;
 			while (all_tokens[token_index].token != InkToken::RightBrace) {
-				text_items.push_back(all_tokens[token_index].text_contents);
+				if (!all_tokens[token_index].text_contents.empty()) {
+					text_items.push_back(all_tokens[token_index].text_contents);
+				}
+				
 				if (in_choice_line && !past_choice_initial_braces) {
 					items_if.push_back(compile_token(all_tokens, all_tokens[token_index], story_knots));
 				} else {
@@ -594,11 +597,15 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 						default: {
 							InkObject* compiled_object = compile_token(all_tokens, all_tokens[token_index], story_knots);
-							if (is_conditional) {
-								std::vector<InkObject*>& target_array = in_else ? items_else : items_if;
-								target_array.push_back(compiled_object);
-							} else if (!items.empty()) {
-								items.back().push_back(compiled_object);
+							if (compiled_object->has_any_contents(true)) {
+								if (is_conditional) {
+									std::vector<InkObject*>& target_array = in_else ? items_else : items_if;
+									target_array.push_back(compiled_object);
+								} else if (!items.empty()) {
+									items.back().push_back(compiled_object);
+								} else {
+									delete compiled_object;
+								}
 							} else {
 								delete compiled_object;
 							}
