@@ -207,6 +207,8 @@ std::string InkStory::continue_story() {
 			changed_knot = true;
 		}
 
+		story_state.just_diverted_to_non_knot = false;
+
 		// Special case: line break is ignored if a divert after it leads to glue
 		if (story_state.check_for_glue_divert) { // HACK: is there a better way to do this?
 			if (eval_result.target_knot == "END" || eval_result.target_knot == "DONE") {
@@ -244,6 +246,8 @@ std::string InkStory::continue_story() {
 						if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
 							changed_knot = true;
 						}
+
+						story_state.just_diverted_to_non_knot = true;
 					} break;
 
 					case WeaveContentType::GatherPoint: {
@@ -259,6 +263,8 @@ std::string InkStory::continue_story() {
 						if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
 							changed_knot = true;
 						}
+
+						story_state.just_diverted_to_non_knot = true;
 					} break;
 
 					default: {
@@ -266,66 +272,6 @@ std::string InkStory::continue_story() {
 					} break;
 				}
 			}
-			
-			/*
-			// [knot].[stitch] divert
-			if (std::size_t dot_index = eval_result.target_knot.find("."); dot_index != eval_result.target_knot.npos) {
-				std::string knot_name = eval_result.target_knot.substr(0, dot_index);
-				if (auto target_knot = story_data->knots.find(knot_name); target_knot != story_data->knots.end()) {
-					std::vector<Stitch>& knot_stitches = target_knot->second.stitches;
-
-					std::string stitch_name = eval_result.target_knot.substr(dot_index + 1);
-					std::size_t stitch_index = SIZE_MAX;
-					for (Stitch& stitch : knot_stitches) { // HACK: make this better than linear time
-						if (stitch.name == stitch_name) {
-							stitch_index = stitch.index;
-							story_state.current_stitch = &stitch;
-							break;
-						}
-					}
-
-					if (stitch_index != SIZE_MAX) {
-						story_state.current_knots_stack.back() = {&target_knot->second, stitch_index};
-						story_state.story_tracking.increment_visit_count(&target_knot->second, story_state.current_stitch);
-						changed_knot = true;
-					} else {
-						throw std::runtime_error("Stitch not found");
-					}
-				} else {
-					throw std::runtime_error("Knot for stitch not found");
-				}
-			// [knot] divert
-			} else if (auto target_knot = story_data->knots.find(eval_result.target_knot); target_knot != story_data->knots.end()) {
-				while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
-					story_state.current_knots_stack.pop_back();
-				}
-
-				story_state.current_knots_stack.back() = {&target_knot->second, 0};
-				story_state.story_tracking.increment_visit_count(&target_knot->second);
-				story_state.current_stitch = nullptr;
-				changed_knot = true;
-			// [stitch] divert
-			} else {
-				std::vector<Stitch>& current_stitches = story_state.current_nonchoice_knot().knot->stitches;
-				std::size_t stitch_index = SIZE_MAX;
-				for (Stitch& stitch : current_stitches) { // HACK: make this better than linear time
-					if (stitch.name == eval_result.target_knot) {
-						story_state.current_stitch = &stitch;
-						stitch_index = stitch.index;
-						break;
-					}
-				}
-
-				if (stitch_index != SIZE_MAX) {
-					story_state.current_nonchoice_knot().index = stitch_index;
-					story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch);
-					if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
-						changed_knot = true;
-					}
-				} else {
-					throw std::runtime_error("Stitch not found");
-				}
-			}*/
 
 			eval_result.target_knot.clear();
 		}
