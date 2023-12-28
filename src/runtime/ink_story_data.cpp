@@ -3,6 +3,7 @@
 #include <format>
 
 #include <iostream>
+#include <stdexcept>
 
 #ifndef INKB_VERSION
 #define INKB_VERSION 255
@@ -62,7 +63,7 @@ void InkStoryData::print_info() const {
 	}
 }
 
-InkWeaveContent* InkStoryData::get_content(const std::string& path, Knot* current_knot, Stitch* current_stitch) {
+GetContentResult InkStoryData::get_content(const std::string& path, Knot* current_knot, Stitch* current_stitch) {
 	std::string first;
 	first.reserve(10);
 	std::string second;
@@ -80,10 +81,49 @@ InkWeaveContent* InkStoryData::get_content(const std::string& path, Knot* curren
 		}
 	}
 
+	GetContentResult result;
 	switch (dots) {
 		case 0: {
 			if (auto knot = knots.find(first); knot != knots.end()) {
-				return &knot->second;
+				result.knot = &knot->second;
+				result.result_type = WeaveContentType::Knot;
+				result.found_any = true;
+				return result;
+			}
+
+			if (current_stitch) {
+				for (GatherPoint& gather_point : current_stitch->gather_points) {
+					if (gather_point.name == first) {
+						result.knot = current_knot;
+						result.stitch = current_stitch;
+						result.gather_point = &gather_point;
+						result.result_type = WeaveContentType::GatherPoint;
+						result.found_any = true;
+						return result;
+					}
+				}
+			}
+			
+			if (current_knot) {
+				for (Stitch& stitch : current_knot->stitches) {
+					if (stitch.name == first) {
+						result.knot = current_knot;
+						result.stitch = &stitch;
+						result.result_type = WeaveContentType::Stitch;
+						result.found_any = true;
+						return result;
+					}
+				}
+
+				for (GatherPoint& gather_point : current_knot->gather_points) {
+					if (gather_point.name == first) {
+						result.knot = current_knot;
+						result.gather_point = &gather_point;
+						result.result_type = WeaveContentType::GatherPoint;
+						result.found_any = true;
+						return result;
+					}
+				}
 			}
 		} break;
 
@@ -91,13 +131,21 @@ InkWeaveContent* InkStoryData::get_content(const std::string& path, Knot* curren
 			if (auto knot = knots.find(first); knot != knots.end()) {
 				for (Stitch& stitch : knot->second.stitches) {
 					if (stitch.name == second) {
-						return &stitch;
+						result.knot = &knot->second;
+						result.stitch = &stitch;
+						result.result_type = WeaveContentType::Stitch;
+						result.found_any = true;
+						return result;
 					}
 				}
 
 				for (GatherPoint& gather_point : knot->second.gather_points) {
 					if (gather_point.name == second) {
-						return &gather_point;
+						result.knot = &knot->second;
+						result.gather_point = &gather_point;
+						result.result_type = WeaveContentType::GatherPoint;
+						result.found_any = true;
+						return result;
 					}
 				}
 			}
@@ -109,7 +157,12 @@ InkWeaveContent* InkStoryData::get_content(const std::string& path, Knot* curren
 					if (stitch.name == second) {
 						for (GatherPoint& gather_point : stitch.gather_points) {
 							if (gather_point.name == third) {
-								return &gather_point;
+								result.knot = &knot->second;
+								result.stitch = &stitch;
+								result.gather_point = &gather_point;
+								result.result_type = WeaveContentType::GatherPoint;
+								result.found_any = true;
+								return result;
 							}
 						}
 					}
@@ -118,9 +171,9 @@ InkWeaveContent* InkStoryData::get_content(const std::string& path, Knot* curren
 		} break;
 
 		default: {
-			throw;
+			throw std::runtime_error("Invalid content address");
 		}
 	}
 
-	return nullptr;
+	return result;
 }

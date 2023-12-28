@@ -374,6 +374,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						Knot new_knot;
 						new_knot.name = new_knot_name;
 						new_knot.uuid = current_uuid++;
+						new_knot.type = WeaveContentType::Knot;
 						story_knots.push_back(new_knot);
 
 						while (all_tokens[token_index].token != InkToken::NewLine) {
@@ -391,6 +392,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					Stitch new_stitch;
 					new_stitch.name = new_stitch_name;
 					new_stitch.uuid = current_uuid++;
+					new_stitch.type = WeaveContentType::Stitch;
 					new_stitch.index = static_cast<std::uint16_t>(story_knots.back().objects.size());
 					stitches.push_back(new_stitch);
 					//std::sort(stitches.begin(), stitches.end(), [](const Stitch& a, const Stitch& b) { return a.index < b.index; });
@@ -413,7 +415,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			if (at_line_start && token.count > choice_level) {
 				++choice_level;
 				std::vector<InkChoiceEntry> choice_options;
-				bool has_gather = false;
+				//bool has_gather = false;
 				bool current_choice_sticky = token.token == InkToken::Plus;
 
 				while (token_index < all_tokens.size()) {
@@ -422,7 +424,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 							end_line = true;
 							break;
 						} else if (next_token_is(all_tokens, token_index, InkToken::Dash)) {
-							has_gather = true;
+							//has_gather = true;
 							end_line = true;
 							break;
 						} else if ((next_token_is(all_tokens, token_index, InkToken::Asterisk) || next_token_is(all_tokens, token_index, InkToken::Plus)) && next_token(all_tokens, token_index).count <= choice_level) {
@@ -442,6 +444,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						GatherPoint label;
 						label.name = all_tokens[token_index + 2].text_contents;
 						label.uuid = current_uuid++;
+						label.type = WeaveContentType::GatherPoint;
 						label.index = static_cast<std::uint16_t>(story_knots.back().objects.size());
 						label.in_choice = true;
 						label.choice_index = static_cast<std::uint16_t>(choice_options.size());
@@ -571,7 +574,10 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 			++token_index;
 			while (all_tokens[token_index].token != InkToken::RightBrace) {
-				text_items.push_back(all_tokens[token_index].text_contents);
+				if (!all_tokens[token_index].text_contents.empty()) {
+					text_items.push_back(all_tokens[token_index].text_contents);
+				}
+				
 				if (in_choice_line && !past_choice_initial_braces) {
 					items_if.push_back(compile_token(all_tokens, all_tokens[token_index], story_knots));
 				} else {
@@ -591,11 +597,15 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 						default: {
 							InkObject* compiled_object = compile_token(all_tokens, all_tokens[token_index], story_knots);
-							if (is_conditional) {
-								std::vector<InkObject*>& target_array = in_else ? items_else : items_if;
-								target_array.push_back(compiled_object);
-							} else if (!items.empty()) {
-								items.back().push_back(compiled_object);
+							if (compiled_object->has_any_contents(true)) {
+								if (is_conditional) {
+									std::vector<InkObject*>& target_array = in_else ? items_else : items_if;
+									target_array.push_back(compiled_object);
+								} else if (!items.empty()) {
+									items.back().push_back(compiled_object);
+								} else {
+									delete compiled_object;
+								}
 							} else {
 								delete compiled_object;
 							}
@@ -677,12 +687,19 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				
 				GatherPoint new_gather_point;
 				new_gather_point.uuid = current_uuid++;
+				new_gather_point.type = WeaveContentType::GatherPoint;
 				new_gather_point.index = static_cast<std::uint16_t>(story_knots.back().objects.size());
 				new_gather_point.level = token.count;
 
 				if (next_token_is_sequence(all_tokens, token_index, {InkToken::LeftParen, InkToken::Text, InkToken::RightParen})) {
 					new_gather_point.name = all_tokens[token_index + 2].text_contents;
 					token_index += 3;
+				}
+
+				if (!story_knots.back().objects.empty() && story_knots.back().objects.back()->get_id() == ObjectId::Choice) {
+					while (next_token_is(all_tokens, token_index, InkToken::NewLine)) {
+						++token_index;
+					}
 				}
 
 				gather_points.push_back(new_gather_point);

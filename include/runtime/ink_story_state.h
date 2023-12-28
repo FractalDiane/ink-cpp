@@ -51,6 +51,7 @@ struct InkStoryState {
 	bool check_for_glue_divert = false;
 	bool in_choice_text = false;
 	bool at_choice = false;
+	bool just_diverted_to_non_knot = false;
 
 	cparse::TokenMap variables;
 
