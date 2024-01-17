@@ -757,6 +757,11 @@ TEST_F(GlobalVariableTests, DivertVariables) {
 	story.choose_choice_index(1);
 	EXPECT_TEXT("Everybody in your Kingdom died.");
 }
+
+TEST_F(GlobalVariableTests, PrintingVariables) {
+	STORY("13_global_variables/13c_printing_variables.ink");
+	EXPECT_TEXT("My name is Jean Passepartout, but my friends call me Jackie. I'm 23 years old.");
+}
 #pragma endregion
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

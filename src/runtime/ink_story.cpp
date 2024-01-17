@@ -150,7 +150,7 @@ void InkStory::init_story() {
 void InkStory::bind_ink_functions() {
 	#define CP_FUNC(name, body, ...) {\
 		auto func_##name = [this](cparse::TokenMap scope) -> cparse::packToken body;\
-		story_state.variables[#name] = cparse::CppFunction(func_##name, {__VA_ARGS__}, "");\
+		story_state.variables[#name] = cparse::CppFunction(func_##name, {__VA_ARGS__}, #name);\
 	}
 
 	CP_FUNC(CHOICE_COUNT, { return story_state.current_choices.size(); });
@@ -166,7 +166,7 @@ void InkStory::bind_ink_functions() {
 		return -1;
 	}, "__knot");
 
-	CP_FUNC(SEED_RANDOM, { 
+	CP_FUNC(SEED_RANDOM, {
 		story_state.rng.seed(static_cast<unsigned int>(scope["__seed"].asInt()));
 		return cparse::packToken::None();
 	}, "__seed");
