@@ -220,7 +220,14 @@ std::string InkStory::continue_story() {
 			eval_result.target_knot.clear();
 			story_state.check_for_glue_divert = false;
 		} else if (!eval_result.target_knot.empty()) {
-			if (GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_nonchoice_knot().knot, story_state.current_stitch); target.found_any) {
+			GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_nonchoice_knot().knot, story_state.current_stitch);
+			if (!target.found_any) {
+				if (cparse::packToken* target_var = story_state.variables.find(eval_result.target_knot)) {
+					target = story_data->get_content(target_var->asString(), story_state.current_nonchoice_knot().knot, story_state.current_stitch);
+				}
+			}
+
+			if (target.found_any) {
 				switch (target.result_type) {
 					case WeaveContentType::Knot: {
 						while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {

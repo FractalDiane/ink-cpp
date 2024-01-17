@@ -59,10 +59,10 @@ std::int64_t randi_range(std::int64_t from, std::int64_t to, std::mt19937& gener
 }
 
 std::string deinkify_expression(const std::string& expression) noexcept {
-	std::string result;
-	result.reserve(expression.size());
+	std::string result = expression;
+	//result.reserve(expression.size());
 
-	bool looking_for_knot = false;
+	/*bool looking_for_knot = false;
 	bool found_knot_word = false;
 	for (std::size_t i = 0; i < expression.size(); ++i) {
 		if (expression.substr(i, 2) == "->") {
@@ -84,13 +84,14 @@ std::string deinkify_expression(const std::string& expression) noexcept {
 				found_knot_word = false;
 			}
 		}
-	}
+	}*/
 
 	// HACK: MAKE THIS WAY LESS BAD
 	static const std::unordered_map<std::string, std::string> replacements = {
 		{R"(\bnot\b)", "!"},
 		{R"(\bor\b)", "||"},
 		{R"(\band\b)", "&&"},
+		{R"(->\s*([\w.]+))", R"("$1")"},
 	};
 
 	for (const auto& entry : replacements) {

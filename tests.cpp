@@ -742,6 +742,21 @@ TEST_F(GlobalVariableTests, VariableChecks) {
 		EXPECT_EQ(story.get_current_choices(), choices_expected[i]);
 	}
 }
+
+TEST_F(GlobalVariableTests, DivertVariables) {
+	STORY("13_global_variables/13b_divert_variables.ink");
+
+	EXPECT_TEXT("Your Kingdom is in dire straits.", "Give up now, or keep trying to save your Kingdom?");
+	EXPECT_CHOICES("Keep trying!", "Give up");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("It's not working. Your Kingdom is still in dire straits.", "Give up now, or keep trying to save your Kingdom?");
+	EXPECT_CHOICES("Keep trying!", "Give up");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("It's not working. Your Kingdom is still in dire straits.", "Give up now, or keep trying to save your Kingdom?");
+	EXPECT_CHOICES("Keep trying!", "Give up");
+	story.choose_choice_index(1);
+	EXPECT_TEXT("Everybody in your Kingdom died.");
+}
 #pragma endregion
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
