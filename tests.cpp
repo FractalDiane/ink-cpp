@@ -40,7 +40,9 @@ FIXTURE(GameQueriesTests);
 FIXTURE(GatherTests);
 FIXTURE(NestedFlowTests);
 FIXTURE(TrackingWeaveTests);
+FIXTURE(GlobalVariableTests);
 
+#pragma region ContentTests
 TEST_F(ContentTests, SingleLineText) {
 	STORY("1_content/1a_text.ink");
 	EXPECT_TEXT("Hello, world");
@@ -63,7 +65,9 @@ TEST_F(ContentTests, Tags) {
 	std::vector<std::string> expected_tags = {"three * test", "other tags", "right here", "colour it blue"};
 	EXPECT_EQ(story.get_current_tags(), expected_tags);
 }
+#pragma endregion
 
+#pragma region ChoiceTests
 TEST_F(ChoiceTests, SingleChoice) {
 	STORY("2_choices/2a_choice.ink");
 	EXPECT_TEXT("Hello world!");
@@ -107,12 +111,16 @@ TEST_F(ChoiceTests, MultipleChoices) {
 		EXPECT_TEXT(expected_texts[i][0], expected_texts[i][1]);
 	}
 }
+#pragma endregion
 
+#pragma region KnotTests
 TEST_F(KnotTests, Knots) {
 	STORY("3_knots/3a_knot.ink");
 	EXPECT_TEXT("Hello world");
 }
+#pragma endregion
 
+#pragma region DivertTests
 TEST_F(DivertTests, Diverts) {
 	STORY("4_diverts/4a_divert.ink");
 	EXPECT_TEXT("We hurried home to Savile Row as fast as we could.");
@@ -122,7 +130,9 @@ TEST_F(DivertTests, DivertsWithGlue) {
 	STORY("4_diverts/4b_glue.ink");
 	EXPECT_TEXT("We hurried home to Savile Row as fast as we could.");
 }
+#pragma endregion
 
+#pragma region BranchingTests
 TEST_F(BranchingTests, AdvancedBranching) {
 	std::vector<std::string> expected_texts = {
 		"You open the gate, and step out onto the path.",
@@ -158,7 +168,9 @@ TEST_F(BranchingTests, BranchingAndJoining) {
 		}
 	}
 }
+#pragma endregion
 
+#pragma region StitchTests
 TEST_F(StitchTests, BasicStitches) {
 	std::vector<std::string> expected_texts = {
 		"Welcome to first class, sir.",
@@ -190,7 +202,9 @@ TEST_F(StitchTests, StitchesWithLocalDiverts) {
 	story.choose_choice_index(0);
 	EXPECT_TEXT("I put myself in third.");
 }
+#pragma endregion
 
+#pragma region VaryingChoiceTests
 TEST_F(VaryingChoiceTests, ChoicesBeingUsedUp) {
 	STORY("7_varying/7a_fallback_choice.ink");
 	EXPECT_TEXT("You search desperately for a friendly face in the crowd.");
@@ -239,7 +253,9 @@ TEST_F(VaryingChoiceTests, ConditionalChoices) {
 	EXPECT_TEXT("Hello 2", "Hello 3", "");
 	EXPECT_CHOICES("Choice 1", "Choice 2", "Choice 3");
 }
+#pragma endregion
 
+#pragma region VariableTextTests
 TEST_F(VariableTextTests, Sequences) {
 	STORY("8_variable_text/8a_sequence.ink");
 	EXPECT_TEXT("I bought a coffee with my five-pound note.");
@@ -405,7 +421,9 @@ TEST_F(VariableTextTests, ConditionalText) {
 		EXPECT_TEXT(expected_text_outer[i].first, expected_text_outer[i].second);
 	}
 }
+#pragma endregion
 
+#pragma region GameQueriesTests
 TEST_F(GameQueriesTests, ChoiceCountFunction) {
 	STORY("9_game_queries/9a_choice_count.ink");
 	EXPECT_TEXT("");
@@ -434,7 +452,9 @@ TEST_F(GameQueriesTests, SeedRandomFunction) {
 	std::string text2 = story.continue_story();
 	EXPECT_EQ(text1, text2);
 }
+#pragma endregion
 
+#pragma region GatherTests
 TEST_F(GatherTests, Gathers) {
 	std::vector<std::vector<std::string>> expected_texts = {
 		{R"("I am somewhat tired," I repeated.)", R"("Really," he responded. "How deleterious.")"},
@@ -480,7 +500,9 @@ TEST_F(GatherTests, MultipleGathers) {
 		}
 	}
 }
+#pragma endregion
 
+#pragma region NestedFlowTests
 TEST_F(NestedFlowTests, NestedChoices) {
 	for (int i = 0; i < 2; ++i) {
 		STORY("11_nested_flow/11a_nested_choice.ink");
@@ -606,7 +628,9 @@ TEST_F(NestedFlowTests, ComplexNesting) {
 		}
 	}
 }
+#pragma endregion
 
+#pragma region TrackingWeaveTests
 TEST_F(TrackingWeaveTests, ChoiceLabels) {
 	for (int i = 0; i < 2; ++i) {
 		STORY("12_tracking_weave/12a_choice_labels.ink");
@@ -684,6 +708,41 @@ TEST_F(TrackingWeaveTests, WeaveLoops) {
 		}
 	}
 }
+#pragma endregion
+
+#pragma region GlobalVariableTests
+TEST_F(GlobalVariableTests, VariableChecks) {
+	std::vector<std::tuple<int, bool>> var_values = {
+		{0, false},
+		{1, false},
+		{0, true},
+		{1, true},
+	};
+
+	std::vector<std::vector<std::string>> choices_expected = {
+		{"'But, Monsieur, why are we travelling?'"},
+		{"'But, Monsieur, why are we travelling?'"},
+		{"I contemplated our strange adventure"},
+		{"I contemplated our strange adventure"},
+	};
+
+	for (int i = 0; i < 4; ++i) {
+		STORY("13_global_variables/13a_variable_checks.ink");
+
+		int mood = std::get<0>(var_values[i]);
+		bool knows_about_wager = std::get<1>(var_values[i]);
+
+		story.set_variable("mood", mood);
+		story.set_variable("knows_about_wager", knows_about_wager);
+
+		EXPECT_TEXT(std::format("The train jolted and rattled. {}.",
+								mood > 0 ? "I was feeling positive enough, however, and did not mind the odd bump"
+								: "It was more than I could bear"));
+
+		EXPECT_EQ(story.get_current_choices(), choices_expected[i]);
+	}
+}
+#pragma endregion
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 

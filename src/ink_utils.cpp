@@ -2,6 +2,8 @@
 
 #include <numeric>
 #include <algorithm>
+#include <regex>
+#include <unordered_map>
 
 std::string strip_string_edges(const std::string& string, bool left, bool right, bool include_spaces) noexcept {
 	std::string result;
@@ -82,6 +84,17 @@ std::string deinkify_expression(const std::string& expression) noexcept {
 				found_knot_word = false;
 			}
 		}
+	}
+
+	// HACK: MAKE THIS WAY LESS BAD
+	static const std::unordered_map<std::string, std::string> replacements = {
+		{R"(\bnot\b)", "!"},
+		{R"(\bor\b)", "||"},
+		{R"(\band\b)", "&&"},
+	};
+
+	for (const auto& entry : replacements) {
+		result = std::regex_replace(result, std::regex(entry.first), entry.second);
 	}
 
 	return result;

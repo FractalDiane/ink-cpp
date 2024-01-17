@@ -743,6 +743,14 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			}
 		} break;
 
+		case InkToken::Bang: {
+			if (false) {
+
+			} else {
+				result_object = new InkObjectText("!");
+			}
+		} break;
+
 		case InkToken::KeywordVar: {
 			if (at_line_start) {
 				if (next_token_is_sequence(all_tokens, token_index, {InkToken::Text, InkToken::Equal})) {
@@ -756,6 +764,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						++token_index;
 					}
 
+					--token_index;
 					result_object = new InkObjectGlobalVariable(identifier, strip_string_edges(expression, true, true, true));
 				} else {
 					throw std::runtime_error("Malformed VAR statement");

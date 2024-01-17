@@ -18,7 +18,10 @@ int main() {
 	//std::cout << INKCPP_WORKING_DIR << std::endl;
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("12_tracking_weave/12d_weave_loops.ink"));
+	InkStory story = compiler.compile_file(TEST_PATH("13_global_variables/13a_variable_checks.ink"));
+
+	story.set_variable("mood", 1);
+	story.set_variable("knows_about_wager", true);
 
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
