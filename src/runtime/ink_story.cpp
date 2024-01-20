@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <format>
 #include <ranges>
+#include <cmath>
 
 #include <stdexcept>
 #include <iostream>
@@ -178,6 +179,7 @@ void InkStory::bind_ink_functions() {
 	CP_FUNC(INT, { return scope["__what"].asInt(); }, "__what");
 	CP_FUNC(FLOOR, { return std::floor(scope["__what"].asDouble()); }, "__what");
 	CP_FUNC(FLOAT, { return scope["__what"].asDouble(); }, "__what");
+	CP_FUNC(POW, { return std::pow(scope["__base"].asDouble(), scope["__exp"].asDouble()); }, "__base", "__exp");
 
 	#undef CP_FUNC
 }

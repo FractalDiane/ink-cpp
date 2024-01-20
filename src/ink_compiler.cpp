@@ -720,6 +720,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				}
 
 				result_object = new InkObjectLogic(expression);
+				end_line = true;
 			} else {
 				result_object = new InkObjectText("~");
 			}

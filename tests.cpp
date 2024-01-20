@@ -2,6 +2,7 @@
 
 #include "ink_compiler.h"
 #include "runtime/ink_story.h"
+#include "ink_cparse_ext.h"
 
 #include "builtin-features.inc"
 
@@ -41,6 +42,7 @@ FIXTURE(GatherTests);
 FIXTURE(NestedFlowTests);
 FIXTURE(TrackingWeaveTests);
 FIXTURE(GlobalVariableTests);
+FIXTURE(LogicTests);
 
 #pragma region ContentTests
 TEST_F(ContentTests, SingleLineText) {
@@ -762,12 +764,42 @@ TEST_F(GlobalVariableTests, PrintingVariables) {
 	STORY("13_global_variables/13c_printing_variables.ink");
 	EXPECT_TEXT("My name is Jean Passepartout, but my friends call me Jackie. I'm 23 years old.");
 }
+
+TEST_F(GlobalVariableTests, StringLogic) {
+	// TODO: string logic
+	STORY("13_global_variables/13d_string_logic.ink");
+
+	std::string text = story.continue_story();
+	EXPECT_FALSE(text.contains("{~red|blue|green|yellow}"));
+
+	std::string end = text.substr(52);
+	std::size_t split_index = end.find(" and ");
+
+	std::string left = end.substr(0, split_index);
+	std::string right = end.substr(split_index + 5);
+	right.pop_back();
+	EXPECT_EQ(left, right);
+}
+#pragma endregion
+
+#pragma region LogicTests
+TEST_F(LogicTests, BasicLogic) {
+	STORY("14_logic/14a_basic_logic.ink");
+	EXPECT_TEXT("knows_about_wager = true", "x = 27", "y = 108", "p1 = 9", "p2 = 4");
+}
+
+TEST_F(LogicTests, StringComparisons) {
+	STORY("14_logic/14b_string_comparisons.ink");
+	EXPECT_TEXT("true", "true", "true");
+}
 #pragma endregion
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {
 	cparse_startup();
+	InkCparseStartup ink_startup;
+	InkCparseStartupParser ink_startup_parser;
 	testing::InitGoogleTest();
 	return RUN_ALL_TESTS();
 }

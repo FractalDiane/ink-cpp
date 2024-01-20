@@ -11,7 +11,7 @@ set(SRC_CPARSE
 	cparse/containers.cpp
 )
 
-set(SRC_UTIL src/ink_utils.cpp)
+set(SRC_UTIL src/ink_utils.cpp src/ink_cparse_ext.cpp)
 
 set(SRC_COMPILER src/ink_compiler.cpp)
 
