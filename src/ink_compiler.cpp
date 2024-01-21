@@ -564,7 +564,9 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			}
 
 			std::vector<std::vector<InkObject*>> items = {{}};
-			std::vector<InkObject*> items_if;
+			//std::unordered_map<std::string, std::vector<InkObject*>> items_conditions = {{"", {}}};
+			//std::pair<std::string, std::vector<InkObject*>> current_condition;
+			std::vector<std::pair<std::string, std::vector<InkObject*>>> items_conditions = {{std::string(), {}}};
 			std::vector<InkObject*> items_else;
 			std::vector<std::string> text_items;
 
@@ -579,11 +581,20 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				}
 				
 				if (in_choice_line && !past_choice_initial_braces) {
-					items_if.push_back(compile_token(all_tokens, all_tokens[token_index], story_knots));
+					items_conditions.back().second.push_back(compile_token(all_tokens, all_tokens[token_index], story_knots));
 				} else {
 					switch (all_tokens[token_index].token) {
 						case InkToken::Colon: {
 							is_conditional = true;
+							if (std::string& current_condition = items_conditions.back().first; current_condition.empty()) {
+								current_condition.reserve(50);
+								for (InkObject* object : items[0]) {
+									current_condition += object->to_string();
+									delete object;
+								}
+
+								//items_conditions.back().second.clear();
+							}
 						} break;
 
 						case InkToken::Pipe: {
@@ -595,12 +606,33 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 							}
 						} break;
 
+						case InkToken::Dash: {
+							if (is_conditional && at_line_start) {
+								if (InkLexer::Token next = next_token(all_tokens, token_index); next.token == InkToken::Text && next.text_contents == "else") {
+									in_else = true;
+									token_index += 2;
+									break;
+								} else {
+									std::string this_condition;
+									this_condition.reserve(50);
+									while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::Colon) {
+										this_condition += all_tokens[token_index].text_contents;
+										++token_index;
+									}
+
+									items_conditions.push_back({this_condition, {}});
+								}
+							}
+						}
+
 						default: {
 							InkObject* compiled_object = compile_token(all_tokens, all_tokens[token_index], story_knots);
 							if (compiled_object->has_any_contents(true)) {
 								if (is_conditional) {
-									std::vector<InkObject*>& target_array = in_else ? items_else : items_if;
+									//std::vector<InkObject*>& target_array = in_else ? items_else : items_if;
+									std::vector<InkObject*>& target_array = in_else ? items_else : items_conditions.back().second;
 									target_array.push_back(compiled_object);
+									//items_conditions.back().second.push_back(compiled_object);
 								} else if (!items.empty()) {
 									items.back().push_back(compiled_object);
 								} else {
@@ -620,8 +652,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 			if (in_choice_line && !past_choice_initial_braces) {
 				std::string condition;
-				condition.reserve(items_if.size() * 10);
-				for (InkObject* object : items_if) {
+				condition.reserve(items_conditions.back().second.size() * 10);
+				for (InkObject* object : items_conditions.back().second) {
 					condition += object->to_string();
 					delete object;
 				}
@@ -629,14 +661,15 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				choice_stack.back().conditions.push_back(condition);
 			} else {
 				if (is_conditional) {
-					std::string condition;
+					/*std::string condition;
 					condition.reserve(50);
 					for (InkObject* object : items[0]) {
 						condition += object->to_string();
 						delete object;
-					}
+					}*/
 
-					result_object = new InkObjectConditional(strip_string_edges(condition, true, true, true), items_if, items_else);
+					//result_object = new InkObjectConditional(strip_string_edges(condition, true, true, true), items_if, items_else);
+					result_object = new InkObjectConditional(items_conditions, items_else);
 				} else if (found_pipe || sequence_type != InkSequenceType::Sequence) {
 					result_object = new InkObjectSequence(sequence_type, items);
 				} else if (!text_items.empty()) {

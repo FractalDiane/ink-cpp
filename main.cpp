@@ -21,7 +21,9 @@ int main() {
 	//std::cout << INKCPP_WORKING_DIR << std::endl;
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("14_logic/14a_basic_logic.ink"));
+	InkStory story = compiler.compile_file(TEST_PATH("8_variable_text/8k_conditional_text.ink"));
+	story.set_variable("met_blofeld", false);
+	story.set_variable("learned_his_name", false);
 
 	std::cout << story.continue_story() << std::endl;
 	//std::cout << story.continue_story() << std::endl;

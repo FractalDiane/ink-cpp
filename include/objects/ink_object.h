@@ -14,6 +14,7 @@ enum class ObjectId {
 	Divert,
 	Interpolation,
 	Conditional,
+	Switch,
 	Sequence,
 	ChoiceTextMix,
 	Tag,

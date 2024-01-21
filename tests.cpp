@@ -43,6 +43,7 @@ FIXTURE(NestedFlowTests);
 FIXTURE(TrackingWeaveTests);
 FIXTURE(GlobalVariableTests);
 FIXTURE(LogicTests);
+FIXTURE(ConditionalBlockTests);
 
 #pragma region ContentTests
 TEST_F(ContentTests, SingleLineText) {
@@ -791,6 +792,28 @@ TEST_F(LogicTests, BasicLogic) {
 TEST_F(LogicTests, StringComparisons) {
 	STORY("14_logic/14b_string_comparisons.ink");
 	EXPECT_TEXT("true", "true", "true");
+}
+#pragma endregion
+
+#pragma region ConditionalBlockTests
+TEST_F(ConditionalBlockTests, BasicIf) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("15_conditional_blocks/15a_basic_if.ink");
+		story.set_variable("x", i == 0 ? 0 : 7);
+		story.set_variable("y", 0);
+
+		EXPECT_TEXT(std::format("y = {}", i == 0 ? 0 : 6));
+	}
+}
+
+TEST_F(ConditionalBlockTests, IfElse) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("15_conditional_blocks/15b_if_else.ink");
+		story.set_variable("x", i == 0 ? 0 : 7);
+		story.set_variable("y", 0);
+
+		EXPECT_TEXT(std::format("y = {}", i == 0 ? 1 : 6));
+	}
 }
 #pragma endregion
 

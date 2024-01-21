@@ -5,8 +5,10 @@
 #include "shunting-yard.h"
 
 InkObjectConditional::~InkObjectConditional() {
-	for (InkObject* object : branch_if) {
-		delete object;
+	for (auto& entry : branches) {
+		for (InkObject* object : entry.second) {
+			delete object;
+		}
 	}
 
 	for (InkObject* object : branch_else) {
@@ -16,9 +18,19 @@ InkObjectConditional::~InkObjectConditional() {
 
 void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	cparse::TokenMap vars = story_state.story_tracking.add_visit_count_variables(story_state.variables, story_state.current_knot().knot, story_state.current_stitch);
-	cparse::packToken result = cparse::calculator::calculate(deinkify_expression(condition).c_str(), vars);
-	const std::vector<InkObject*>& result_array = result.asBool() ? branch_if : branch_else;
-	for (InkObject* object : result_array) {
+	
+	for (const auto& entry : branches) {
+		cparse::packToken condition_result = cparse::calculator::calculate(deinkify_expression(entry.first).c_str(), vars);
+		if (condition_result.asBool()) {
+			for (InkObject* object : entry.second) {
+				object->execute(story_state, eval_result);
+			}
+
+			return;
+		}
+	}
+	
+	for (InkObject* object : branch_else) {
 		object->execute(story_state, eval_result);
 	}
 }
