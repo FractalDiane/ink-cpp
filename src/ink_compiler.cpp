@@ -598,7 +598,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 									delete object;
 								}
 
-								//items_conditions.back().second.clear();
+								items.clear();
 							}
 						} break;
 
@@ -624,6 +624,10 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 									if (found_colon && !found_dash) {
 										is_switch = true;
 										switch_expression = items_conditions.back().first;
+										for (InkObject* object : items_conditions.back().second) {
+											delete object;
+										}
+
 										items_conditions.back().first.clear();
 										items_conditions.back().second.clear();
 									}
@@ -652,10 +656,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 							InkObject* compiled_object = compile_token(all_tokens, all_tokens[token_index], story_knots);
 							if (compiled_object->has_any_contents(true)) {
 								if (is_conditional) {
-									//std::vector<InkObject*>& target_array = in_else ? items_else : items_if;
 									std::vector<InkObject*>& target_array = in_else ? items_else : items_conditions.back().second;
 									target_array.push_back(compiled_object);
-									//items_conditions.back().second.push_back(compiled_object);
 								} else if (!items.empty()) {
 									items.back().push_back(compiled_object);
 								} else {
@@ -673,6 +675,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 			--brace_level;
 
+			bool delete_items = true;
 			if (in_choice_line && !past_choice_initial_braces) {
 				std::string condition;
 				condition.reserve(items_conditions.back().second.size() * 10);
@@ -684,14 +687,6 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				choice_stack.back().conditions.push_back(condition);
 			} else {
 				if (is_conditional) {
-					/*std::string condition;
-					condition.reserve(50);
-					for (InkObject* object : items[0]) {
-						condition += object->to_string();
-						delete object;
-					}*/
-
-					//result_object = new InkObjectConditional(strip_string_edges(condition, true, true, true), items_if, items_else);
 					if (!is_switch) {
 						result_object = new InkObjectConditional(items_conditions, items_else);
 					} else {
@@ -699,14 +694,17 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					}
 				} else if (found_pipe || sequence_type != InkSequenceType::Sequence) {
 					result_object = new InkObjectSequence(sequence_type, items);
+					delete_items = false;
 				} else if (!text_items.empty()) {
 					std::string all_text = join_string_vector(text_items, std::string());
 					result_object = new InkObjectInterpolation(all_text);
+				}
+			}
 
-					for (auto& vec : items) {
-						for (InkObject* object : vec) {
-							delete object;
-						}
+			if (delete_items) {
+				for (auto& vec : items) {
+					for (InkObject* object : vec) {
+						delete object;
 					}
 				}
 			}
