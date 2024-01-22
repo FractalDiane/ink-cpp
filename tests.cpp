@@ -766,7 +766,7 @@ TEST_F(GlobalVariableTests, PrintingVariables) {
 	EXPECT_TEXT("My name is Jean Passepartout, but my friends call me Jackie. I'm 23 years old.");
 }
 
-TEST_F(GlobalVariableTests, StringLogic) {
+TEST_F(GlobalVariableTests, EvalLogicInString) {
 	// TODO: string logic
 	STORY("13_global_variables/13d_string_logic.ink");
 
@@ -813,6 +813,36 @@ TEST_F(ConditionalBlockTests, IfElse) {
 		story.set_variable("y", 0);
 
 		EXPECT_TEXT(std::format("y = {}", i == 0 ? 1 : 6));
+	}
+}
+
+TEST_F(ConditionalBlockTests, IfElseAlt) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("15_conditional_blocks/15c_if_else_alt.ink");
+		story.set_variable("x", i == 0 ? 0 : 7);
+		story.set_variable("y", 0);
+
+		EXPECT_TEXT(std::format("y = {}", i == 0 ? 1 : 6));
+	}
+}
+
+TEST_F(ConditionalBlockTests, IfElifElse) {
+	for (int i = 0; i < 3; ++i) {
+		STORY("15_conditional_blocks/15d_if_elif_else.ink");
+		story.set_variable("x", i == 0 ? 0 : i == 1 ? 7 : -2);
+		story.set_variable("y", 3);
+
+		EXPECT_TEXT(std::format("y = {}", i == 0 ? 0 : i == 1 ? 6 : -1));
+	}
+}
+
+TEST_F(ConditionalBlockTests, SwitchStatement) {
+	std::vector<std::string> expected_results = {"zero", "one", "two", "lots"};
+	for (int i = 0; i < 4; ++i) {
+		STORY("15_conditional_blocks/15e_switch_statement.ink");
+		story.set_variable("x", i);
+
+		EXPECT_TEXT(expected_results[i]);
 	}
 }
 #pragma endregion

@@ -7,12 +7,19 @@
 class InkObjectConditional : public InkObject {
 private:
 	//std::unordered_map<std::string, std::vector<InkObject*>> branches;
+	
+	bool is_switch;
 	std::vector<std::pair<std::string, std::vector<InkObject*>>> branches;
 	std::vector<InkObject*> branch_else;
 
+	std::string switch_expression;
+
 public:
 	InkObjectConditional(const std::vector<std::pair<std::string, std::vector<InkObject*>>>& branches, const std::vector<InkObject*>& objects_else)
-		: branches{branches}, branch_else{objects_else} {}
+		: branches{branches}, branch_else{objects_else}, is_switch{false} {}
+
+	InkObjectConditional(const std::string& switch_expression, const std::vector<std::pair<std::string, std::vector<InkObject*>>>& branches, const std::vector<InkObject*>& objects_else)
+		: switch_expression{switch_expression}, branches{branches}, branch_else{objects_else}, is_switch{true} {}
  
 	virtual ~InkObjectConditional() override;
 

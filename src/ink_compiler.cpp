@@ -569,10 +569,14 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			std::vector<std::pair<std::string, std::vector<InkObject*>>> items_conditions = {{std::string(), {}}};
 			std::vector<InkObject*> items_else;
 			std::vector<std::string> text_items;
+			std::string switch_expression;
 
 			bool is_conditional = false;
+			bool is_switch = false;
 			bool in_else = false;
 			bool found_pipe = false;
+			bool found_colon = false;
+			bool found_dash = false;
 
 			++token_index;
 			while (all_tokens[token_index].token != InkToken::RightBrace) {
@@ -585,6 +589,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				} else {
 					switch (all_tokens[token_index].token) {
 						case InkToken::Colon: {
+							found_colon = true;
 							is_conditional = true;
 							if (std::string& current_condition = items_conditions.back().first; current_condition.empty()) {
 								current_condition.reserve(50);
@@ -607,20 +612,38 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						} break;
 
 						case InkToken::Dash: {
-							if (is_conditional && at_line_start) {
+							if (at_line_start) {
+								is_conditional = true;
+								
 								if (InkLexer::Token next = next_token(all_tokens, token_index); next.token == InkToken::Text && next.text_contents == "else") {
 									in_else = true;
 									token_index += 2;
+									found_dash = true;
 									break;
 								} else {
+									if (found_colon && !found_dash) {
+										is_switch = true;
+										switch_expression = items_conditions.back().first;
+										items_conditions.back().first.clear();
+										items_conditions.back().second.clear();
+									}
+									
 									std::string this_condition;
 									this_condition.reserve(50);
+									++token_index;
 									while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::Colon) {
 										this_condition += all_tokens[token_index].text_contents;
 										++token_index;
 									}
 
-									items_conditions.push_back({this_condition, {}});
+									if (items_conditions.back().first.empty()) {
+										items_conditions.back().first = this_condition;
+									} else {
+										items_conditions.push_back({this_condition, {}});
+									}
+									
+									found_dash = true;
+									break;
 								}
 							}
 						}
@@ -669,7 +692,11 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					}*/
 
 					//result_object = new InkObjectConditional(strip_string_edges(condition, true, true, true), items_if, items_else);
-					result_object = new InkObjectConditional(items_conditions, items_else);
+					if (!is_switch) {
+						result_object = new InkObjectConditional(items_conditions, items_else);
+					} else {
+						result_object = new InkObjectConditional(switch_expression, items_conditions, items_else);
+					}
 				} else if (found_pipe || sequence_type != InkSequenceType::Sequence) {
 					result_object = new InkObjectSequence(sequence_type, items);
 				} else if (!text_items.empty()) {
