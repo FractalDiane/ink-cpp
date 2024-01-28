@@ -34,5 +34,6 @@ public:
 
 	void choose_choice_index(std::size_t index);
 
+	const class cparse::packToken get_variable(const std::string& name) const;
 	void set_variable(const std::string& name, const class cparse::packToken& value);
 };

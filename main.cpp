@@ -21,8 +21,14 @@ int main() {
 	//std::cout << INKCPP_WORKING_DIR << std::endl;
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("14_logic/14a_basic_logic.ink"));
+	InkStory story = compiler.compile_file(TEST_PATH("15_conditional_blocks/15f_read_count_condition.ink"));
+	story.set_variable("visited_snakes", false);
+	story.set_variable("visited_poland", true);
+	story.set_variable("fear", 0);
+	//story.set_variable("x", 7);
+	//story.set_variable("y", 0);
 
+	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	//std::cout << story.continue_story() << std::endl;
 	//story.choose_choice_index(1);

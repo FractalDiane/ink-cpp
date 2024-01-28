@@ -28,6 +28,20 @@ public:
 				return std::format("{}({})", static_cast<int>(token), count);
 			}
 		}
+
+		std::string get_text_contents() const {
+			if (token == InkToken::Text) {
+				return text_contents;
+			} else {
+				std::string result;
+				result.reserve(text_contents.length() * count);
+				for (int i = 0; i < count; ++i) {
+					result += text_contents;
+				}
+
+				return result;
+			}
+		}
 	};
 
 	InkLexer() = default;

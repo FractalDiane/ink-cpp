@@ -101,7 +101,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 				std::size_t whitespace_skipped = 0;
 				while (true) {
 					char inner_chr = script_text[index];
-					if (inner_chr > 32) {
+					if (inner_chr > 32 || inner_chr == '\n') {
 						if (inner_chr == chr) {
 							++this_token.count;
 						} else {
@@ -130,7 +130,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 					++index;
 					while (true) {
 						char inner_chr = script_text[index];
-						if (inner_chr > 32) {
+						if (inner_chr > 32 || inner_chr == '\n') {
 							if (inner_chr == chr) {
 								++this_token.count;
 							} else {
@@ -359,7 +359,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					break;
 				}
 
-				tag_contents += all_tokens[token_index].text_contents;
+				tag_contents += all_tokens[token_index].get_text_contents();
 				++token_index;
 			}
 
@@ -564,26 +564,42 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			}
 
 			std::vector<std::vector<InkObject*>> items = {{}};
-			std::vector<InkObject*> items_if;
+			//std::unordered_map<std::string, std::vector<InkObject*>> items_conditions = {{"", {}}};
+			//std::pair<std::string, std::vector<InkObject*>> current_condition;
+			std::vector<std::pair<std::string, std::vector<InkObject*>>> items_conditions = {{std::string(), {}}};
 			std::vector<InkObject*> items_else;
 			std::vector<std::string> text_items;
+			std::string switch_expression;
 
 			bool is_conditional = false;
+			bool is_switch = false;
 			bool in_else = false;
 			bool found_pipe = false;
+			bool found_colon = false;
+			bool found_dash = false;
 
 			++token_index;
 			while (all_tokens[token_index].token != InkToken::RightBrace) {
-				if (!all_tokens[token_index].text_contents.empty()) {
-					text_items.push_back(all_tokens[token_index].text_contents);
+				if (!all_tokens[token_index].get_text_contents().empty()) {
+					text_items.push_back(all_tokens[token_index].get_text_contents());
 				}
 				
 				if (in_choice_line && !past_choice_initial_braces) {
-					items_if.push_back(compile_token(all_tokens, all_tokens[token_index], story_knots));
+					items_conditions.back().second.push_back(compile_token(all_tokens, all_tokens[token_index], story_knots));
 				} else {
 					switch (all_tokens[token_index].token) {
 						case InkToken::Colon: {
+							found_colon = true;
 							is_conditional = true;
+							if (std::string& current_condition = items_conditions.back().first; current_condition.empty()) {
+								current_condition.reserve(50);
+								for (InkObject* object : items[0]) {
+									current_condition += object->to_string();
+									delete object;
+								}
+
+								items.clear();
+							}
 						} break;
 
 						case InkToken::Pipe: {
@@ -595,11 +611,52 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 							}
 						} break;
 
+						case InkToken::Dash: {
+							if (at_line_start) {
+								is_conditional = true;
+								
+								if (InkLexer::Token next = next_token(all_tokens, token_index); next.token == InkToken::Text && next.text_contents == "else") {
+									in_else = true;
+									token_index += 2;
+									found_dash = true;
+									break;
+								} else {
+									if (found_colon && !found_dash) {
+										is_switch = true;
+										switch_expression = items_conditions.back().first;
+										for (InkObject* object : items_conditions.back().second) {
+											delete object;
+										}
+
+										items_conditions.back().first.clear();
+										items_conditions.back().second.clear();
+									}
+									
+									std::string this_condition;
+									this_condition.reserve(50);
+									++token_index;
+									while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::Colon) {
+										this_condition += all_tokens[token_index].get_text_contents();
+										++token_index;
+									}
+
+									if (items_conditions.back().first.empty()) {
+										items_conditions.back().first = this_condition;
+									} else {
+										items_conditions.push_back({this_condition, {}});
+									}
+									
+									found_dash = true;
+									break;
+								}
+							}
+						}
+
 						default: {
 							InkObject* compiled_object = compile_token(all_tokens, all_tokens[token_index], story_knots);
 							if (compiled_object->has_any_contents(true)) {
 								if (is_conditional) {
-									std::vector<InkObject*>& target_array = in_else ? items_else : items_if;
+									std::vector<InkObject*>& target_array = in_else ? items_else : items_conditions.back().second;
 									target_array.push_back(compiled_object);
 								} else if (!items.empty()) {
 									items.back().push_back(compiled_object);
@@ -618,10 +675,11 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 			--brace_level;
 
+			bool delete_items = true;
 			if (in_choice_line && !past_choice_initial_braces) {
 				std::string condition;
-				condition.reserve(items_if.size() * 10);
-				for (InkObject* object : items_if) {
+				condition.reserve(items_conditions.back().second.size() * 10);
+				for (InkObject* object : items_conditions.back().second) {
 					condition += object->to_string();
 					delete object;
 				}
@@ -629,24 +687,24 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				choice_stack.back().conditions.push_back(condition);
 			} else {
 				if (is_conditional) {
-					std::string condition;
-					condition.reserve(50);
-					for (InkObject* object : items[0]) {
-						condition += object->to_string();
-						delete object;
+					if (!is_switch) {
+						result_object = new InkObjectConditional(items_conditions, items_else);
+					} else {
+						result_object = new InkObjectConditional(switch_expression, items_conditions, items_else);
 					}
-
-					result_object = new InkObjectConditional(strip_string_edges(condition, true, true, true), items_if, items_else);
 				} else if (found_pipe || sequence_type != InkSequenceType::Sequence) {
 					result_object = new InkObjectSequence(sequence_type, items);
+					delete_items = false;
 				} else if (!text_items.empty()) {
 					std::string all_text = join_string_vector(text_items, std::string());
 					result_object = new InkObjectInterpolation(all_text);
+				}
+			}
 
-					for (auto& vec : items) {
-						for (InkObject* object : vec) {
-							delete object;
-						}
+			if (delete_items) {
+				for (auto& vec : items) {
+					for (InkObject* object : vec) {
+						delete object;
 					}
 				}
 			}
@@ -715,7 +773,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				std::string expression;
 				expression.reserve(50);
 				while (all_tokens[token_index].token != InkToken::NewLine) {
-					expression += all_tokens[token_index].text_contents;
+					expression += all_tokens[token_index].get_text_contents();
 					++token_index;
 				}
 
@@ -761,7 +819,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					std::string expression;
 					expression.reserve(50);
 					while (all_tokens[token_index].token != InkToken::NewLine) {
-						expression += all_tokens[token_index].text_contents;
+						expression += all_tokens[token_index].get_text_contents();
 						++token_index;
 					}
 
