@@ -353,6 +353,15 @@ void InkStory::choose_choice_index(std::size_t index) {
 	}
 }
 
+const cparse::packToken InkStory::get_variable(const std::string& name) const {
+	if (const cparse::packToken* variable = story_state.variables.find(name)) {
+		return *variable;
+	}
+	
+	// TODO: maybe make this crash instead
+	return cparse::packToken::None();
+}
+
 void InkStory::set_variable(const std::string& name, const cparse::packToken& value) {
 	story_state.variables[name] = value;
 }

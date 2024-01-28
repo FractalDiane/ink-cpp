@@ -101,7 +101,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 				std::size_t whitespace_skipped = 0;
 				while (true) {
 					char inner_chr = script_text[index];
-					if (inner_chr > 32) {
+					if (inner_chr > 32 || inner_chr == '\n') {
 						if (inner_chr == chr) {
 							++this_token.count;
 						} else {
@@ -130,7 +130,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 					++index;
 					while (true) {
 						char inner_chr = script_text[index];
-						if (inner_chr > 32) {
+						if (inner_chr > 32 || inner_chr == '\n') {
 							if (inner_chr == chr) {
 								++this_token.count;
 							} else {
@@ -359,7 +359,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					break;
 				}
 
-				tag_contents += all_tokens[token_index].text_contents;
+				tag_contents += all_tokens[token_index].get_text_contents();
 				++token_index;
 			}
 
@@ -580,8 +580,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 			++token_index;
 			while (all_tokens[token_index].token != InkToken::RightBrace) {
-				if (!all_tokens[token_index].text_contents.empty()) {
-					text_items.push_back(all_tokens[token_index].text_contents);
+				if (!all_tokens[token_index].get_text_contents().empty()) {
+					text_items.push_back(all_tokens[token_index].get_text_contents());
 				}
 				
 				if (in_choice_line && !past_choice_initial_braces) {
@@ -636,7 +636,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 									this_condition.reserve(50);
 									++token_index;
 									while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::Colon) {
-										this_condition += all_tokens[token_index].text_contents;
+										this_condition += all_tokens[token_index].get_text_contents();
 										++token_index;
 									}
 
@@ -773,7 +773,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				std::string expression;
 				expression.reserve(50);
 				while (all_tokens[token_index].token != InkToken::NewLine) {
-					expression += all_tokens[token_index].text_contents;
+					expression += all_tokens[token_index].get_text_contents();
 					++token_index;
 				}
 
@@ -819,7 +819,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					std::string expression;
 					expression.reserve(50);
 					while (all_tokens[token_index].token != InkToken::NewLine) {
-						expression += all_tokens[token_index].text_contents;
+						expression += all_tokens[token_index].get_text_contents();
 						++token_index;
 					}
 

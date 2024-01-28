@@ -31,7 +31,7 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 			}
 		}
 	} else {
-		// FIXME: this might be redundant and strictly worse performance than the above version
+		// TODO: this might be redundant and strictly worse performance than the above version
 		cparse::packToken result = cparse::calculator::calculate(deinkify_expression(switch_expression).c_str(), vars);
 		for (const auto& entry : branches) {
 			cparse::packToken condition_result = cparse::calculator::calculate(deinkify_expression(entry.first).c_str(), vars);

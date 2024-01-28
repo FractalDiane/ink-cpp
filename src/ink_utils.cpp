@@ -88,10 +88,22 @@ std::string deinkify_expression(const std::string& expression) noexcept {
 
 	// HACK: MAKE THIS WAY LESS BAD
 	static const std::unordered_map<std::string, std::string> replacements = {
+		// not
 		{R"(\bnot\b)", "!"},
+		// or
 		{R"(\bor\b)", "||"},
+		// and
 		{R"(\band\b)", "&&"},
+		// -> knot
 		{R"(->\s*([\w.]+))", R"("$1")"},
+		// var++
+		{R"(\b([\w.]+)\b\+\+)", "$1 = $1 + 1"},
+		// ++var
+		{R"(\+\+\b([\w.]+)\b)", "$1 = $1 + 1"},
+		// var--
+		{R"(\b([\w.]+)\b--)", "$1 = $1 - 1"},
+		// --var
+		{R"(--\b([\w.]+)\b)", "$1 = $1 - 1"},
 	};
 
 	for (const auto& entry : replacements) {

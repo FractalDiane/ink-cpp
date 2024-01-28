@@ -3,6 +3,7 @@
 #include "ink_compiler.h"
 #include "runtime/ink_story.h"
 #include "ink_cparse_ext.h"
+#include "ink_utils.h"
 
 #include "builtin-features.inc"
 
@@ -28,6 +29,7 @@ protected:\
 	}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+FIXTURE(NonStoryTests);
 
 FIXTURE(ContentTests);
 FIXTURE(ChoiceTests);
@@ -44,6 +46,21 @@ FIXTURE(TrackingWeaveTests);
 FIXTURE(GlobalVariableTests);
 FIXTURE(LogicTests);
 FIXTURE(ConditionalBlockTests);
+
+#pragma region NonStoryTests
+TEST_F(NonStoryTests, DeinkifyExpression) {
+	EXPECT_EQ(deinkify_expression("true and true"), "true && true");
+	EXPECT_EQ(deinkify_expression("true or false"), "true || false");
+	EXPECT_EQ(deinkify_expression("not true"), "! true");
+
+	EXPECT_EQ(deinkify_expression("-> my_story"), "\"my_story\"");
+
+	EXPECT_EQ(deinkify_expression("var++"), "var = var + 1");
+	EXPECT_EQ(deinkify_expression("++var"), "var = var + 1");
+	EXPECT_EQ(deinkify_expression("var--"), "var = var - 1");
+	EXPECT_EQ(deinkify_expression("--var"), "var = var - 1");
+}
+#pragma endregion
 
 #pragma region ContentTests
 TEST_F(ContentTests, SingleLineText) {
@@ -843,6 +860,32 @@ TEST_F(ConditionalBlockTests, SwitchStatement) {
 		story.set_variable("x", i);
 
 		EXPECT_TEXT(expected_results[i]);
+	}
+}
+
+TEST_F(ConditionalBlockTests, ReadCountCondition) {
+	std::vector<std::tuple<int, bool, bool>> inputs = {
+		{0, false, false},
+		{0, true, false},
+		{0, false, true},	
+	};
+
+	std::vector<std::string> expected_result = {
+		"You had a dream about marmalade. You prefer strawberry jam, but it's not bad.",
+		"You had a dream about snakes. Thousands of them. Oh dear.",
+		"You had a dream about Polish beer. Unfortunately, you don't drink.",
+	};
+
+	std::vector<int> expected_fear = {0, 1, -1};
+
+	for (int i = 0; i < 3; ++i) {
+		STORY("15_conditional_blocks/15f_read_count_condition.ink");
+		story.set_variable("fear", std::get<0>(inputs[i]));
+		story.set_variable("visited_snakes", std::get<1>(inputs[i]));
+		story.set_variable("visited_poland", std::get<2>(inputs[i]));
+
+		EXPECT_TEXT(expected_result[i]);
+		EXPECT_EQ(story.get_variable("fear"), expected_fear[i]);
 	}
 }
 #pragma endregion
