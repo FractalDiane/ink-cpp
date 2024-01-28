@@ -327,6 +327,8 @@ std::string InkStory::continue_story() {
 					ObjectId next_type = next->get_id();
 					eval_result.should_continue |= next_type != ObjectId::Text && next_type != ObjectId::LineBreak;
 				}
+			} else {
+				++story_state.current_knot().index;
 			}
 		}
 	}

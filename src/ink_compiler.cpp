@@ -566,8 +566,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			std::vector<std::vector<InkObject*>> items = {{}};
 			//std::unordered_map<std::string, std::vector<InkObject*>> items_conditions = {{"", {}}};
 			//std::pair<std::string, std::vector<InkObject*>> current_condition;
-			std::vector<std::pair<std::string, std::vector<InkObject*>>> items_conditions = {{std::string(), {}}};
-			std::vector<InkObject*> items_else;
+			std::vector<std::pair<std::string, Knot>> items_conditions = {{std::string(), Knot()}};
+			Knot items_else;
 			std::vector<std::string> text_items;
 			std::string switch_expression;
 
@@ -585,7 +585,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				}
 				
 				if (in_choice_line && !past_choice_initial_braces) {
-					items_conditions.back().second.push_back(compile_token(all_tokens, all_tokens[token_index], story_knots));
+					items_conditions.back().second.objects.push_back(compile_token(all_tokens, all_tokens[token_index], story_knots));
 				} else {
 					switch (all_tokens[token_index].token) {
 						case InkToken::Colon: {
@@ -624,12 +624,12 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 									if (found_colon && !found_dash) {
 										is_switch = true;
 										switch_expression = items_conditions.back().first;
-										for (InkObject* object : items_conditions.back().second) {
+										for (InkObject* object : items_conditions.back().second.objects) {
 											delete object;
 										}
 
 										items_conditions.back().first.clear();
-										items_conditions.back().second.clear();
+										items_conditions.back().second.objects.clear();
 									}
 									
 									std::string this_condition;
@@ -656,8 +656,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 							InkObject* compiled_object = compile_token(all_tokens, all_tokens[token_index], story_knots);
 							if (compiled_object->has_any_contents(true)) {
 								if (is_conditional) {
-									std::vector<InkObject*>& target_array = in_else ? items_else : items_conditions.back().second;
-									target_array.push_back(compiled_object);
+									Knot& target_array = in_else ? items_else : items_conditions.back().second;
+									target_array.objects.push_back(compiled_object);
 								} else if (!items.empty()) {
 									items.back().push_back(compiled_object);
 								} else {
@@ -678,8 +678,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			bool delete_items = true;
 			if (in_choice_line && !past_choice_initial_braces) {
 				std::string condition;
-				condition.reserve(items_conditions.back().second.size() * 10);
-				for (InkObject* object : items_conditions.back().second) {
+				condition.reserve(items_conditions.back().second.objects.size() * 10);
+				for (InkObject* object : items_conditions.back().second.objects) {
 					condition += object->to_string();
 					delete object;
 				}

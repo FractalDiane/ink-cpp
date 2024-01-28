@@ -21,10 +21,11 @@ int main() {
 	//std::cout << INKCPP_WORKING_DIR << std::endl;
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("15_conditional_blocks/15f_read_count_condition.ink"));
-	story.set_variable("visited_snakes", false);
-	story.set_variable("visited_poland", true);
-	story.set_variable("fear", 0);
+	InkStory story = compiler.compile_file(TEST_PATH("15_conditional_blocks/15g_conditional_with_logic.ink"));
+	//InkStory story = compiler.compile_file(TEST_PATH("8_variable_text/8k_conditional_text.ink"));
+	story.set_variable("met_blofeld", true);
+	story.set_variable("learned_his_name", true);
+	story.set_variable("know_about_wager", true);
 	//story.set_variable("x", 7);
 	//story.set_variable("y", 0);
 

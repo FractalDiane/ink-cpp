@@ -888,6 +888,16 @@ TEST_F(ConditionalBlockTests, ReadCountCondition) {
 		EXPECT_EQ(story.get_variable("fear"), expected_fear[i]);
 	}
 }
+
+TEST_F(ConditionalBlockTests, ConditionalWithLogic) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("15_conditional_blocks/15g_conditional_with_logic.ink");
+		story.set_variable("know_about_wager", i == 1);
+
+		EXPECT_TEXT(std::format("I stared at Monsieur Fogg. {}", i == 1 ? "\"But surely you are not serious?\" I demanded." : "\"But there must be a reason for this trip,\" I observed."));
+		EXPECT_TEXT("He said nothing in reply, merely considering his newspaper with as much thoroughness as entomologist considering his latest pinned addition.");
+	}
+}
 #pragma endregion
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
