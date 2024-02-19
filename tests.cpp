@@ -918,6 +918,48 @@ TEST_F(ConditionalBlockTests, ConditionalWithOptions) {
 		}
 	}
 }
+
+TEST_F(ConditionalBlockTests, MultilineAlternatives) {
+	STORY("15_conditional_blocks/15i_multiline_alternatives.ink");
+	EXPECT_TEXT("I entered the casino.");
+	std::string next = story.continue_story();
+	EXPECT_TRUE(next.starts_with("At the table, I drew a card."));
+	EXPECT_TEXT("I held my breath.", "Would my luck hold?");
+
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I entered the casino again.");
+	std::string next2 = story.continue_story();
+	EXPECT_TRUE(next2.starts_with("At the table, I drew a card."));
+	EXPECT_TEXT("I waited impatiently.", "Could I win the hand?");
+
+	story.choose_choice_index(0);
+	EXPECT_TEXT("Once more, I went inside.");
+	std::string next3 = story.continue_story();
+	EXPECT_TRUE(next3.starts_with("At the table, I drew a card."));
+	EXPECT_TEXT("I paused.", "");
+}
+
+TEST_F(ConditionalBlockTests, ModifiedShuffles) {
+	STORY("15_conditional_blocks/15j_modified_shuffles.ink");
+
+	std::string one_1 = story.continue_story();
+	EXPECT_TRUE(one_1 == "The sun was hot." || one_1 == "It was a hot day.");
+	std::string two_1 = story.continue_story();
+	EXPECT_TRUE(two_1 == "A silver BMW roars past." || two_1 == "A bright yellow Mustang takes the turn.");
+
+	story.choose_choice_index(0);
+	std::string one_2 = story.continue_story();
+	EXPECT_TRUE((one_2 == "The sun was hot." || one_2 == "It was a hot day.") && one_2 != one_1);
+	std::string two_2 = story.continue_story();
+	EXPECT_TRUE((two_2 == "A silver BMW roars past." || two_2 == "A bright yellow Mustang takes the turn.") && two_2 != two_1);
+
+	story.choose_choice_index(0);
+	EXPECT_TEXT("There are like, cars, here.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("There are like, cars, here.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("There are like, cars, here.");
+}
 #pragma endregion
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

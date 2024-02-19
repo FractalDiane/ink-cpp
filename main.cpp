@@ -34,7 +34,7 @@ int main() {
 	//std::cout << INKCPP_WORKING_DIR << std::endl;
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("15_conditional_blocks/15h_conditional_with_options.ink"));
+	InkStory story = compiler.compile_file(TEST_PATH("15_conditional_blocks/15j_modified_shuffles.ink"));
 	//InkStory story = compiler.compile_file(TEST_PATH("8_variable_text/8k_conditional_text.ink"));
 	//story.set_variable("met_blofeld", true);
 	//story.set_variable("learned_his_name", true);
@@ -42,13 +42,11 @@ int main() {
 	//story.set_variable("x", 7);
 	//story.set_variable("y", 0);
 
-	story.set_variable("door_open", false);
-
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	print_vector(story.get_current_choices());
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
 	//std::cout << story.continue_story() << std::endl;
 	//std::cout << story.continue_story() << std::endl;
 	//std::cout << story.continue_story() << std::endl;

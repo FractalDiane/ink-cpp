@@ -321,14 +321,6 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 		++token_index;
 	}
 
-	/*for (Knot& knot : result_knots) {
-		std::cout << "=== " << knot.name << std::endl;
-		for (InkObject* object : knot.objects) {
-			std::cout << object->to_string() << std::endl;
-			delete object;
-		}
-	}*/
-
 	return new InkStoryData(result_knots);
 }
 
@@ -566,9 +558,51 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				default: break;
 			}
 
+			bool is_explicit_alternative = false;
+
+			if (next_token_is_sequence(all_tokens, token_index, {InkToken::Text, InkToken::Colon})) {
+				std::string text = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
+				if (text == "stopping") {
+					token_index += 2;
+					is_explicit_alternative = true;
+				} else if (text == "shuffle") {
+					sequence_type = InkSequenceType::Shuffle;
+					token_index += 2;
+					is_explicit_alternative = true;
+				} else if (text == "cycle") {
+					sequence_type = InkSequenceType::Cycle;
+					token_index += 2;
+					is_explicit_alternative = true;
+				} else if (text == "once") {
+					sequence_type = InkSequenceType::OnceOnly;
+					token_index += 2;
+					is_explicit_alternative = true;
+				} else if (text == "shuffle once") {
+					sequence_type = InkSequenceType::ShuffleOnce;
+					token_index += 2;
+					is_explicit_alternative = true;
+				} else if (text == "shuffle stopping") {
+					sequence_type = InkSequenceType::ShuffleStop;
+					token_index += 2;
+					is_explicit_alternative = true;
+				}
+			}/* else if (next_token_is_sequence(all_tokens, token_index, {InkToken::Text, InkToken::Text, InkToken::Colon})) {
+				std::string text1 = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
+				if (text1 == "shuffle") {
+					std::string text2 = strip_string_edges(all_tokens[token_index + 2].text_contents, true, true, true);
+					if (text2 == "once") {
+						sequence_type = InkSequenceType::ShuffleOnce;
+						token_index += 3;
+						is_explicit_alternative = true;
+					} else if (text2 == "stopping") {
+						sequence_type = InkSequenceType::ShuffleStop;
+						token_index += 3;
+						is_explicit_alternative = true;
+					}
+				}
+			}*/
+
 			std::vector<std::vector<InkObject*>> items = {{}};
-			//std::unordered_map<std::string, std::vector<InkObject*>> items_conditions = {{"", {}}};
-			//std::pair<std::string, std::vector<InkObject*>> current_condition;
 			std::vector<std::pair<std::string, Knot>> items_conditions = {{std::string(), Knot()}};
 			Knot items_else;
 			std::vector<std::string> text_items;
@@ -616,41 +650,49 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 						case InkToken::Dash: {
 							if (at_line_start) {
-								is_conditional = true;
-								
-								if (InkLexer::Token next = next_token(all_tokens, token_index); next.token == InkToken::Text && next.text_contents == "else") {
-									in_else = true;
-									token_index += 2;
+								if (is_explicit_alternative) {
+									++token_index;
+									if (found_dash) {
+										items.push_back({});
+									}
+
 									found_dash = true;
-									break;
 								} else {
-									if (found_colon && !found_dash) {
-										is_switch = true;
-										switch_expression = items_conditions.back().first;
-										for (InkObject* object : items_conditions.back().second.objects) {
-											delete object;
+									if (InkLexer::Token next = next_token(all_tokens, token_index); next.token == InkToken::Text && next.text_contents == "else") {
+										in_else = true;
+										token_index += 2;
+										found_dash = true;
+										break;
+									} else {
+										is_conditional = true;
+										if (found_colon && !found_dash) {
+											is_switch = true;
+											switch_expression = items_conditions.back().first;
+											for (InkObject* object : items_conditions.back().second.objects) {
+												delete object;
+											}
+
+											items_conditions.back().first.clear();
+											items_conditions.back().second.objects.clear();
+										}
+										
+										std::string this_condition;
+										this_condition.reserve(50);
+										++token_index;
+										while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::Colon) {
+											this_condition += all_tokens[token_index].get_text_contents();
+											++token_index;
 										}
 
-										items_conditions.back().first.clear();
-										items_conditions.back().second.objects.clear();
+										if (items_conditions.back().first.empty()) {
+											items_conditions.back().first = this_condition;
+										} else {
+											items_conditions.push_back({this_condition, {}});
+										}
+										
+										found_dash = true;
+										break;
 									}
-									
-									std::string this_condition;
-									this_condition.reserve(50);
-									++token_index;
-									while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::Colon) {
-										this_condition += all_tokens[token_index].get_text_contents();
-										++token_index;
-									}
-
-									if (items_conditions.back().first.empty()) {
-										items_conditions.back().first = this_condition;
-									} else {
-										items_conditions.push_back({this_condition, {}});
-									}
-									
-									found_dash = true;
-									break;
 								}
 							}
 						}
@@ -695,8 +737,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					} else {
 						result_object = new InkObjectConditional(switch_expression, items_conditions, items_else);
 					}
-				} else if (found_pipe || sequence_type != InkSequenceType::Sequence) {
-					result_object = new InkObjectSequence(sequence_type, items);
+				} else if (found_pipe || is_explicit_alternative || sequence_type != InkSequenceType::Sequence) {
+					result_object = new InkObjectSequence(sequence_type, is_explicit_alternative, items);
 					delete_items = false;
 				} else if (!text_items.empty()) {
 					std::string all_text = join_string_vector(text_items, std::string());
