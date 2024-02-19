@@ -31,4 +31,5 @@ public:
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 
 	virtual bool will_choice_take_fallback(InkStoryState& story_state) override;
+	//virtual bool stop_before_this() const override { return true; }
 };
