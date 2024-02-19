@@ -423,6 +423,9 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						if (next_token_is(all_tokens, token_index, InkToken::Equal)) {
 							end_line = true;
 							break;
+						} else if (next_token_is(all_tokens, token_index, InkToken::RightBrace)) {
+							end_line = true;
+							break;
 						} else if (next_token_is(all_tokens, token_index, InkToken::Dash)) {
 							//has_gather = true;
 							end_line = true;
@@ -464,7 +467,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						const InkLexer::Token& in_choice_token = all_tokens[token_index];
 						if (in_choice_token.token == InkToken::NewLine) {
 							InkLexer::Token next = next_token(all_tokens, token_index);
-							if (next.token == InkToken::Equal) {
+							if (next.token == InkToken::Equal || next.token == InkToken::RightBrace) {
 								break;
 							} else if (next.token == InkToken::Dash && next.count <= choice_level) {
 								break;

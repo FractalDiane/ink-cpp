@@ -220,17 +220,7 @@ std::string InkStory::continue_story() {
 
 		story_state.just_diverted_to_non_knot = false;
 
-		// Special case: line break is ignored if a divert after it leads to glue
-		if (story_state.check_for_glue_divert) { // HACK: is there a better way to do this?
-			if (eval_result.target_knot == "END" || eval_result.target_knot == "DONE") {
-				story_state.should_end_story = true;
-			} else if (auto knot = story_data->knots.find(eval_result.target_knot); knot != story_data->knots.end() && !knot->second.objects.empty()) {
-				eval_result.should_continue = knot->second.objects[0]->get_id() == ObjectId::Glue;
-			}
-
-			eval_result.target_knot.clear();
-			story_state.check_for_glue_divert = false;
-		} else if (!eval_result.target_knot.empty()) {
+		if (!eval_result.target_knot.empty()) {
 			GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 			if (!target.found_any) {
 				if (cparse::packToken* target_var = story_state.variables.find(eval_result.target_knot)) {
@@ -268,7 +258,8 @@ std::string InkStory::continue_story() {
 						story_state.just_diverted_to_non_knot = true;
 					} break;
 
-					case WeaveContentType::GatherPoint: {
+					case WeaveContentType::GatherPoint:
+					default: {
 						while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
 							story_state.current_knots_stack.pop_back();
 						}
@@ -283,10 +274,6 @@ std::string InkStory::continue_story() {
 						}
 
 						story_state.just_diverted_to_non_knot = true;
-					} break;
-
-					default: {
-
 					} break;
 				}
 			}

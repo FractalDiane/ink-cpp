@@ -37,7 +37,7 @@ std::string strip_string_edges(const std::string& string, bool left, bool right,
 
 std::string remove_duplicate_spaces(const std::string& string) noexcept {
 	std::string result = string;
-	auto end = std::unique(result.begin(), result.end(), [](char lhs, char rhs) { return lhs == rhs && lhs == ' '; });
+	auto end = std::unique(result.begin(), result.end(), [](char lhs, char rhs) { return lhs <= 32 && rhs <= 32; });
 	result.erase(end, result.end());
 	return result;
 }

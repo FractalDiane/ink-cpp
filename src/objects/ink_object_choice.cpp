@@ -96,8 +96,6 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.in_choice_text = false;
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 
-		//story_state.choice_gather_stack.push_back(has_gather);
-
 		if (!story_state.current_choices.empty()) {
 			story_state.at_choice = true;
 		} else if (fallback_index != SIZE_MAX) {
@@ -113,19 +111,10 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		choice_eval_result.result.reserve(50);
 		for (InkObject* object : selected_choice_struct->text) {
 			object->execute(story_state, choice_eval_result);
-			//if (object->get_id() == ObjectId::LineBreak) {
-			//	choice_eval_result.should_continue = story_state.in_glue;
-			//}
 		}
 
 		eval_result.result = choice_eval_result.result;
 		eval_result.reached_newline = !selected_choice_struct->immediately_continue_to_result && eval_result.has_any_contents(true);
-
-		//eval_result.reached_newline = true;
-		//eval_result.should_continue = story_state.in_glue
-		//							  || strip_string_edges(eval_result.result, true, true, true).empty()
-		//							  || selected_choice_struct->immediately_continue_to_result
-		//							  || (!selected_choice_struct->result.objects.empty() && selected_choice_struct->result.objects[0]->get_id() == ObjectId::Choice);
 
 		story_state.current_knots_stack.push_back({&(selected_choice_struct->result), 0});
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
@@ -134,10 +123,6 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, &selected_choice_struct->label);
 		}
 
-		/*for (auto& entry : story_state.turns_since_knots) {
-			++entry.second;
-		}*/
-		
 		story_state.story_tracking.increment_turns_since();
 
 		story_state.current_choices.clear();

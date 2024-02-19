@@ -891,11 +891,31 @@ TEST_F(ConditionalBlockTests, ReadCountCondition) {
 
 TEST_F(ConditionalBlockTests, ConditionalWithLogic) {
 	for (int i = 0; i < 2; ++i) {
-		STORY("15_conditional_blocks/15g_conditional_with_logic.ink");
+		STORY("15_conditional_blocks/15g_conditional_with_content.ink");
 		story.set_variable("know_about_wager", i == 1);
 
 		EXPECT_TEXT(std::format("I stared at Monsieur Fogg. {}", i == 1 ? "\"But surely you are not serious?\" I demanded." : "\"But there must be a reason for this trip,\" I observed."));
 		EXPECT_TEXT("He said nothing in reply, merely considering his newspaper with as much thoroughness as entomologist considering his latest pinned addition.");
+	}
+}
+
+TEST_F(ConditionalBlockTests, ConditionalWithOptions) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("15_conditional_blocks/15h_conditional_with_options.ink");
+		story.set_variable("door_open", i == 1);
+
+		EXPECT_TEXT("Monsieur Fogg and I stared at each other for several long moments.");
+		EXPECT_EQ(story.get_current_choices(), 
+			(i == 0 ? std::vector<std::string>{"I asked permission to leave", "I stood and went to open the door"}
+			: std::vector<std::string>{"I strode out of the compartment"})
+		);
+
+		story.choose_choice_index(0);
+		if (i == 0) {
+			EXPECT_TEXT("I asked permission to leave and Monsieur Fogg looked surprised. I opened the door and left.");
+		} else {
+			EXPECT_TEXT("I strode out of the compartment and I fancied I heard my master quietly tutting to himself. I went outside.");
+		}
 	}
 }
 #pragma endregion
