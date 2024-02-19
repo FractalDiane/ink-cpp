@@ -21,6 +21,8 @@ public:
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 
+	virtual bool stop_before_this() const override { return true; }
+
 	void append_text(const std::string& text);
 	const std::string& get_text_contents() const { return text_contents; }
 };

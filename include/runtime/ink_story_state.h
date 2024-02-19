@@ -69,5 +69,8 @@ struct InkStoryState {
 struct InkStoryEvalResult {
 	std::string result;
 	bool should_continue = true;
+	bool reached_newline = false;
 	std::string target_knot;
+
+	bool has_any_contents(bool strip);
 };

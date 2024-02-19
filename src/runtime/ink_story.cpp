@@ -199,10 +199,19 @@ std::string InkStory::continue_story() {
 	InkStoryEvalResult eval_result;
 	eval_result.result.reserve(512);
 	eval_result.target_knot.reserve(32);
-	while (eval_result.should_continue && !story_state.should_end_story && (!story_state.at_choice || story_state.selected_choice != SIZE_MAX) && story_state.index_in_knot() < story_state.current_knot_size()) {
+	while (!story_state.should_end_story && (!story_state.at_choice || story_state.selected_choice != SIZE_MAX) && story_state.index_in_knot() < story_state.current_knot_size()) {
 		Knot* knot_before_object = story_state.current_knot().knot;
 		bool changed_knot = false;
 		InkObject* current_object = story_state.current_knot().knot->objects[story_state.index_in_knot()];
+
+		if (eval_result.reached_newline && eval_result.has_any_contents(true) && current_object->stop_before_this()) {
+			if (story_state.in_glue) {
+				story_state.in_glue = false;
+			} else {
+				break;
+			}
+		}
+
 		current_object->execute(story_state, eval_result);
 
 		if (story_state.current_knot().knot != knot_before_object) {
@@ -322,11 +331,13 @@ std::string InkStory::continue_story() {
 			}
 
 			if (found_gather) {
-				eval_result.should_continue = story_state.in_glue;
+				/*eval_result.should_continue = story_state.in_glue;
 				if (InkObject* next = story_state.get_current_object(0)) {
 					ObjectId next_type = next->get_id();
 					eval_result.should_continue |= next_type != ObjectId::Text && next_type != ObjectId::LineBreak;
-				}
+				}*/
+
+				eval_result.reached_newline = true;
 			} else {
 				++story_state.current_knot().index;
 			}

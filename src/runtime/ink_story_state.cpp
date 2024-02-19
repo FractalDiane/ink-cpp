@@ -1,6 +1,7 @@
 #include "runtime/ink_story_state.h"
 
 #include "objects/ink_object.h"
+#include "ink_utils.h"
 
 #include "shunting-yard.h"
 
@@ -63,4 +64,8 @@ cparse::TokenMap InkStoryState::get_variables_with_locals() {
 	}*/
 
 	return result;
+}
+
+bool InkStoryEvalResult::has_any_contents(bool strip) {
+	return strip ? !strip_string_edges(result, true, true, true).empty() : !result.empty();
 }
