@@ -336,6 +336,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				case '=': {
 					if (next_char(expression, index) == '=') {
 						result.push_back(new TokenOperator(TokenOperator::Type::Equal, false));
+						++index;
 					} else {
 						result.push_back(new TokenOperator(TokenOperator::Type::Assign, false));
 					}
@@ -344,6 +345,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				case '<': {
 					if (next_char(expression, index) == '=') {
 						result.push_back(new TokenOperator(TokenOperator::Type::LessEqual, false));
+						++index;
 					} else {
 						result.push_back(new TokenOperator(TokenOperator::Type::Less, false));
 					}
@@ -352,6 +354,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				case '>': {
 					if (next_char(expression, index) == '=') {
 						result.push_back(new TokenOperator(TokenOperator::Type::GreaterEqual, false));
+						++index;
 					} else {
 						result.push_back(new TokenOperator(TokenOperator::Type::Greater, false));
 					}
@@ -374,17 +377,23 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 
 				case '!': {
-					result.push_back(new TokenOperator(TokenOperator::Type::Not, false));
+					if (next_char(expression, index) == '=') {
+						result.push_back(new TokenOperator(TokenOperator::Type::NotEqual, false));
+						++index;
+					} else {
+						result.push_back(new TokenOperator(TokenOperator::Type::Not, false));
+					}
 				} break;
 
 				case '"': {
 					if (!in_quotes) {
 						in_quotes = true;
-					} else {
+					}
+					/*} else {
 						result.push_back(new TokenStringLiteral(current_string));
 						current_string.clear();
 						in_quotes = false;
-					}
+					}*/
 				} break;
 
 				default: {
@@ -394,13 +403,17 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 						if (auto keyword = Keywords.find(current_word); keyword != Keywords.end()) {
 							result.push_back(new TokenKeyword(keyword->second));
 						} else {
-							try {
-								int64_t word_int = std::stoll(current_word);
-								result.push_back(new TokenNumberInt(word_int));
-							} catch (...) {
+							if (current_word.contains(".")) {
 								try {
 									double word_float = std::stod(current_word);
 									result.push_back(new TokenNumberFloat(word_float));
+								} catch (...) {
+									result.push_back(new TokenVariable(current_word));
+								}
+							} else {
+								try {
+									std::int64_t word_int = std::stoll(current_word);
+									result.push_back(new TokenNumberInt(word_int));
 								} catch (...) {
 									result.push_back(new TokenVariable(current_word));
 								}
@@ -412,7 +425,13 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 			}
 		} else {
-			current_string.push_back(this_char);
+			if (this_char != '"') {
+				current_string.push_back(this_char);
+			} else {
+				result.push_back(new TokenStringLiteral(current_string));
+				current_string.clear();
+				in_quotes = false;
+			}
 		}
 
 		++index;
@@ -423,13 +442,17 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 		if (auto keyword = Keywords.find(current_word); keyword != Keywords.end()) {
 			result.push_back(new TokenKeyword(keyword->second));
 		} else {
-			try {
-				int64_t word_int = std::stoll(current_word);
-				result.push_back(new TokenNumberInt(word_int));
-			} catch (...) {
+			if (current_word.contains(".")) {
 				try {
 					double word_float = std::stod(current_word);
 					result.push_back(new TokenNumberFloat(word_float));
+				} catch (...) {
+					result.push_back(new TokenVariable(current_word));
+				}
+			} else {
+				try {
+					std::int64_t word_int = std::stoll(current_word);
+					result.push_back(new TokenNumberInt(word_int));
 				} catch (...) {
 					result.push_back(new TokenVariable(current_word));
 				}
@@ -520,7 +543,7 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
 		stack.push(result);\
 	} break;
 
-Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& expression_tokens, std::unordered_map<std::string, Token*>& variables) {
+Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& expression_tokens, TokenMap& variables) {
 	std::stack<Token*> stack;
 	std::unordered_set<Token*> tokens_to_dealloc;
 
@@ -572,9 +595,34 @@ Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& ex
 		++index;
 	}
 
+	Token* result = nullptr;
+	if (!stack.empty()) {
+		result = stack.top();
+		tokens_to_dealloc.erase(result);
+	}
+
 	for (Token* token : tokens_to_dealloc) {
 		delete token;
 	}
 
-	return !stack.empty() ? stack.top() : nullptr;
+	return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+PackedToken ExpressionParser::execute_expression(const std::string& expression) {
+	std::vector<Token*> tokenized = tokenize_expression(expression);
+	std::vector<Token*> shunted = shunt(tokenized);
+
+	TokenMap no_vars;
+	Token* result = execute_expression_tokens(shunted, no_vars);
+	return PackedToken(result);
+}
+
+PackedToken ExpressionParser::execute_expression(const std::string& expression, TokenMap& variables) {
+	std::vector<Token*> tokenized = tokenize_expression(expression);
+	std::vector<Token*> shunted = shunt(tokenized);
+
+	Token* result = execute_expression_tokens(shunted, variables);
+	return PackedToken(result);
 }

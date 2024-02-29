@@ -10,6 +10,7 @@
 
 #include <utility>
 #include <any>
+#include <cstdlib>
 
 #define FIXTURE(name) class name : public testing::Test {\
 protected:\
@@ -108,6 +109,35 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 	for (ExpressionParser::Token* token : result) {
 		delete token;
 	}
+}
+
+TEST_F(ExpressionParserTests, ExpressionEvaluation) {
+	using ExpressionParser::PackedToken;
+	using ExpressionParser::execute_expression;
+
+	PackedToken t1 = execute_expression("5 + 7");
+	EXPECT_EQ(t1.as_int(), 12);
+
+	PackedToken t2 = execute_expression("5 + 7 * 52 - 8");
+	EXPECT_EQ(t2.as_int(), 361);
+
+	PackedToken t3 = execute_expression("5.0 * 4.2");
+	EXPECT_EQ(t3.as_float(), 21.0);
+
+	PackedToken t4 = execute_expression("5.0 - 4.2 - 3.7 / 2.5");
+	EXPECT_TRUE(std::abs(t4.as_float() - -0.68) < 0.0001);
+
+	PackedToken t5 = execute_expression("5 == 2");
+	EXPECT_EQ(t5.as_bool(), false);
+
+	PackedToken t6 = execute_expression("3 != 6");
+	EXPECT_EQ(t6.as_bool(), true);
+
+	PackedToken t7 = execute_expression("7 < 12");
+	EXPECT_EQ(t7.as_bool(), true);
+
+	PackedToken t8 = execute_expression(R"("hello" + " " + "there")");
+	EXPECT_EQ(t8.as_string(), "hello there");
 }
 #pragma endregion
 
