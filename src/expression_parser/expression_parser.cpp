@@ -298,8 +298,6 @@ Token* TokenStringLiteral::operator_substring(const Token* other) const {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-// ~ temp x = 5 + 7
-// Keyword(Temp) Variable("x") Operator(=) Number(5) Operator(+) Number(7)
 std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& expression) {
 	std::vector<Token*> result;
 	result.reserve(128);
@@ -629,6 +627,13 @@ PackedToken ExpressionParser::execute_expression(const std::string& expression) 
 
 	TokenMap no_vars;
 	Token* result = execute_expression_tokens(shunted, no_vars);
+
+	for (Token* token : tokenized) {
+		if (token != result) {
+			delete token;
+		}
+	}
+
 	return PackedToken(result);
 }
 
@@ -637,5 +642,12 @@ PackedToken ExpressionParser::execute_expression(const std::string& expression, 
 	std::vector<Token*> shunted = shunt(tokenized);
 
 	Token* result = execute_expression_tokens(shunted, variables);
+
+	for (Token* token : tokenized) {
+		if (token != result) {
+			delete token;
+		}
+	}
+
 	return PackedToken(result);
 }

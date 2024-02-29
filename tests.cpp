@@ -109,6 +109,8 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 	for (ExpressionParser::Token* token : result) {
 		delete token;
 	}
+
+	delete result_token;
 }
 
 TEST_F(ExpressionParserTests, ExpressionEvaluation) {
