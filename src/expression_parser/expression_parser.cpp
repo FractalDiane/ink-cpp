@@ -519,6 +519,10 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
 			case TokenType::Function: {
 				stack.push(this_token);
 			} break;
+
+			default: {
+
+			} break;
 		}
 
 		++index;
@@ -589,6 +593,10 @@ Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& ex
 						tokens_to_dealloc.erase(value);
 					} break;
 				}
+			} break;
+
+			default: {
+
 			} break;
 		}
 

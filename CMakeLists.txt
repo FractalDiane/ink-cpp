@@ -93,7 +93,7 @@ if(MSVC)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	set(INK_COMPILE_OPTIONS -Wall -Wpedantic -Werror -Wno-unused-lambda-capture -Wno-unused-parameter -Wno-error=unused-private-field -Wno-reorder)
 else()
-	set(INK_COMPILE_OPTIONS -Wall -Wpedantic -Werror -Wno-unused-parameter -Wno-reorder)
+	set(INK_COMPILE_OPTIONS -Wall -Wpedantic -Werror -Wno-unused-parameter -Wno-reorder -lm)
 endif()
 
 target_compile_options(ink_backend PUBLIC ${INK_COMPILE_OPTIONS})
