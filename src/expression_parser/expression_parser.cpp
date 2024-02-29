@@ -592,6 +592,10 @@ Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& ex
 						variables[static_cast<TokenVariable*>(var)->data] = value;
 						tokens_to_dealloc.erase(value);
 					} break;
+
+					default: {
+
+					} break;
 				}
 			} break;
 
