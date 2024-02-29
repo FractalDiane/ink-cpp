@@ -269,13 +269,36 @@ struct TokenVariable : public Token {
 	virtual TokenType get_type() const override { return TokenType::Variable; }
 };
 
-class PackedToken {
-private:
+struct PackedToken {
 	Token* token;
 
-public:
-	PackedToken(Token* token) : token{token} {}
+	PackedToken() : token{nullptr} {}
 	~PackedToken() { delete token; }
+	PackedToken(Token* token) : token{token} {}
+	PackedToken(PackedToken& from) = delete;
+	PackedToken(PackedToken&& from) : token{from.token} {
+		from.token = nullptr;
+	}
+
+	PackedToken& operator=(PackedToken& other) = delete;
+
+	PackedToken& operator=(PackedToken&& other) {
+		if (this != &other) {
+			token = other.token;
+			other.token = nullptr;
+		}
+
+		return *this;
+	}
+
+	/*PackedToken& operator=(PackedToken& other) {
+		if (this != &other) {
+			token = other.token;
+			other.token = nullptr;
+		}
+
+		return *this;
+	}*/
 
 	bool as_bool() const {
 		if (token->get_type() == TokenType::Boolean) {
@@ -310,7 +333,7 @@ public:
 	}
 };
 
-typedef std::unordered_map<std::string, Token*> TokenMap;
+typedef std::unordered_map<std::string, PackedToken> TokenMap;
 
 std::vector<Token*> tokenize_expression(const std::string& expression);
 

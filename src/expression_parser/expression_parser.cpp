@@ -588,7 +588,16 @@ Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& ex
 							throw;
 						}
 
-						variables[static_cast<TokenVariable*>(var)->data] = value;
+						//PackedToken packed{value};
+						//variables[static_cast<TokenVariable*>(var)->data] = packed;
+
+						const std::string& var_name = static_cast<TokenVariable*>(var)->data;
+						if (auto existing_var = variables.find(var_name); existing_var != variables.end()) {
+							existing_var->second = PackedToken(value);
+						} else {
+							variables.insert(std::make_pair(var_name, std::move(value)));
+						}
+						//variables.insert_or_assign(var_name, PackedToken(value));
 						tokens_to_dealloc.erase(value);
 					} break;
 

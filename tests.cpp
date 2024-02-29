@@ -102,15 +102,14 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 	std::vector<ExpressionParser::Token*> result_postfix = ExpressionParser::shunt(result);
 	EXPECT_EQ(result.size(), result_postfix.size());
 
-	std::unordered_map<std::string, Token*> variables;
+	std::unordered_map<std::string, ExpressionParser::PackedToken> variables;
 	Token* result_token = ExpressionParser::execute_expression_tokens(result_postfix, variables);
 	EXPECT_FALSE(result_token);
+	EXPECT_EQ(variables["test"].as_int(), 12);
 
 	for (ExpressionParser::Token* token : result) {
 		delete token;
 	}
-
-	delete result_token;
 }
 
 TEST_F(ExpressionParserTests, ExpressionEvaluation) {
