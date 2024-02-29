@@ -7,48 +7,6 @@
 
 namespace ExpressionParser {
 
-/*enum class TokenType {
-	Operator_Plus,
-	Operator_Minus,
-	Operator_Multiply,
-	Operator_Divide,
-	Operator_Modulus,
-
-	Operator_Prefix_Negative,
-	Operator_Prefix_Increment,
-	Operator_Prefix_Decrement,
-
-	Operator_Postfix_Increment,
-	Operator_Postfix_Decrement,
-
-	Operator_Assign,
-
-	Operator_Equal,
-	Operator_NotEqual,
-	Operator_Less,
-	Operator_Greater,
-	Operator_LessEqual,
-	Operator_GreaterEqual,
-
-	Operator_And,
-	Operator_Or,
-	Operator_Xor,
-	Operator_Not,
-
-	LeftParen,
-	RightParen,
-	Comma,
-
-	KeywordTemp,
-
-	VariableName,
-	Boolean,
-	Integer,
-	Float,
-	String,
-	Function,
-};*/
-
 enum class TokenType {
 	Keyword,
 	Boolean,
@@ -77,6 +35,7 @@ struct Token {
 	virtual Token* operator_dec_pre();
 	virtual Token* operator_dec_post();
 	virtual Token* operator_not() const;
+	virtual Token* operator_bitnot() const;
 	virtual Token* operator_negative() const;
 
 	virtual Token* operator_equal(const Token* other) const;
@@ -86,6 +45,15 @@ struct Token {
 	virtual Token* operator_lessequal(const Token* other) const;
 	virtual Token* operator_greaterequal(const Token* other) const;
 
+	virtual Token* operator_and(const Token* other) const;
+	virtual Token* operator_or(const Token* other) const;
+	
+	virtual Token* operator_bitand(const Token* other) const;
+	virtual Token* operator_bitor(const Token* other) const;
+	virtual Token* operator_bitxor(const Token* other) const;
+	virtual Token* operator_shiftleft(const Token* other) const;
+	virtual Token* operator_shiftright(const Token* other) const;
+	
 	virtual Token* operator_substring(const Token* other) const;
 };
 
@@ -117,6 +85,12 @@ struct TokenBoolean : public Token {
 	virtual Token* operator_not() const override;
 	virtual Token* operator_equal(const Token* other) const override;
 	virtual Token* operator_notequal(const Token* other) const override;
+
+	virtual Token* operator_and(const Token* other) const override;
+	virtual Token* operator_or(const Token* other) const override;
+	virtual Token* operator_bitand(const Token* other) const override;
+	virtual Token* operator_bitor(const Token* other) const override;
+	virtual Token* operator_bitxor(const Token* other) const override;
 };
 
 struct TokenNumberInt : public Token {
@@ -229,16 +203,23 @@ struct TokenOperator : public Token {
 		BitAnd,
 		BitOr,
 		BitXor,
+		BitNot,
 		ShiftLeft,
 		ShiftRight,
 	};
 
+	enum class UnaryType {
+		NotUnary,
+		Prefix,
+		Postfix,
+	};
+
 	struct Data {
 		Type type;
-		bool unary;
+		UnaryType unary_type;
 	} data;
 
-	TokenOperator(Type type, bool unary) : data{type, unary} {}
+	TokenOperator(Type type, UnaryType unary_type) : data{type, unary_type} {}
 
 	virtual TokenType get_type() const override { return TokenType::Operator; }
 };
@@ -273,32 +254,38 @@ struct PackedToken {
 	Token* token;
 
 	PackedToken() : token{nullptr} {}
-	~PackedToken() { delete token; }
 	PackedToken(Token* token) : token{token} {}
+	PackedToken(bool from) : token{new TokenBoolean(from)} {}
+	PackedToken(std::int64_t from) : token{new TokenNumberInt(from)} {}
+	PackedToken(double from) : token{new TokenNumberFloat(from)} {}
+	PackedToken(const std::string& from) : token{new TokenStringLiteral(from)} {}
+	PackedToken(std::string&& from) : token{new TokenStringLiteral(from)} {}
+
+	~PackedToken() { delete token; }
+	
 	PackedToken(PackedToken& from) = delete;
-	PackedToken(PackedToken&& from) : token{from.token} {
+	PackedToken(PackedToken&& from) {
+		if (token) {
+			delete token;
+		}
+
+		token = from.token;
 		from.token = nullptr;
 	}
 
 	PackedToken& operator=(PackedToken& other) = delete;
-
 	PackedToken& operator=(PackedToken&& other) {
 		if (this != &other) {
+			if (token) {
+				delete token;
+			}
+			
 			token = other.token;
 			other.token = nullptr;
 		}
 
 		return *this;
 	}
-
-	/*PackedToken& operator=(PackedToken& other) {
-		if (this != &other) {
-			token = other.token;
-			other.token = nullptr;
-		}
-
-		return *this;
-	}*/
 
 	bool as_bool() const {
 		if (token->get_type() == TokenType::Boolean) {

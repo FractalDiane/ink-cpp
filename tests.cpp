@@ -139,6 +139,18 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 
 	PackedToken t8 = execute_expression(R"("hello" + " " + "there")");
 	EXPECT_EQ(t8.as_string(), "hello there");
+
+	PackedToken t9 = execute_expression("++5");
+	EXPECT_EQ(t9.as_int(), 6);
+
+	PackedToken t10 = execute_expression("5++");
+	EXPECT_EQ(t10.as_int(), 5);
+
+	PackedToken t11 = execute_expression(R"("hello" ? "llo")");
+	EXPECT_EQ(t11.as_bool(), true);
+
+	PackedToken t12 = execute_expression(R"("hello" ? "blah")");
+	EXPECT_EQ(t12.as_bool(), false);
 }
 #pragma endregion
 

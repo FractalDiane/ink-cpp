@@ -81,6 +81,7 @@ Token* Token::operator_inc_post() { throw; }
 Token* Token::operator_dec_pre() { throw; }
 Token* Token::operator_dec_post() { throw; }
 Token* Token::operator_not() const { throw; }
+Token* Token::operator_bitnot() const { throw; }
 Token* Token::operator_negative() const { throw; }
 
 Token* Token::operator_equal(const Token* other) const { throw; }
@@ -89,6 +90,15 @@ Token* Token::operator_less(const Token* other) const { throw; }
 Token* Token::operator_greater(const Token* other) const { throw; }
 Token* Token::operator_lessequal(const Token* other) const { throw; }
 Token* Token::operator_greaterequal(const Token* other) const { throw; }
+
+Token* Token::operator_and(const Token* other) const { throw; }
+Token* Token::operator_or(const Token* other) const { throw; }
+
+Token* Token::operator_bitand(const Token* other) const { throw; }
+Token* Token::operator_bitor(const Token* other) const { throw; }
+Token* Token::operator_bitxor(const Token* other) const { throw; }
+Token* Token::operator_shiftleft(const Token* other) const { throw; }
+Token* Token::operator_shiftright(const Token* other) const { throw; }
 
 Token* Token::operator_substring(const Token* other) const { throw; }
 
@@ -200,6 +210,46 @@ Token* TokenBoolean::operator_notequal(const Token* other) const {
 	}
 }
 
+Token* TokenBoolean::operator_and(const Token* other) const {
+	if (other->get_type() == TokenType::Boolean) {
+		return new TokenBoolean(data && static_cast<const TokenBoolean*>(other)->data);
+	} else {
+		throw;
+	}
+}
+
+Token* TokenBoolean::operator_or(const Token* other) const {
+	if (other->get_type() == TokenType::Boolean) {
+		return new TokenBoolean(data || static_cast<const TokenBoolean*>(other)->data);
+	} else {
+		throw;
+	}
+}
+
+Token* TokenBoolean::operator_bitand(const Token* other) const {
+	if (other->get_type() == TokenType::Boolean) {
+		return new TokenBoolean(data & static_cast<const TokenBoolean*>(other)->data);
+	} else {
+		throw;
+	}
+}
+
+Token* TokenBoolean::operator_bitor(const Token* other) const {
+	if (other->get_type() == TokenType::Boolean) {
+		return new TokenBoolean(data | static_cast<const TokenBoolean*>(other)->data);
+	} else {
+		throw;
+	}
+}
+
+Token* TokenBoolean::operator_bitxor(const Token* other) const {
+	if (other->get_type() == TokenType::Boolean) {
+		return new TokenBoolean(data ^ static_cast<const TokenBoolean*>(other)->data);
+	} else {
+		throw;
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 OP_MATH_INT(TokenNumberInt, plus, +);
@@ -298,6 +348,32 @@ Token* TokenStringLiteral::operator_substring(const Token* other) const {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+void try_add_word(std::vector<Token*>& result, std::string& word) {
+	if (!word.empty()) {
+		if (auto keyword = Keywords.find(word); keyword != Keywords.end()) {
+			result.push_back(new TokenKeyword(keyword->second));
+		} else {
+			if (word.contains(".")) {
+				try {
+					double word_float = std::stod(word);
+					result.push_back(new TokenNumberFloat(word_float));
+				} catch (...) {
+					result.push_back(new TokenVariable(word));
+				}
+			} else {
+				try {
+					std::int64_t word_int = std::stoll(word);
+					result.push_back(new TokenNumberInt(word_int));
+				} catch (...) {
+					result.push_back(new TokenVariable(word));
+				}
+			}
+		}
+
+		word.clear();
+	}
+}
+
 std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& expression) {
 	std::vector<Token*> result;
 	result.reserve(128);
@@ -311,78 +387,127 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 
 	std::size_t index = 0;
 	while (index < expression.length()) {
+		using UnaryType = TokenOperator::UnaryType;
 		char this_char = expression[index];
 		if (!in_quotes) {
 			switch (this_char) {
 				case '+': {
 					if (next_char(expression, index) == '+') {
-						result.push_back(new TokenOperator(TokenOperator::Type::Increment, true));
+						if (next_char(expression, index + 1) <= 32) {
+							try_add_word(result, current_word);
+							result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Postfix));
+						} else {
+							result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Prefix));
+						}
+						
 						++index;
 					} else {
-						result.push_back(new TokenOperator(TokenOperator::Type::Plus, false));
+						result.push_back(new TokenOperator(TokenOperator::Type::Plus, UnaryType::NotUnary));
 					}
 				} break;
 
 				case '-': {
 					if (next_char(expression, index) == '-') {
-						result.push_back(new TokenOperator(TokenOperator::Type::Decrement, true));
+						if (next_char(expression, index + 1) <= 32) {
+							try_add_word(result, current_word);
+							result.push_back(new TokenOperator(TokenOperator::Type::Decrement, UnaryType::Postfix));
+						} else {
+							result.push_back(new TokenOperator(TokenOperator::Type::Decrement, UnaryType::Prefix));
+						}
+						
 						++index;
 					} else {
-						result.push_back(new TokenOperator(TokenOperator::Type::Minus, false));
+						if (next_char(expression, index) > 32) {
+							result.push_back(new TokenOperator(TokenOperator::Type::Negative, UnaryType::Prefix));
+						} else {
+							result.push_back(new TokenOperator(TokenOperator::Type::Minus, UnaryType::NotUnary));
+						}
 					}
 				} break;
 
 				case '=': {
 					if (next_char(expression, index) == '=') {
-						result.push_back(new TokenOperator(TokenOperator::Type::Equal, false));
+						result.push_back(new TokenOperator(TokenOperator::Type::Equal, UnaryType::NotUnary));
 						++index;
 					} else {
-						result.push_back(new TokenOperator(TokenOperator::Type::Assign, false));
+						result.push_back(new TokenOperator(TokenOperator::Type::Assign, UnaryType::NotUnary));
 					}
 				} break;
 
 				case '<': {
 					if (next_char(expression, index) == '=') {
-						result.push_back(new TokenOperator(TokenOperator::Type::LessEqual, false));
+						result.push_back(new TokenOperator(TokenOperator::Type::LessEqual, UnaryType::NotUnary));
 						++index;
+					} else if (next_char(expression, index) == '<') {
+						result.push_back(new TokenOperator(TokenOperator::Type::ShiftLeft, UnaryType::NotUnary));
 					} else {
-						result.push_back(new TokenOperator(TokenOperator::Type::Less, false));
+						result.push_back(new TokenOperator(TokenOperator::Type::Less, UnaryType::NotUnary));
 					}
 				} break;
 				
 				case '>': {
 					if (next_char(expression, index) == '=') {
-						result.push_back(new TokenOperator(TokenOperator::Type::GreaterEqual, false));
+						result.push_back(new TokenOperator(TokenOperator::Type::GreaterEqual, UnaryType::NotUnary));
 						++index;
+					} else if (next_char(expression, index) == '>') {
+						result.push_back(new TokenOperator(TokenOperator::Type::ShiftRight, UnaryType::NotUnary));
 					} else {
-						result.push_back(new TokenOperator(TokenOperator::Type::Greater, false));
+						result.push_back(new TokenOperator(TokenOperator::Type::Greater, UnaryType::NotUnary));
 					}
 				} break;
 
 				case '*': {
-					result.push_back(new TokenOperator(TokenOperator::Type::Multiply, false));
+					result.push_back(new TokenOperator(TokenOperator::Type::Multiply, UnaryType::NotUnary));
 				} break;
 
 				case '/': {
-					result.push_back(new TokenOperator(TokenOperator::Type::Divide, false));
+					result.push_back(new TokenOperator(TokenOperator::Type::Divide, UnaryType::NotUnary));
 				} break;
 
 				case '%': {
-					result.push_back(new TokenOperator(TokenOperator::Type::Modulus, false));
+					result.push_back(new TokenOperator(TokenOperator::Type::Modulus, UnaryType::NotUnary));
 				} break;
 
 				case '?': {
-					result.push_back(new TokenOperator(TokenOperator::Type::Substring, false));
+					result.push_back(new TokenOperator(TokenOperator::Type::Substring, UnaryType::NotUnary));
 				} break;
 
 				case '!': {
 					if (next_char(expression, index) == '=') {
-						result.push_back(new TokenOperator(TokenOperator::Type::NotEqual, false));
+						result.push_back(new TokenOperator(TokenOperator::Type::NotEqual, UnaryType::NotUnary));
 						++index;
-					} else {
-						result.push_back(new TokenOperator(TokenOperator::Type::Not, false));
+					} else if (next_char(expression, index) > 32) {
+						result.push_back(new TokenOperator(TokenOperator::Type::Not, UnaryType::Prefix));
 					}
 				} break;
+
+				case '&': {
+					if (next_char(expression, index) == '&') {
+						result.push_back(new TokenOperator(TokenOperator::Type::And, UnaryType::NotUnary));
+						++index;
+					} else {
+						result.push_back(new TokenOperator(TokenOperator::Type::BitAnd, UnaryType::NotUnary));
+					}
+				} break;
+
+				case '|': {
+					if (next_char(expression, index) == '|') {
+						result.push_back(new TokenOperator(TokenOperator::Type::Or, UnaryType::NotUnary));
+						++index;
+					} else {
+						result.push_back(new TokenOperator(TokenOperator::Type::BitOr, UnaryType::NotUnary));
+					}
+				} break;
+
+				case '^': {
+					result.push_back(new TokenOperator(TokenOperator::Type::BitXor, UnaryType::NotUnary));
+				} break;
+
+				case '~': {
+					if (next_char(expression, index) > 32) {
+						result.push_back(new TokenOperator(TokenOperator::Type::BitNot, UnaryType::Prefix));
+					}
+				}
 
 				case '"': {
 					if (!in_quotes) {
@@ -398,28 +523,8 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				default: {
 					if (this_char > 32) {
 						current_word.push_back(this_char);
-					} else if (!current_word.empty()) {
-						if (auto keyword = Keywords.find(current_word); keyword != Keywords.end()) {
-							result.push_back(new TokenKeyword(keyword->second));
-						} else {
-							if (current_word.contains(".")) {
-								try {
-									double word_float = std::stod(current_word);
-									result.push_back(new TokenNumberFloat(word_float));
-								} catch (...) {
-									result.push_back(new TokenVariable(current_word));
-								}
-							} else {
-								try {
-									std::int64_t word_int = std::stoll(current_word);
-									result.push_back(new TokenNumberInt(word_int));
-								} catch (...) {
-									result.push_back(new TokenVariable(current_word));
-								}
-							}
-						}
-						
-						current_word.clear();
+					} else {
+						try_add_word(result, current_word);
 					}
 				} break;
 			}
@@ -436,30 +541,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 		++index;
 	}
 
-	if (!current_word.empty()) {
-		// TODO: dry it
-		if (auto keyword = Keywords.find(current_word); keyword != Keywords.end()) {
-			result.push_back(new TokenKeyword(keyword->second));
-		} else {
-			if (current_word.contains(".")) {
-				try {
-					double word_float = std::stod(current_word);
-					result.push_back(new TokenNumberFloat(word_float));
-				} catch (...) {
-					result.push_back(new TokenVariable(current_word));
-				}
-			} else {
-				try {
-					std::int64_t word_int = std::stoll(current_word);
-					result.push_back(new TokenNumberInt(word_int));
-				} catch (...) {
-					result.push_back(new TokenVariable(current_word));
-				}
-			}
-		}
-		
-		current_word.clear();
-	}
+	try_add_word(result, current_word);
 
 	return result;
 }
@@ -481,14 +563,19 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
 			} break;
 
 			case TokenType::Operator: {
-				bool unary = static_cast<TokenOperator*>(this_token)->data.unary;
-				if (unary) {
-					if (Token* next = next_token(infix, index); next && next->get_type() == TokenType::Variable) {
+				TokenOperator::UnaryType unary_type = static_cast<TokenOperator*>(this_token)->data.unary_type;
+				if (unary_type != TokenOperator::UnaryType::NotUnary) {
+					/*if (Token* next = next_token(infix, index); next && next->get_type() == TokenType::Variable) {
 						stack.push(this_token);
 					} else if (index > 0 && infix[index - 1]->get_type() == TokenType::Variable) {
 						postfix.push_back(this_token);
 					} else {
 						throw;
+					}*/
+					if (unary_type == TokenOperator::UnaryType::Postfix) {
+						postfix.push_back(this_token);
+					} else {
+						stack.push(this_token);
 					}
 				} else {
 					while (!stack.empty()) {
@@ -535,6 +622,30 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
 	return postfix;
 }
 
+#define OP_UN(type, func_pre, func_post) case Type::type: {\
+		Token* operand = stack.top();\
+		stack.pop();\
+\
+		Token* result = nullptr;\
+		if (op->data.unary_type == TokenOperator::UnaryType::Prefix) {\
+			result = operand->operator_##func_pre();\
+		} else {\
+			result = operand->operator_##func_post();\
+		}\
+\
+		tokens_to_dealloc.insert(result);\
+		stack.push(result);\
+	} break;
+
+#define OP_UN_PRE(type, func) case Type::type: {\
+		Token* operand = stack.top();\
+		stack.pop();\
+\
+		Token* result = operand->operator_##func();\
+		tokens_to_dealloc.insert(result);\
+		stack.push(result);\
+	} break;
+
 #define OP_BIN(type, func) case Type::type: {\
 		Token* right = stack.top();\
 		stack.pop();\
@@ -579,6 +690,24 @@ Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& ex
 					OP_BIN(LessEqual, lessequal);
 					OP_BIN(GreaterEqual, greaterequal);
 
+					OP_BIN(And, and);
+					OP_BIN(Or, or);
+
+					OP_BIN(BitAnd, bitand);
+					OP_BIN(BitOr, bitor);
+					OP_BIN(BitXor, bitxor);
+					OP_BIN(ShiftLeft, shiftleft);
+					OP_BIN(ShiftRight, shiftright);
+
+					OP_BIN(Substring, substring);
+
+					OP_UN(Increment, inc_pre, inc_post);
+					OP_UN(Decrement, dec_pre, dec_post);
+
+					OP_UN_PRE(Negative, negative);
+					OP_UN_PRE(Not, not);
+					OP_UN_PRE(BitNot, bitnot);
+
 					case Type::Assign: {
 						Token* value = stack.top();
 						stack.pop();
@@ -588,16 +717,13 @@ Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& ex
 							throw;
 						}
 
-						//PackedToken packed{value};
-						//variables[static_cast<TokenVariable*>(var)->data] = packed;
-
 						const std::string& var_name = static_cast<TokenVariable*>(var)->data;
 						if (auto existing_var = variables.find(var_name); existing_var != variables.end()) {
 							existing_var->second = PackedToken(value);
 						} else {
 							variables.insert(std::make_pair(var_name, std::move(value)));
 						}
-						//variables.insert_or_assign(var_name, PackedToken(value));
+
 						tokens_to_dealloc.erase(value);
 					} break;
 
