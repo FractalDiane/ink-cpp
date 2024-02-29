@@ -104,6 +104,7 @@ std::string deinkify_expression(const std::string& expression) noexcept {
 		{R"(\b([\w.]+)\b--)", "$1 = $1 - 1"},
 		// --var
 		{R"(--\b([\w.]+)\b)", "$1 = $1 - 1"},
+		// temp
 	};
 
 	for (const auto& entry : replacements) {

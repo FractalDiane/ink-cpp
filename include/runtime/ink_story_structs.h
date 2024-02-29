@@ -6,6 +6,8 @@
 
 #include "serialization.h"
 
+#include "shunting-yard.h"
+
 enum class WeaveContentType {
 	Knot,
 	Stitch,
@@ -34,6 +36,8 @@ struct Knot : public InkWeaveContent {
 	std::vector<class InkObject*> objects;
 	std::vector<Stitch> stitches;
 	std::vector<GatherPoint> gather_points;
+
+	cparse::TokenMap local_variables;
 
 	Knot() : objects{}, stitches{}, gather_points{} {}
 	Knot(const std::vector<class InkObject*> objects) : objects{objects}, stitches{{}}, gather_points{{}} {}

@@ -4,10 +4,12 @@
 #include "runtime/ink_story.h"
 #include "ink_cparse_ext.h"
 #include "ink_utils.h"
+#include "expression_parser/expression_parser.h"
 
 #include "builtin-features.inc"
 
 #include <utility>
+#include <any>
 
 #define FIXTURE(name) class name : public testing::Test {\
 protected:\
@@ -28,8 +30,26 @@ protected:\
 		EXPECT_EQ(story.get_current_choices(), expected_choices);\
 	}
 
+template <typename TT, typename DT>
+bool token_matches(ExpressionParser::Token* token, DT data) {
+	if (auto* token_cast = dynamic_cast<TT*>(token)) {
+		return token_cast->data == data;
+	}
+
+	return false;
+}
+
+#define EXPECT_TOKENS(tokens, ...) {\
+	std::vector<ExpressionParser::TokenType> types = {__VA_ARGS__};\
+	EXPECT_EQ(types.size(), tokens.size());\
+	for (unsigned int i = 0; i < tokens.size(); ++i) {\
+		EXPECT_EQ(tokens[i]->get_type(), types[i]);\
+	}\
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-FIXTURE(NonStoryTests);
+FIXTURE(NonStoryFunctionTests);
+FIXTURE(ExpressionParserTests);
 
 FIXTURE(ContentTests);
 FIXTURE(ChoiceTests);
@@ -47,8 +67,8 @@ FIXTURE(GlobalVariableTests);
 FIXTURE(LogicTests);
 FIXTURE(ConditionalBlockTests);
 
-#pragma region NonStoryTests
-TEST_F(NonStoryTests, DeinkifyExpression) {
+#pragma region NonStoryFunctionTests
+TEST_F(NonStoryFunctionTests, DeinkifyExpression) {
 	EXPECT_EQ(deinkify_expression("true and true"), "true && true");
 	EXPECT_EQ(deinkify_expression("true or false"), "true || false");
 	EXPECT_EQ(deinkify_expression("not true"), "! true");
@@ -59,6 +79,35 @@ TEST_F(NonStoryTests, DeinkifyExpression) {
 	EXPECT_EQ(deinkify_expression("++var"), "var = var + 1");
 	EXPECT_EQ(deinkify_expression("var--"), "var = var - 1");
 	EXPECT_EQ(deinkify_expression("--var"), "var = var - 1");
+}
+#pragma endregion
+
+#pragma region ExpressionParserTests
+TEST_F(ExpressionParserTests, BasicTokenization) {
+	using ExpressionParser::Token;
+	using ExpressionParser::TokenType;
+	std::string exp = "test = 5 + 7";
+
+	std::vector<ExpressionParser::Token*> result = ExpressionParser::tokenize_expression(exp);
+
+	EXPECT_TOKENS(result,
+		ExpressionParser::TokenType::Variable,
+		ExpressionParser::TokenType::Operator,
+		ExpressionParser::TokenType::NumberInt,
+		ExpressionParser::TokenType::Operator,
+		ExpressionParser::TokenType::NumberInt,
+	);
+
+	std::vector<ExpressionParser::Token*> result_postfix = ExpressionParser::shunt(result);
+	EXPECT_EQ(result.size(), result_postfix.size());
+
+	std::unordered_map<std::string, Token*> variables;
+	Token* result_token = ExpressionParser::execute_expression_tokens(result_postfix, variables);
+	EXPECT_FALSE(result_token);
+
+	for (ExpressionParser::Token* token : result) {
+		delete token;
+	}
 }
 #pragma endregion
 
