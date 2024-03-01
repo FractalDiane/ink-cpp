@@ -62,9 +62,9 @@ namespace {
 		return index + 1 < string.length() ? string[index + 1] : 0;
 	}
 
-	Token* next_token(const std::vector<Token*>& tokens, std::size_t index) {
+	/*Token* next_token(const std::vector<Token*>& tokens, std::size_t index) {
 		return index + 1 < tokens.size() ? tokens[index + 1] : nullptr;
-	}
+	}*/
 }
 
 #undef O
@@ -507,7 +507,21 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 					if (next_char(expression, index) > 32) {
 						result.push_back(new TokenOperator(TokenOperator::Type::BitNot, UnaryType::Prefix));
 					}
-				}
+				} break;
+
+				case '(': {
+					result.push_back(new TokenParenComma(TokenParenComma::Type::LeftParen));
+				} break;
+
+				case ')': {
+					try_add_word(result, current_word);
+					result.push_back(new TokenParenComma(TokenParenComma::Type::RightParen));
+				} break;
+
+				case ',': {
+					try_add_word(result, current_word);
+					result.push_back(new TokenParenComma(TokenParenComma::Type::Comma));
+				} break;
 
 				case '"': {
 					if (!in_quotes) {
@@ -582,12 +596,12 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
 						Token* next_op = stack.top();
 
 						bool higher_precedence = false;
-						if (next_op->get_type() == TokenType::Function) {
-							higher_precedence = true;
-						} else {
+						if (next_op->get_type() == TokenType::Operator) {
 							TokenOperator::Type this_type = static_cast<TokenOperator*>(this_token)->data.type;
 							TokenOperator::Type that_type = static_cast<TokenOperator*>(next_op)->data.type;
 							higher_precedence = OperatorPrecedences.at(that_type) <= OperatorPrecedences.at(this_type);
+						} else {
+							break;
 						}
 
 						if (higher_precedence) {
@@ -599,6 +613,55 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
 					}
 
 					stack.push(this_token);
+				}
+			} break;
+
+			case TokenType::ParenComma: {
+				auto* paren_comma = static_cast<TokenParenComma*>(this_token);
+				switch (paren_comma->data) {
+					case TokenParenComma::Type::LeftParen: {
+						stack.push(this_token);
+					} break;
+
+					case TokenParenComma::Type::RightParen: {
+						while (!stack.empty()) {
+							Token* next = stack.top();
+							if (next->get_type() == TokenType::ParenComma && static_cast<TokenParenComma*>(next)->data == TokenParenComma::Type::LeftParen) {
+								break;
+							} else {
+								stack.pop();
+								postfix.push_back(next);
+							}
+						}
+
+						if (stack.empty()) {
+							throw;
+						}
+
+						stack.pop();
+						Token* new_top = stack.top();
+						if (new_top->get_type() == TokenType::Variable) {
+							postfix.push_back(new_top);
+							stack.pop();
+						}
+					} break;
+
+					case TokenParenComma::Type::Comma:
+					default: {
+						while (!stack.empty()) {
+							Token* next = stack.top();
+							if (next->get_type() == TokenType::ParenComma) {
+								if (static_cast<TokenParenComma*>(next)->data != TokenParenComma::Type::LeftParen) {
+									postfix.push_back(next);
+									stack.pop();
+								} else {
+									break;
+								}
+							} else {
+								throw;
+							}
+						}
+					} break;
 				}
 			} break;
 

@@ -151,6 +151,9 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 
 	PackedToken t12 = execute_expression(R"("hello" ? "blah")");
 	EXPECT_EQ(t12.as_bool(), false);
+
+	PackedToken t13 = execute_expression("5 * (3 + 4)");
+	EXPECT_EQ(t13.as_int(), 35);
 }
 #pragma endregion
 

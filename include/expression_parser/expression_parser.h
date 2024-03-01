@@ -15,6 +15,7 @@ enum class TokenType {
 	StringLiteral,
 	KnotName,
 	Operator,
+	ParenComma,
 	Function,
 	Variable,
 };
@@ -191,10 +192,6 @@ struct TokenOperator : public Token {
 		LessEqual,
 		GreaterEqual,
 
-		LeftParen,
-		RightParen,
-		Comma,
-
 		And,
 		Or,
 		Xor,
@@ -224,20 +221,26 @@ struct TokenOperator : public Token {
 	virtual TokenType get_type() const override { return TokenType::Operator; }
 };
 
+struct TokenParenComma : public Token {
+	enum class Type {
+		LeftParen,
+		RightParen,
+		Comma,
+	} data;
+
+	TokenParenComma(Type type) : data{type} {}
+
+	virtual TokenType get_type() const override { return TokenType::ParenComma; }
+};
+
 struct TokenFunction : public Token {
-	struct Data {
+	/*struct Data {
 		std::string function;
 		std::vector<Token*> arguments;
-	} data;
-	
+	} data;*/
+	std::string data;
 
-	TokenFunction(const std::string& function, const std::vector<Token*>& arguments) : data{function, arguments} {}
-
-	virtual ~TokenFunction() override {
-		for (Token* token : data.arguments) {
-			delete token;
-		}
-	}
+	TokenFunction(const std::string& function) : data{function} {}
 
 	virtual TokenType get_type() const override { return TokenType::Function; }
 };
