@@ -1,7 +1,6 @@
 #include "expression_parser/expression_parser.h"
 
 #include <cctype>
-#include <stack>
 #include <unordered_set>
 #include <cmath>
 
@@ -58,17 +57,62 @@ namespace {
 		{O::Assign, C(16)},
 	};
 
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
+	Token* builtin_pow(std::stack<Token*>& stack) {
+		Token* expo = stack.top();
+		stack.pop();
+		Token* base = stack.top();
+		stack.pop();
+
+		return new TokenNumberFloat(std::pow(base->as_float(), expo->as_float()));
+	}
+
+	Token* builtin_int(std::stack<Token*>& stack) {
+		Token* what = stack.top();
+		stack.pop();
+
+		return new TokenNumberInt(what->as_int());
+	}
+
+	Token* builtin_float(std::stack<Token*>& stack) {
+		Token* what = stack.top();
+		stack.pop();
+
+		return new TokenNumberFloat(what->as_float());
+	}
+
+	Token* builtin_floor(std::stack<Token*>& stack) {
+		Token* what = stack.top();
+		stack.pop();
+
+		return new TokenNumberInt(static_cast<std::int64_t>(std::floor(what->as_float())));
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
+	static const std::unordered_map<std::string, PtrTokenFunc> BuiltinFunctions = {
+		{"POW", builtin_pow},
+		{"INT", builtin_int},
+		{"FLOAT", builtin_float},
+		{"FLOOR", builtin_floor},
+	};
+
+	///////////////////////////////////////////////////////////////////////////////////////////////
+
 	char next_char(const std::string& string, std::size_t index) {
 		return index + 1 < string.length() ? string[index + 1] : 0;
 	}
-
-	/*Token* next_token(const std::vector<Token*>& tokens, std::size_t index) {
-		return index + 1 < tokens.size() ? tokens[index + 1] : nullptr;
-	}*/
 }
+
 
 #undef O
 #undef C
+
+bool Token::as_bool() const { throw; }
+std::int64_t Token::as_int() const { throw; }
+double Token::as_float() const { throw; }
+const std::string& Token::as_string() const { throw; }
 
 Token* Token::operator_plus(const Token* other) const { throw; }
 Token* Token::operator_minus(const Token* other) const { throw; }
@@ -190,6 +234,18 @@ Token* Token::operator_substring(const Token* other) const { throw; }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+bool TokenBoolean::as_bool() const {
+	return data;
+}
+
+std::int64_t TokenBoolean::as_int() const {
+	return data ? 1 : 0;
+}
+
+double TokenBoolean::as_float() const {
+	return data ? 1.0 : 0.0;
+}
+
 Token* TokenBoolean::operator_not() const {
 	return new TokenBoolean(!data);
 }
@@ -252,6 +308,18 @@ Token* TokenBoolean::operator_bitxor(const Token* other) const {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+bool TokenNumberInt::as_bool() const {
+	return data != 0;
+}
+
+std::int64_t TokenNumberInt::as_int() const {
+	return data;
+}
+
+double TokenNumberInt::as_float() const {
+	return static_cast<double>(data);
+}
+
 OP_MATH_INT(TokenNumberInt, plus, +);
 OP_MATH_INT(TokenNumberInt, minus, -);
 OP_MATH_INT(TokenNumberInt, multiply, *);
@@ -290,6 +358,18 @@ OP_CMP_INT(TokenNumberInt, lessequal, <=);
 OP_CMP_INT(TokenNumberInt, greaterequal, >=);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+bool TokenNumberFloat::as_bool() const {
+	return data != 0.0;
+}
+
+std::int64_t TokenNumberFloat::as_int() const {
+	return static_cast<std::int64_t>(data);
+}
+
+double TokenNumberFloat::as_float() const {
+	return data;
+}
 
 OP_MATH_FLOAT(TokenNumberFloat, plus, +);
 OP_MATH_FLOAT(TokenNumberFloat, minus, -);
@@ -330,6 +410,14 @@ OP_CMP_FLOAT(TokenNumberFloat, greaterequal, >=);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+bool TokenStringLiteral::as_bool() const { 
+	return !data.empty();
+}
+
+const std::string& TokenStringLiteral::as_string() const {
+	return data;
+}
+
 Token* TokenStringLiteral::operator_plus(const Token* other) const {
 	if (other->get_type() == TokenType::StringLiteral) {
 		return new TokenStringLiteral(data + static_cast<const TokenStringLiteral*>(other)->data);
@@ -352,6 +440,8 @@ void try_add_word(std::vector<Token*>& result, std::string& word) {
 	if (!word.empty()) {
 		if (auto keyword = Keywords.find(word); keyword != Keywords.end()) {
 			result.push_back(new TokenKeyword(keyword->second));
+		} else if (auto func = BuiltinFunctions.find(word); func != BuiltinFunctions.end()) {
+			result.push_back(new TokenFunction(func->second));
 		} else {
 			if (word.contains(".")) {
 				try {
@@ -510,6 +600,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 
 				case '(': {
+					try_add_word(result, current_word);
 					result.push_back(new TokenParenComma(TokenParenComma::Type::LeftParen));
 				} break;
 
@@ -579,13 +670,6 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
 			case TokenType::Operator: {
 				TokenOperator::UnaryType unary_type = static_cast<TokenOperator*>(this_token)->data.unary_type;
 				if (unary_type != TokenOperator::UnaryType::NotUnary) {
-					/*if (Token* next = next_token(infix, index); next && next->get_type() == TokenType::Variable) {
-						stack.push(this_token);
-					} else if (index > 0 && infix[index - 1]->get_type() == TokenType::Variable) {
-						postfix.push_back(this_token);
-					} else {
-						throw;
-					}*/
 					if (unary_type == TokenOperator::UnaryType::Postfix) {
 						postfix.push_back(this_token);
 					} else {
@@ -639,10 +723,12 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
 						}
 
 						stack.pop();
-						Token* new_top = stack.top();
-						if (new_top->get_type() == TokenType::Variable) {
-							postfix.push_back(new_top);
-							stack.pop();
+						if (!stack.empty()) {
+							Token* new_top = stack.top();
+							if (new_top->get_type() == TokenType::Function) {
+								postfix.push_back(new_top);
+								stack.pop();
+							}
 						}
 					} break;
 
@@ -793,6 +879,12 @@ Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& ex
 					default: {
 
 					} break;
+				}
+			} break;
+
+			case TokenType::Function: {
+				if (Token* result = (static_cast<TokenFunction*>(this_token)->data)(stack)) {
+					stack.push(result);
 				}
 			} break;
 
