@@ -410,7 +410,7 @@ OP_CMP_FLOAT(TokenNumberFloat, greaterequal, >=);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool TokenStringLiteral::as_bool() const { 
+bool TokenStringLiteral::as_bool() const {
 	return !data.empty();
 }
 
@@ -426,6 +426,22 @@ Token* TokenStringLiteral::operator_plus(const Token* other) const {
 	}
 }
 
+Token* TokenStringLiteral::operator_equal(const Token* other) const {
+	if (other->get_type() == TokenType::StringLiteral) {
+		return new TokenBoolean(data == static_cast<const TokenStringLiteral*>(other)->data);
+	} else {
+		throw;
+	}
+}
+
+Token* TokenStringLiteral::operator_notequal(const Token* other) const {
+	if (other->get_type() == TokenType::StringLiteral) {
+		return new TokenBoolean(data != static_cast<const TokenStringLiteral*>(other)->data);
+	} else {
+		throw;
+	}
+}
+
 Token* TokenStringLiteral::operator_substring(const Token* other) const {
 	if (other->get_type() == TokenType::StringLiteral) {
 		return new TokenBoolean(data.contains(static_cast<const TokenStringLiteral*>(other)->data));
@@ -436,11 +452,11 @@ Token* TokenStringLiteral::operator_substring(const Token* other) const {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-void try_add_word(std::vector<Token*>& result, std::string& word) {
+void try_add_word(std::vector<Token*>& result, std::string& word, const FunctionMap& all_functions) {
 	if (!word.empty()) {
 		if (auto keyword = Keywords.find(word); keyword != Keywords.end()) {
 			result.push_back(new TokenKeyword(keyword->second));
-		} else if (auto func = BuiltinFunctions.find(word); func != BuiltinFunctions.end()) {
+		} else if (auto func = all_functions.find(word); func != all_functions.end()) {
 			result.push_back(new TokenFunction(func->second));
 		} else {
 			if (word.contains(".")) {
@@ -464,7 +480,7 @@ void try_add_word(std::vector<Token*>& result, std::string& word) {
 	}
 }
 
-std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& expression) {
+std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& expression, const FunctionMap& all_functions) {
 	std::vector<Token*> result;
 	result.reserve(128);
 
@@ -484,7 +500,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				case '+': {
 					if (next_char(expression, index) == '+') {
 						if (next_char(expression, index + 1) <= 32) {
-							try_add_word(result, current_word);
+							try_add_word(result, current_word, all_functions);
 							result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Postfix));
 						} else {
 							result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Prefix));
@@ -499,7 +515,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				case '-': {
 					if (next_char(expression, index) == '-') {
 						if (next_char(expression, index + 1) <= 32) {
-							try_add_word(result, current_word);
+							try_add_word(result, current_word, all_functions);
 							result.push_back(new TokenOperator(TokenOperator::Type::Decrement, UnaryType::Postfix));
 						} else {
 							result.push_back(new TokenOperator(TokenOperator::Type::Decrement, UnaryType::Prefix));
@@ -600,17 +616,17 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 
 				case '(': {
-					try_add_word(result, current_word);
+					try_add_word(result, current_word, all_functions);
 					result.push_back(new TokenParenComma(TokenParenComma::Type::LeftParen));
 				} break;
 
 				case ')': {
-					try_add_word(result, current_word);
+					try_add_word(result, current_word, all_functions);
 					result.push_back(new TokenParenComma(TokenParenComma::Type::RightParen));
 				} break;
 
 				case ',': {
-					try_add_word(result, current_word);
+					try_add_word(result, current_word, all_functions);
 					result.push_back(new TokenParenComma(TokenParenComma::Type::Comma));
 				} break;
 
@@ -629,7 +645,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 					if (this_char > 32) {
 						current_word.push_back(this_char);
 					} else {
-						try_add_word(result, current_word);
+						try_add_word(result, current_word, all_functions);
 					}
 				} break;
 			}
@@ -646,7 +662,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 		++index;
 	}
 
-	try_add_word(result, current_word);
+	try_add_word(result, current_word, all_functions);
 
 	return result;
 }
@@ -911,8 +927,13 @@ Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& ex
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-PackedToken ExpressionParser::execute_expression(const std::string& expression) {
-	std::vector<Token*> tokenized = tokenize_expression(expression);
+PackedToken ExpressionParser::execute_expression(const std::string& expression, const FunctionMap& functions) {
+	FunctionMap all_functions = BuiltinFunctions;
+	if (!functions.empty()) {
+		all_functions.insert(functions.begin(), functions.end());
+	}
+	
+	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions);
 	std::vector<Token*> shunted = shunt(tokenized);
 
 	TokenMap no_vars;
@@ -927,8 +948,13 @@ PackedToken ExpressionParser::execute_expression(const std::string& expression) 
 	return PackedToken(result);
 }
 
-PackedToken ExpressionParser::execute_expression(const std::string& expression, TokenMap& variables) {
-	std::vector<Token*> tokenized = tokenize_expression(expression);
+PackedToken ExpressionParser::execute_expression(const std::string& expression, TokenMap& variables, const FunctionMap& functions) {
+	FunctionMap all_functions = BuiltinFunctions;
+	if (!functions.empty()) {
+		all_functions.insert(functions.begin(), functions.end());
+	}
+
+	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions);
 	std::vector<Token*> shunted = shunt(tokenized);
 
 	Token* result = execute_expression_tokens(shunted, variables);

@@ -89,7 +89,7 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 	using ExpressionParser::TokenType;
 	std::string exp = "test = 5 + 7";
 
-	std::vector<ExpressionParser::Token*> result = ExpressionParser::tokenize_expression(exp);
+	std::vector<ExpressionParser::Token*> result = ExpressionParser::tokenize_expression(exp, {});
 
 	EXPECT_TOKENS(result,
 		ExpressionParser::TokenType::Variable,

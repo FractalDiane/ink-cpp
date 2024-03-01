@@ -179,6 +179,10 @@ struct TokenStringLiteral : public Token {
 	virtual TokenType get_type() const override { return TokenType::StringLiteral; }
 
 	virtual Token* operator_plus(const Token* other) const override;
+
+	virtual Token* operator_equal(const Token* other) const override;
+	virtual Token* operator_notequal(const Token* other) const override;
+
 	virtual Token* operator_substring(const Token* other) const override;
 };
 
@@ -331,14 +335,15 @@ struct PackedToken {
 };
 
 typedef std::unordered_map<std::string, PackedToken> TokenMap;
+typedef std::unordered_map<std::string, PtrTokenFunc> FunctionMap;
 
-std::vector<Token*> tokenize_expression(const std::string& expression);
+std::vector<Token*> tokenize_expression(const std::string& expression, const FunctionMap& all_functions);
 
 std::vector<Token*> shunt(const std::vector<Token*>& infix);
 
 Token* execute_expression_tokens(const std::vector<Token*>& tokens, TokenMap& variables);
 
-PackedToken execute_expression(const std::string& expression);
-PackedToken execute_expression(const std::string& expression, TokenMap& variables);
+PackedToken execute_expression(const std::string& expression, const FunctionMap& functions = {});
+PackedToken execute_expression(const std::string& expression, TokenMap& variables, const FunctionMap& functions = {});
 
 }
