@@ -42,8 +42,8 @@ InkStoryState::KnotStatus& InkStoryState::current_nonchoice_knot() {
 	return current_knots_stack.front();
 }
 
-cparse::TokenMap InkStoryState::get_variables_with_locals() {
-	cparse::TokenMap result = variables;
+ExpressionParser::TokenMap InkStoryState::get_variables_with_locals() {
+	ExpressionParser::TokenMap result = variables;
 
 	/*Knot* knot = current_knot().knot;
 	for (const Stitch& stitch : knot->stitches) {

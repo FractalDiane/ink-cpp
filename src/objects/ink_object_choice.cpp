@@ -5,6 +5,8 @@
 #include "shunting-yard.h"
 #include "builtin-features.inc"
 
+#include "expression_parser/expression_parser.h"
+
 /*std::vector<std::uint8_t> InkObjectChoice::to_bytes() const {
 	return {}
 }
@@ -65,9 +67,10 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 					const std::vector<std::string>& conditions = this_choice.conditions;
 					if (!conditions.empty()) {
 						for (const std::string& condition : conditions) {
-							cparse::TokenMap vars = story_state.story_tracking.add_visit_count_variables(story_state.variables, story_state.current_knot().knot, story_state.current_stitch);
-							cparse::packToken result = cparse::calculator::calculate(deinkify_expression(condition).c_str(), vars);
-							if (!result.asBool()) {
+							ExpressionParser::TokenMap vars = story_state.story_tracking.add_visit_count_variables(story_state.variables, story_state.current_knot().knot, story_state.current_stitch);
+							//cparse::packToken result = cparse::calculator::calculate(deinkify_expression(condition).c_str(), vars);
+							ExpressionParser::PackedToken result = ExpressionParser::execute_expression(condition, vars);
+							if (!result.as_bool()) {
 								include_choice = false;
 								break;
 							}

@@ -9,6 +9,8 @@
 
 #include "shunting-yard.h"
 
+#include "expression_parser/expression_parser.h"
+
 struct InkStoryTracking {
 	struct SubKnotStats {
 		std::string name;
@@ -34,6 +36,6 @@ struct InkStoryTracking {
 
 	void increment_visit_count(Knot* knot, Stitch* stitch = nullptr, GatherPoint* gather_point = nullptr);
 	void increment_turns_since();
-	cparse::TokenMap add_visit_count_variables(const cparse::TokenMap& variables, Knot* current_knot, Stitch* current_stitch);
+	ExpressionParser::TokenMap add_visit_count_variables(const ExpressionParser::TokenMap& variables, Knot* current_knot, Stitch* current_stitch);
 	bool get_content_stats(InkWeaveContent* content, InkStoryTracking::SubKnotStats& result);
 };

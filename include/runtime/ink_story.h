@@ -3,6 +3,8 @@
 #include "runtime/ink_story_data.h"
 #include "runtime/ink_story_state.h"
 
+#include "expression_parser/expression_parser.h"
+
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -12,6 +14,9 @@ class InkStory {
 private:
 	InkStoryData* story_data;
 	InkStoryState story_state;
+
+	static ExpressionParser::FunctionMap builtin_functions;
+	static bool builtins_initialized;
 
 private:
 	void init_story();
@@ -34,6 +39,6 @@ public:
 
 	void choose_choice_index(std::size_t index);
 
-	const class cparse::packToken get_variable(const std::string& name) const;
-	void set_variable(const std::string& name, const class cparse::packToken& value);
+	ExpressionParser::PackedToken get_variable(const std::string& name) const;
+	void set_variable(const std::string& name, const ExpressionParser::PackedToken& value);
 };

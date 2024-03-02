@@ -157,6 +157,9 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 
 	PackedToken t14 = execute_expression("POW(3, 2)");
 	EXPECT_EQ(t14.as_float(), 9);
+
+	PackedToken t15 = execute_expression("-> my_knot");
+	EXPECT_EQ(t15.as_string(), "my_knot");
 }
 #pragma endregion
 
@@ -914,7 +917,7 @@ TEST_F(LogicTests, StringComparisons) {
 TEST_F(ConditionalBlockTests, BasicIf) {
 	for (int i = 0; i < 2; ++i) {
 		STORY("15_conditional_blocks/15a_basic_if.ink");
-		story.set_variable("x", i == 0 ? 0 : 7);
+		story.set_variable("x", (i == 0 ? 0 : 7));
 		story.set_variable("y", 0);
 
 		EXPECT_TEXT(std::format("y = {}", i == 0 ? 0 : 6));

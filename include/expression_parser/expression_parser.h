@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <unordered_map>
 #include <stack>
+#include <functional>
 
 namespace ExpressionParser {
 
@@ -21,15 +22,27 @@ enum class TokenType {
 	Variable,
 };
 
+struct Token;
+struct PackedToken;
+
+using PtrTokenFunc = std::function<Token*(std::stack<Token*>&)>;
+typedef std::unordered_map<std::string, PackedToken> TokenMap;
+typedef std::unordered_map<std::string, PtrTokenFunc> FunctionMap;
+
 struct Token {
 	virtual ~Token() = default;
 
 	virtual TokenType get_type() const = 0;
+	virtual Token* copy() const = 0;
 
 	virtual bool as_bool() const;
 	virtual std::int64_t as_int() const;
 	virtual double as_float() const;
 	virtual const std::string& as_string() const;
+
+	virtual std::string to_printable_string() const;
+
+	virtual Token* get_value(const TokenMap& variables) { return this; }
 
 	virtual Token* operator_plus(const Token* other) const;
 	virtual Token* operator_minus(const Token* other) const;
@@ -64,7 +77,7 @@ struct Token {
 	virtual Token* operator_substring(const Token* other) const;
 };
 
-typedef Token* (*PtrTokenFunc)(std::stack<Token*>&);
+//typedef Token* (*PtrTokenFunc)(std::stack<Token*>&);
 
 struct TokenKeyword : public Token {
 	enum class Type {
@@ -82,6 +95,8 @@ struct TokenKeyword : public Token {
 	TokenKeyword(Type type) : data{type} {}
 
 	virtual TokenType get_type() const override { return TokenType::Keyword; }
+
+	virtual Token* copy() const override { return new TokenKeyword(data); }
 };
 
 struct TokenBoolean : public Token {
@@ -91,9 +106,13 @@ struct TokenBoolean : public Token {
 
 	virtual TokenType get_type() const override { return TokenType::Boolean; }
 
+	virtual Token* copy() const override { return new TokenBoolean(data); }
+
 	virtual bool as_bool() const override;
 	virtual std::int64_t as_int() const override;
 	virtual double as_float() const override;
+
+	virtual std::string to_printable_string() const override;
 
 	virtual Token* operator_not() const override;
 	virtual Token* operator_equal(const Token* other) const override;
@@ -113,9 +132,13 @@ struct TokenNumberInt : public Token {
 
 	virtual TokenType get_type() const override { return TokenType::NumberInt; }
 
+	virtual Token* copy() const override { return new TokenNumberInt(data); }
+
 	virtual bool as_bool() const override;
 	virtual std::int64_t as_int() const override;
 	virtual double as_float() const override;
+
+	virtual std::string to_printable_string() const override;
 
 	virtual Token* operator_plus(const Token* other) const override;
 	virtual Token* operator_minus(const Token* other) const override;
@@ -144,9 +167,13 @@ struct TokenNumberFloat : public Token {
 
 	virtual TokenType get_type() const override { return TokenType::NumberFloat; }
 
+	virtual Token* copy() const override { return new TokenNumberFloat(data); }
+
 	virtual bool as_bool() const override;
 	virtual std::int64_t as_int() const override;
 	virtual double as_float() const override;
+
+	virtual std::string to_printable_string() const override;
 
 	virtual Token* operator_plus(const Token* other) const override;
 	virtual Token* operator_minus(const Token* other) const override;
@@ -173,8 +200,12 @@ struct TokenStringLiteral : public Token {
 
 	TokenStringLiteral(const std::string& data) : data{data} {}
 
+	virtual Token* copy() const override { return new TokenStringLiteral(data); }
+
 	virtual bool as_bool() const override;
 	virtual const std::string& as_string() const override;
+
+	virtual std::string to_printable_string() const override;
 
 	virtual TokenType get_type() const override { return TokenType::StringLiteral; }
 
@@ -193,6 +224,12 @@ struct TokenKnotName : public Token {
 	} data;
 
 	TokenKnotName(const std::string& knot, bool has_arrow) : data{knot, has_arrow} {}
+
+	virtual Token* copy() const override { return new TokenKnotName(data.knot, data.has_arrow); }
+
+	virtual const std::string& as_string() const override;
+
+	virtual std::string to_printable_string() const override;
 
 	virtual TokenType get_type() const override { return TokenType::KnotName; }
 };
@@ -245,6 +282,8 @@ struct TokenOperator : public Token {
 
 	TokenOperator(Type type, UnaryType unary_type) : data{type, unary_type} {}
 
+	virtual Token* copy() const override { return new TokenOperator(data.type, data.unary_type); }
+
 	virtual TokenType get_type() const override { return TokenType::Operator; }
 };
 
@@ -256,6 +295,8 @@ struct TokenParenComma : public Token {
 	} data;
 
 	TokenParenComma(Type type) : data{type} {}
+
+	virtual Token* copy() const override { return new TokenParenComma(data); }
 
 	virtual TokenType get_type() const override { return TokenType::ParenComma; }
 };
@@ -269,6 +310,8 @@ struct TokenFunction : public Token {
 
 	TokenFunction(PtrTokenFunc function) : data{function} {}
 
+	virtual Token* copy() const override { return new TokenFunction(data); }
+
 	virtual TokenType get_type() const override { return TokenType::Function; }
 };
 
@@ -277,7 +320,11 @@ struct TokenVariable : public Token {
 
 	TokenVariable(const std::string& name) : data{name} {}
 
+	virtual Token* copy() const override { return new TokenVariable(data); }
+
 	virtual TokenType get_type() const override { return TokenType::Variable; }
+
+	virtual Token* get_value(const TokenMap& variables) override;
 };
 
 struct PackedToken {
@@ -287,13 +334,15 @@ struct PackedToken {
 	PackedToken(Token* token) : token{token} {}
 	PackedToken(bool from) : token{new TokenBoolean(from)} {}
 	PackedToken(std::int64_t from) : token{new TokenNumberInt(from)} {}
+	PackedToken(int from) : token{new TokenNumberInt(static_cast<std::int64_t>(from))} {}
 	PackedToken(double from) : token{new TokenNumberFloat(from)} {}
 	PackedToken(const std::string& from) : token{new TokenStringLiteral(from)} {}
 	PackedToken(std::string&& from) : token{new TokenStringLiteral(from)} {}
 
 	~PackedToken() { delete token; }
 	
-	PackedToken(PackedToken& from) = delete;
+	PackedToken(const PackedToken& from) : token{from.token->copy()} {}
+
 	PackedToken(PackedToken&& from) {
 		if (token) {
 			delete token;
@@ -303,7 +352,14 @@ struct PackedToken {
 		from.token = nullptr;
 	}
 
-	PackedToken& operator=(PackedToken& other) = delete;
+	PackedToken& operator=(const PackedToken& other) {
+		if (this != &other) {
+			token = other.token->copy();
+		}
+
+		return *this;
+	}
+
 	PackedToken& operator=(PackedToken&& other) {
 		if (this != &other) {
 			if (token) {
@@ -315,6 +371,14 @@ struct PackedToken {
 		}
 
 		return *this;
+	}
+
+	bool operator==(const PackedToken& other) const {
+		return token->operator_equal(other.token);
+	}
+
+	bool operator!=(const PackedToken& other) const {
+		return token->operator_notequal(other.token);
 	}
 
 	bool as_bool() const {
@@ -332,10 +396,11 @@ struct PackedToken {
 	const std::string& as_string() const {
 		return token->as_string();
 	}
-};
 
-typedef std::unordered_map<std::string, PackedToken> TokenMap;
-typedef std::unordered_map<std::string, PtrTokenFunc> FunctionMap;
+	std::string to_printable_string() const {
+		return token->to_printable_string();
+	}
+};
 
 std::vector<Token*> tokenize_expression(const std::string& expression, const FunctionMap& all_functions);
 
