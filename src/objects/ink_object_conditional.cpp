@@ -21,6 +21,10 @@ InkObjectConditional::InkObjectConditional(const std::string& switch_expression,
 
 InkObjectConditional::~InkObjectConditional() {
 	for (auto& entry : branches) {
+		for (ExpressionParser::Token* token : entry.first) {
+			delete token;
+		}
+
 		for (InkObject* object : entry.second.objects) {
 			delete object;
 		}
@@ -28,6 +32,10 @@ InkObjectConditional::~InkObjectConditional() {
 
 	for (InkObject* object : branch_else.objects) {
 		delete object;
+	}
+
+	for (ExpressionParser::Token* token : switch_expression) {
+		delete token;
 	}
 }
 
@@ -37,7 +45,7 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 	if (!is_switch) {
 		for (auto& entry : branches) {
 			//cparse::packToken condition_result = cparse::calculator::calculate(deinkify_expression(entry.first).c_str(), vars);
-			ExpressionParser::PackedToken condition_result = ExpressionParser::execute_expression(entry.first, vars);
+			ExpressionParser::Token* condition_result = ExpressionParser::execute_expression_tokens(entry.first, vars);
 			if (condition_result.as_bool()) {
 				/*for (InkObject* object : entry.second) {
 					object->execute(story_state, eval_result);
@@ -51,10 +59,10 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 	} else {
 		// TODO: this might be redundant and strictly worse performance than the above version
 		//cparse::packToken result = cparse::calculator::calculate(deinkify_expression(switch_expression).c_str(), vars);
-		ExpressionParser::PackedToken result = ExpressionParser::execute_expression(switch_expression, vars);
+		ExpressionParser::PackedToken result = ExpressionParser::execute_expression_tokens(switch_expression, vars);
 		for (auto& entry : branches) {
 			//cparse::packToken condition_result = cparse::calculator::calculate(deinkify_expression(entry.first).c_str(), vars);
-			ExpressionParser::PackedToken condition_result = ExpressionParser::execute_expression(entry.first, vars);
+			ExpressionParser::PackedToken condition_result = ExpressionParser::execute_expression_tokens(entry.first, vars);
 			if (condition_result == result) {
 				/*for (InkObject* object : entry.second) {
 					object->execute(story_state, eval_result);

@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstdint>
 #include <unordered_map>
+#include <unordered_set>
 #include <stack>
 #include <functional>
 
@@ -329,17 +330,22 @@ struct TokenVariable : public Token {
 
 struct PackedToken {
 	Token* token;
+	bool owner;
 
-	PackedToken() : token{nullptr} {}
-	PackedToken(Token* token) : token{token} {}
-	PackedToken(bool from) : token{new TokenBoolean(from)} {}
-	PackedToken(std::int64_t from) : token{new TokenNumberInt(from)} {}
-	PackedToken(int from) : token{new TokenNumberInt(static_cast<std::int64_t>(from))} {}
-	PackedToken(double from) : token{new TokenNumberFloat(from)} {}
-	PackedToken(const std::string& from) : token{new TokenStringLiteral(from)} {}
-	PackedToken(std::string&& from) : token{new TokenStringLiteral(from)} {}
+	PackedToken() : token{nullptr}, owner{false} {}
+	PackedToken(Token* token, bool owner) : token{token}, owner{owner} {}
+	PackedToken(bool from) : token{new TokenBoolean(from)}, owner{true} {}
+	PackedToken(std::int64_t from) : token{new TokenNumberInt(from)}, owner{true} {}
+	PackedToken(int from) : token{new TokenNumberInt(static_cast<std::int64_t>(from))}, owner{true} {}
+	PackedToken(double from) : token{new TokenNumberFloat(from)}, owner{true} {}
+	PackedToken(const std::string& from) : token{new TokenStringLiteral(from)}, owner{true} {}
+	PackedToken(std::string&& from) : token{new TokenStringLiteral(from)}, owner{true} {}
 
-	~PackedToken() { delete token; }
+	~PackedToken() {
+		if (owner) {
+			delete token;
+		}
+	}
 	
 	PackedToken(const PackedToken& from) : token{from.token->copy()} {}
 
@@ -404,11 +410,13 @@ struct PackedToken {
 
 std::vector<Token*> tokenize_expression(const std::string& expression, const FunctionMap& all_functions);
 
-std::vector<Token*> shunt(const std::vector<Token*>& infix);
+std::vector<Token*> shunt(const std::vector<Token*>& infix, std::unordered_set<Token*>& tokens_shunted);
 
 Token* execute_expression_tokens(const std::vector<Token*>& tokens, TokenMap& variables);
 
 PackedToken execute_expression(const std::string& expression, const FunctionMap& functions = {});
 PackedToken execute_expression(const std::string& expression, TokenMap& variables, const FunctionMap& functions = {});
+
+std::vector<Token*> tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions);
 
 }

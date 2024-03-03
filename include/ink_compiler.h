@@ -8,7 +8,7 @@
 
 #include <string>
 #include <vector>
-#include <format>
+#include <unordered_set>
 
 class InkLexer {
 public:
@@ -78,6 +78,8 @@ private:
 	std::size_t current_sequence_index = 0;
 
 	std::uint32_t current_uuid = 0;
+
+	std::unordered_set<std::string> declared_variables;
 	
 public:
 	InkStory compile_script(const std::string& script);

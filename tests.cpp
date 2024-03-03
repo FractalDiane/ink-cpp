@@ -4,6 +4,7 @@
 #include "runtime/ink_story.h"
 #include "ink_cparse_ext.h"
 #include "ink_utils.h"
+
 #include "expression_parser/expression_parser.h"
 
 #include "builtin-features.inc"
@@ -99,7 +100,8 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 		ExpressionParser::TokenType::NumberInt,
 	);
 
-	std::vector<ExpressionParser::Token*> result_postfix = ExpressionParser::shunt(result);
+	std::unordered_set<ExpressionParser::Token*> dummy;
+	std::vector<ExpressionParser::Token*> result_postfix = ExpressionParser::shunt(result, dummy);
 	EXPECT_EQ(result.size(), result_postfix.size());
 
 	std::unordered_map<std::string, ExpressionParser::PackedToken> variables;

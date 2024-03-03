@@ -723,7 +723,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 	return result;
 }
 
-std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
+std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, std::unordered_set<Token*>& tokens_shunted) {
 	std::vector<Token*> postfix;
 	std::stack<Token*> stack;
 
@@ -738,6 +738,7 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
 			case TokenType::Variable:
 			case TokenType::KnotName: {
 				postfix.push_back(this_token);
+				tokens_shunted.insert(this_token);
 			} break;
 
 			case TokenType::Operator: {
@@ -745,6 +746,7 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
 				if (unary_type != TokenOperator::UnaryType::NotUnary) {
 					if (unary_type == TokenOperator::UnaryType::Postfix) {
 						postfix.push_back(this_token);
+						tokens_shunted.insert(this_token);
 					} else {
 						stack.push(this_token);
 					}
@@ -763,6 +765,7 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
 
 						if (higher_precedence) {
 							postfix.push_back(next_op);
+							tokens_shunted.insert(next_op);
 							stack.pop();
 						} else {
 							break;
@@ -788,6 +791,7 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
 							} else {
 								stack.pop();
 								postfix.push_back(next);
+								tokens_shunted.insert(next);
 							}
 						}
 
@@ -800,6 +804,7 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
 							Token* new_top = stack.top();
 							if (new_top->get_type() == TokenType::Function) {
 								postfix.push_back(new_top);
+								tokens_shunted.insert(new_top);
 								stack.pop();
 							}
 						}
@@ -812,6 +817,7 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix) {
 							if (next->get_type() == TokenType::ParenComma) {
 								if (static_cast<TokenParenComma*>(next)->data != TokenParenComma::Type::LeftParen) {
 									postfix.push_back(next);
+									tokens_shunted.insert(next);
 									stack.pop();
 								} else {
 									break;
@@ -991,8 +997,9 @@ PackedToken ExpressionParser::execute_expression(const std::string& expression, 
 		all_functions.insert(functions.begin(), functions.end());
 	}
 	
+	std::unordered_set<Token*> dummy;
 	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions);
-	std::vector<Token*> shunted = shunt(tokenized);
+	std::vector<Token*> shunted = shunt(tokenized, dummy);
 
 	TokenMap no_vars;
 	Token* result = execute_expression_tokens(shunted, no_vars);
@@ -1012,8 +1019,9 @@ PackedToken ExpressionParser::execute_expression(const std::string& expression, 
 		all_functions.insert(functions.begin(), functions.end());
 	}
 
+	std::unordered_set<Token*> dummy;
 	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions);
-	std::vector<Token*> shunted = shunt(tokenized);
+	std::vector<Token*> shunted = shunt(tokenized, dummy);
 
 	Token* result = execute_expression_tokens(shunted, variables);
 
@@ -1024,4 +1032,23 @@ PackedToken ExpressionParser::execute_expression(const std::string& expression, 
 	}
 
 	return PackedToken(result);
+}
+
+std::vector<Token*> ExpressionParser::tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions) {
+	FunctionMap all_functions = BuiltinFunctions;
+	if (!functions.empty()) {
+		all_functions.insert(functions.begin(), functions.end());
+	}
+
+	std::unordered_set<Token*> tokens_shunted;
+	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions);
+	std::vector<Token*> shunted = shunt(tokenized, tokens_shunted);
+
+	for (Token* token : tokenized) {
+		if (!tokens_shunted.contains(token)) {
+			delete token;
+		}
+	}
+
+	return shunted;
 }
