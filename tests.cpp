@@ -90,7 +90,7 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 	using ExpressionParser::TokenType;
 	std::string exp = "test = 5 + 7";
 
-	std::vector<ExpressionParser::Token*> result = ExpressionParser::tokenize_expression(exp, {});
+	std::vector<ExpressionParser::Token*> result = ExpressionParser::tokenize_expression(exp, {}, {});
 
 	EXPECT_TOKENS(result,
 		ExpressionParser::TokenType::Variable,
@@ -105,8 +105,8 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 	EXPECT_EQ(result.size(), result_postfix.size());
 
 	std::unordered_map<std::string, ExpressionParser::PackedToken> variables;
-	Token* result_token = ExpressionParser::execute_expression_tokens(result_postfix, variables);
-	EXPECT_FALSE(result_token);
+	ExpressionParser::PackedToken result_token = ExpressionParser::execute_expression_tokens(result_postfix, variables, {});
+	EXPECT_FALSE(result_token.token);
 	EXPECT_EQ(variables["test"].as_int(), 12);
 
 	for (ExpressionParser::Token* token : result) {
@@ -539,8 +539,8 @@ TEST_F(VariableTextTests, ConditionalText) {
 
 	for (std::size_t i = 0; i < expected_text_outer.size(); ++i) {
 		STORY("8_variable_text/8k_conditional_text.ink");
-		story.set_variable("met_blofeld", var_values[i].first);
-		story.set_variable("learned_his_name", var_values[i].second);
+		story.set_variable("met_blofeld", ExpressionParser::PackedToken::from_bool(var_values[i].first));
+		story.set_variable("learned_his_name", ExpressionParser::PackedToken::from_bool(var_values[i].second));
 		EXPECT_TEXT(expected_text_outer[i].first, expected_text_outer[i].second);
 	}
 }
@@ -855,8 +855,8 @@ TEST_F(GlobalVariableTests, VariableChecks) {
 		int mood = std::get<0>(var_values[i]);
 		bool knows_about_wager = std::get<1>(var_values[i]);
 
-		story.set_variable("mood", mood);
-		story.set_variable("knows_about_wager", knows_about_wager);
+		story.set_variable("mood", ExpressionParser::PackedToken::from_bool(mood));
+		story.set_variable("knows_about_wager", ExpressionParser::PackedToken::from_bool(knows_about_wager));
 
 		EXPECT_TEXT(std::format("The train jolted and rattled. {}.",
 								mood > 0 ? "I was feeling positive enough, however, and did not mind the odd bump"
@@ -919,8 +919,8 @@ TEST_F(LogicTests, StringComparisons) {
 TEST_F(ConditionalBlockTests, BasicIf) {
 	for (int i = 0; i < 2; ++i) {
 		STORY("15_conditional_blocks/15a_basic_if.ink");
-		story.set_variable("x", (i == 0 ? 0 : 7));
-		story.set_variable("y", 0);
+		story.set_variable("x", ExpressionParser::PackedToken::from_int(i == 0 ? 0 : 7));
+		story.set_variable("y", ExpressionParser::PackedToken::from_int(0));
 
 		EXPECT_TEXT(std::format("y = {}", i == 0 ? 0 : 6));
 	}
@@ -929,8 +929,8 @@ TEST_F(ConditionalBlockTests, BasicIf) {
 TEST_F(ConditionalBlockTests, IfElse) {
 	for (int i = 0; i < 2; ++i) {
 		STORY("15_conditional_blocks/15b_if_else.ink");
-		story.set_variable("x", i == 0 ? 0 : 7);
-		story.set_variable("y", 0);
+		story.set_variable("x", ExpressionParser::PackedToken::from_int(i == 0 ? 0 : 7));
+		story.set_variable("y", ExpressionParser::PackedToken::from_int(0));
 
 		EXPECT_TEXT(std::format("y = {}", i == 0 ? 1 : 6));
 	}
@@ -939,8 +939,8 @@ TEST_F(ConditionalBlockTests, IfElse) {
 TEST_F(ConditionalBlockTests, IfElseAlt) {
 	for (int i = 0; i < 2; ++i) {
 		STORY("15_conditional_blocks/15c_if_else_alt.ink");
-		story.set_variable("x", i == 0 ? 0 : 7);
-		story.set_variable("y", 0);
+		story.set_variable("x", ExpressionParser::PackedToken::from_int(i == 0 ? 0 : 7));
+		story.set_variable("y", ExpressionParser::PackedToken::from_int(0));
 
 		EXPECT_TEXT(std::format("y = {}", i == 0 ? 1 : 6));
 	}
@@ -949,8 +949,8 @@ TEST_F(ConditionalBlockTests, IfElseAlt) {
 TEST_F(ConditionalBlockTests, IfElifElse) {
 	for (int i = 0; i < 3; ++i) {
 		STORY("15_conditional_blocks/15d_if_elif_else.ink");
-		story.set_variable("x", i == 0 ? 0 : i == 1 ? 7 : -2);
-		story.set_variable("y", 3);
+		story.set_variable("x", ExpressionParser::PackedToken::from_int(i == 0 ? 0 : i == 1 ? 7 : -2));
+		story.set_variable("y", ExpressionParser::PackedToken::from_int(3));
 
 		EXPECT_TEXT(std::format("y = {}", i == 0 ? 0 : i == 1 ? 6 : -1));
 	}
@@ -960,7 +960,7 @@ TEST_F(ConditionalBlockTests, SwitchStatement) {
 	std::vector<std::string> expected_results = {"zero", "one", "two", "lots"};
 	for (int i = 0; i < 4; ++i) {
 		STORY("15_conditional_blocks/15e_switch_statement.ink");
-		story.set_variable("x", i);
+		story.set_variable("x", ExpressionParser::PackedToken::from_int(i));
 
 		EXPECT_TEXT(expected_results[i]);
 	}
@@ -983,19 +983,19 @@ TEST_F(ConditionalBlockTests, ReadCountCondition) {
 
 	for (int i = 0; i < 3; ++i) {
 		STORY("15_conditional_blocks/15f_read_count_condition.ink");
-		story.set_variable("fear", std::get<0>(inputs[i]));
-		story.set_variable("visited_snakes", std::get<1>(inputs[i]));
-		story.set_variable("visited_poland", std::get<2>(inputs[i]));
+		story.set_variable("fear", ExpressionParser::PackedToken::from_int(std::get<0>(inputs[i])));
+		story.set_variable("visited_snakes", ExpressionParser::PackedToken::from_bool(std::get<1>(inputs[i])));
+		story.set_variable("visited_poland", ExpressionParser::PackedToken::from_bool(std::get<2>(inputs[i])));
 
 		EXPECT_TEXT(expected_result[i]);
-		EXPECT_EQ(story.get_variable("fear"), expected_fear[i]);
+		EXPECT_EQ(story.get_variable("fear").as_int(), expected_fear[i]);
 	}
 }
 
 TEST_F(ConditionalBlockTests, ConditionalWithLogic) {
 	for (int i = 0; i < 2; ++i) {
 		STORY("15_conditional_blocks/15g_conditional_with_content.ink");
-		story.set_variable("know_about_wager", i == 1);
+		story.set_variable("know_about_wager", ExpressionParser::PackedToken::from_bool(i == 1));
 
 		EXPECT_TEXT(std::format("I stared at Monsieur Fogg. {}", i == 1 ? "\"But surely you are not serious?\" I demanded." : "\"But there must be a reason for this trip,\" I observed."));
 		EXPECT_TEXT("He said nothing in reply, merely considering his newspaper with as much thoroughness as entomologist considering his latest pinned addition.");
@@ -1005,7 +1005,7 @@ TEST_F(ConditionalBlockTests, ConditionalWithLogic) {
 TEST_F(ConditionalBlockTests, ConditionalWithOptions) {
 	for (int i = 0; i < 2; ++i) {
 		STORY("15_conditional_blocks/15h_conditional_with_options.ink");
-		story.set_variable("door_open", i == 1);
+		story.set_variable("door_open", ExpressionParser::PackedToken::from_bool(i == 1));
 
 		EXPECT_TEXT("Monsieur Fogg and I stared at each other for several long moments.");
 		EXPECT_EQ(story.get_current_choices(), 

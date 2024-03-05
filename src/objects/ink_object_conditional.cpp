@@ -45,7 +45,7 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 	if (!is_switch) {
 		for (auto& entry : branches) {
 			//cparse::packToken condition_result = cparse::calculator::calculate(deinkify_expression(entry.first).c_str(), vars);
-			ExpressionParser::Token* condition_result = ExpressionParser::execute_expression_tokens(entry.first, vars);
+			ExpressionParser::PackedToken condition_result = ExpressionParser::execute_expression_tokens(entry.first, vars, story_state.functions);
 			if (condition_result.as_bool()) {
 				/*for (InkObject* object : entry.second) {
 					object->execute(story_state, eval_result);
@@ -59,10 +59,10 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 	} else {
 		// TODO: this might be redundant and strictly worse performance than the above version
 		//cparse::packToken result = cparse::calculator::calculate(deinkify_expression(switch_expression).c_str(), vars);
-		ExpressionParser::PackedToken result = ExpressionParser::execute_expression_tokens(switch_expression, vars);
+		ExpressionParser::PackedToken result = ExpressionParser::execute_expression_tokens(switch_expression, vars, story_state.functions);
 		for (auto& entry : branches) {
 			//cparse::packToken condition_result = cparse::calculator::calculate(deinkify_expression(entry.first).c_str(), vars);
-			ExpressionParser::PackedToken condition_result = ExpressionParser::execute_expression_tokens(entry.first, vars);
+			ExpressionParser::PackedToken condition_result = ExpressionParser::execute_expression_tokens(entry.first, vars, story_state.functions);
 			if (condition_result == result) {
 				/*for (InkObject* object : entry.second) {
 					object->execute(story_state, eval_result);

@@ -64,12 +64,12 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			if (this_choice.sticky || !story_state.has_choice_been_taken(this, i)) {
 				if (!this_choice.fallback) {
 					bool include_choice = true;
-					const std::vector<std::string>& conditions = this_choice.conditions;
+					const std::vector<std::vector<ExpressionParser::Token*>>& conditions = this_choice.conditions;
 					if (!conditions.empty()) {
-						for (const std::string& condition : conditions) {
+						for (const std::vector<ExpressionParser::Token*>& condition : conditions) {
 							ExpressionParser::TokenMap vars = story_state.story_tracking.add_visit_count_variables(story_state.variables, story_state.current_knot().knot, story_state.current_stitch);
 							//cparse::packToken result = cparse::calculator::calculate(deinkify_expression(condition).c_str(), vars);
-							ExpressionParser::PackedToken result = ExpressionParser::execute_expression(condition, vars);
+							ExpressionParser::PackedToken result = ExpressionParser::execute_expression_tokens(condition, vars, story_state.functions);
 							if (!result.as_bool()) {
 								include_choice = false;
 								break;

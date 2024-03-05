@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <unordered_map>
 #include <unordered_set>
-#include <stack>
+#include <deque>
 #include <functional>
 
 namespace ExpressionParser {
@@ -26,7 +26,24 @@ enum class TokenType {
 struct Token;
 struct PackedToken;
 
-using PtrTokenFunc = std::function<Token*(std::stack<Token*>&)>;
+template <typename T>
+class Stack {
+private:
+	std::deque<T> deque;
+
+public:
+	void push(const T& value) { deque.push_back(value); }
+	void push(T&& value) { deque.push_back(value); }
+	T& top(std::size_t index = 0) noexcept { return deque[deque.size() - index - 1]; }
+	void pop() { deque.pop_back(); }
+
+	std::size_t size() const { return deque.size(); }
+	bool empty() const { return deque.empty(); }
+};
+
+using TokenStack = Stack<PackedToken>;
+
+using PtrTokenFunc = std::function<PackedToken(TokenStack&)>;
 typedef std::unordered_map<std::string, PackedToken> TokenMap;
 typedef std::unordered_map<std::string, PtrTokenFunc> FunctionMap;
 
@@ -303,17 +320,19 @@ struct TokenParenComma : public Token {
 };
 
 struct TokenFunction : public Token {
-	/*struct Data {
-		std::string function;
-		std::vector<Token*> arguments;
-	} data;*/
-	PtrTokenFunc data;
+	struct Data {
+		std::string name;
+		PtrTokenFunc function;
+		bool defer_fetch;
+	} data;
 
-	TokenFunction(PtrTokenFunc function) : data{function} {}
+	TokenFunction(const std::string& name, PtrTokenFunc function, bool defer_fetch) : data{name, function, defer_fetch} {}
 
-	virtual Token* copy() const override { return new TokenFunction(data); }
+	virtual Token* copy() const override { return new TokenFunction(data.name, data.function, data.defer_fetch); }
 
 	virtual TokenType get_type() const override { return TokenType::Function; }
+
+	PackedToken call(TokenStack& stack, const FunctionMap& all_functions);
 };
 
 struct TokenVariable : public Token {
@@ -333,21 +352,69 @@ struct PackedToken {
 	bool owner;
 
 	PackedToken() : token{nullptr}, owner{false} {}
-	PackedToken(Token* token, bool owner) : token{token}, owner{owner} {}
-	PackedToken(bool from) : token{new TokenBoolean(from)}, owner{true} {}
+	explicit PackedToken(Token* token, bool owner) : token{token}, owner{owner} {}
+	/*PackedToken(bool from) : token{new TokenBoolean(from)}, owner{true} {}
 	PackedToken(std::int64_t from) : token{new TokenNumberInt(from)}, owner{true} {}
 	PackedToken(int from) : token{new TokenNumberInt(static_cast<std::int64_t>(from))}, owner{true} {}
 	PackedToken(double from) : token{new TokenNumberFloat(from)}, owner{true} {}
 	PackedToken(const std::string& from) : token{new TokenStringLiteral(from)}, owner{true} {}
-	PackedToken(std::string&& from) : token{new TokenStringLiteral(from)}, owner{true} {}
+	PackedToken(std::string&& from) : token{new TokenStringLiteral(from)}, owner{true} {}*/
 
 	~PackedToken() {
-		if (owner) {
-			delete token;
-		}
+		//if (owner) {
+		//	delete token;
+		//}
 	}
+
+	static PackedToken from_bool(bool from) { return PackedToken(new TokenBoolean(from), true); }
+	static PackedToken from_int(std::int64_t from) { return PackedToken(new TokenNumberInt(from), true); }
+	static PackedToken from_float(double from) { return PackedToken(new TokenNumberFloat(from), true); }
+	static PackedToken from_string(const std::string& from) { return PackedToken(new TokenStringLiteral(from), true); }
+	static PackedToken from_string(std::string&& from) { return PackedToken(new TokenStringLiteral(from), true); }
+
+	static PackedToken from_other(PackedToken& from, bool transfer_ownership) {
+		if (transfer_ownership) {
+			from.owner = false;
+		}
+
+		return PackedToken(from.token, transfer_ownership);
+	}
+
+	/*explicit PackedToken(PackedToken& from, bool transfer_ownership) : token{from.token}, owner{transfer_ownership} {
+		if (transfer_ownership) {
+			from.owner = false;
+		}
+	}*/
+
+	PackedToken(PackedToken&& from) : token{from.token}, owner{from.owner} {
+		from.token = nullptr;
+		from.owner = false;
+	}
+
+	PackedToken& operator=(PackedToken&& other) {
+		if (this != &other) {
+			token = other.token;
+			owner = other.owner;
+			other.token = nullptr;
+			other.owner = false;
+		}
+
+		return *this;
+	}
+
+	PackedToken(const PackedToken& from) : token{from.token}, owner{false} {}
+	//PackedToken(PackedToken&& from) = delete;
+	PackedToken& operator=(const PackedToken& other) {
+		if (this != &other) {
+			token = other.token;
+			owner = false;
+		}
+
+		return *this;
+	}
+	//PackedToken& operator=(PackedToken&& from) = delete;
 	
-	PackedToken(const PackedToken& from) : token{from.token->copy()} {}
+	/*PackedToken(const PackedToken& from) : token{from.token->copy()} {}
 
 	PackedToken(PackedToken&& from) {
 		if (token) {
@@ -377,7 +444,7 @@ struct PackedToken {
 		}
 
 		return *this;
-	}
+	}*/
 
 	bool operator==(const PackedToken& other) const {
 		return token->operator_equal(other.token);
@@ -408,15 +475,15 @@ struct PackedToken {
 	}
 };
 
-std::vector<Token*> tokenize_expression(const std::string& expression, const FunctionMap& all_functions);
+std::vector<Token*> tokenize_expression(const std::string& expression, const FunctionMap& all_functions, const std::unordered_set<std::string>& deferred_functions);
 
 std::vector<Token*> shunt(const std::vector<Token*>& infix, std::unordered_set<Token*>& tokens_shunted);
 
-Token* execute_expression_tokens(const std::vector<Token*>& tokens, TokenMap& variables);
+PackedToken execute_expression_tokens(const std::vector<Token*>& tokens, TokenMap& variables, const FunctionMap& all_functions);
 
-PackedToken execute_expression(const std::string& expression, const FunctionMap& functions = {});
-PackedToken execute_expression(const std::string& expression, TokenMap& variables, const FunctionMap& functions = {});
+PackedToken execute_expression(const std::string& expression, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
+PackedToken execute_expression(const std::string& expression, TokenMap& variables, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
 
-std::vector<Token*> tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions);
+std::vector<Token*> tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions);
 
 }

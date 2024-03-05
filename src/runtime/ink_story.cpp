@@ -27,10 +27,6 @@
 #include <stdexcept>
 #include <iostream>
 
-bool InkStory::builtins_initialized = false;
-
-ExpressionParser::FunctionMap InkStory::builtin_functions{};
-
 InkStory::InkStory(const std::string& inkb_file) {
 	std::ifstream infile{inkb_file, std::ios::binary};
 
@@ -147,9 +143,7 @@ void InkStory::init_story() {
 		}
 	}
 
-	if (!builtins_initialized) {
-		bind_ink_functions();
-	}
+	bind_ink_functions();
 
 	story_state.current_knots_stack = {{&(story_data->knots[story_data->knot_order[0]]), 0}};
 }
@@ -157,51 +151,50 @@ void InkStory::init_story() {
 void InkStory::bind_ink_functions() {
 	using namespace ExpressionParser;
 
-	#define EXP_FUNC(name, body) builtin_functions.insert({name, [this](std::stack<Token*>& stack) body});
+	#define EXP_FUNC(name, body) story_state.functions.insert({name, [this](TokenStack& stack) body});
 
 	//ExpressionParser::PtrTokenFunc = [this](std::stack<ExpressionParser::Token*>& stack) -> ExpressionParser::Token* { return nullptr; };
 	/*builtin_functions.insert({"CHOICE_COUNT", [this](std::stack<Token*>& stack) {
 		return new TokenNumberInt(story_state.current_choices.size());
 	}});*/
 
-	EXP_FUNC("CHOICE_COUNT", { return new TokenNumberInt(story_state.current_choices.size()); });
-	EXP_FUNC("TURNS", { return new TokenNumberInt(story_state.total_choices_taken); });
+	EXP_FUNC("CHOICE_COUNT", { return PackedToken::from_int(story_state.current_choices.size()); });
+	EXP_FUNC("TURNS", { return PackedToken::from_int(story_state.total_choices_taken); });
 
 	EXP_FUNC("TURNS_SINCE", {
-		const std::string& knot = stack.top()->as_string();
-		stack.pop();
-
+		const std::string& knot = stack.top().as_string();
+		
 		if (GetContentResult content = story_data->get_content(knot, story_state.current_knot().knot, story_state.current_stitch); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
 			if (story_state.story_tracking.get_content_stats(content.get_target(), stats)) {
-				return new TokenNumberInt(stats.turns_since_visited);
+				stack.pop();
+				return PackedToken::from_int(stats.turns_since_visited);
 			}
 		}
 		
-		return new TokenNumberInt(-1);
+		stack.pop();
+		return PackedToken::from_int(-1);
 	});
 
 	EXP_FUNC("SEED_RANDOM", {
-		std::int64_t seed = stack.top()->as_int();
+		std::int64_t seed = stack.top().as_int();
 		stack.pop();
 
 		story_state.rng.seed(static_cast<unsigned int>(seed));
-		return nullptr;
+		return PackedToken();
 	});
 
 	EXP_FUNC("RANDOM", {
-		std::int64_t to = stack.top()->as_int();
+		std::int64_t to = stack.top().as_int();
 		stack.pop();
-		std::int64_t from = stack.top()->as_int();
+		std::int64_t from = stack.top().as_int();
 		stack.pop();
 
 		std::int64_t result = randi_range(from, to, story_state.rng);
-		return new TokenNumberInt(result);
+		return PackedToken::from_int(result);
 	});
 
 	#undef EXP_FUNC
-
-	builtins_initialized = true;
 
 	//auto test = cparse::CppFunction([this](cparse::TokenMap scope) -> cparse::packToken { return cparse::packToken::None(); });
 	/*#define CP_FUNC(name, body, ...) {\
@@ -414,13 +407,14 @@ ExpressionParser::PackedToken InkStory::get_variable(const std::string& name) co
 	}*/
 
 	if (auto variable = story_state.variables.find(name); variable != story_state.variables.end()) {
-		return variable->second;
+		// HACK: can this be less bad?
+		return ExpressionParser::PackedToken::from_other(const_cast<ExpressionParser::PackedToken&>(variable->second), false);
 	}
 
 	// TODO: maybe make this crash instead
 	return ExpressionParser::PackedToken();
 }
 
-void InkStory::set_variable(const std::string& name, const ExpressionParser::PackedToken& value) {
-	story_state.variables[name] = value;
+void InkStory::set_variable(const std::string& name, ExpressionParser::PackedToken&& value) {
+	story_state.variables[name] = ExpressionParser::PackedToken::from_other(value, true);
 }

@@ -15,5 +15,5 @@ InkObjectGlobalVariable::~InkObjectGlobalVariable() {
 void InkObjectGlobalVariable::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	//story_state.variables[name] = cparse::calculator::calculate(deinkify_expression(value).c_str(), story_state.get_variables_with_locals());
 	ExpressionParser::TokenMap vars = story_state.get_variables_with_locals();
-	story_state.variables[name] = ExpressionParser::execute_expression_tokens(value_shunted_tokens, vars);
+	story_state.variables[name] = ExpressionParser::execute_expression_tokens(value_shunted_tokens, vars, story_state.functions);
 }

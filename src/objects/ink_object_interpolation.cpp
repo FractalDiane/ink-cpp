@@ -15,6 +15,6 @@ InkObjectInterpolation::~InkObjectInterpolation() {
 void InkObjectInterpolation::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	ExpressionParser::TokenMap vars = story_state.get_variables_with_locals();
 	//cparse::packToken result = cparse::calculator::calculate(deinkify_expression(what_to_interpolate).c_str(), story_state.get_variables_with_locals());
-	ExpressionParser::PackedToken result = ExpressionParser::execute_expression_tokens(what_to_interpolate, vars);
+	ExpressionParser::PackedToken result = ExpressionParser::execute_expression_tokens(what_to_interpolate, vars, story_state.functions);
 	eval_result.result += result.to_printable_string();
 }

@@ -17,5 +17,5 @@ void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eva
 	//cparse::calculator::calculate(deinkify_expression(contents).c_str(), story_state.get_variables_with_locals());
 	ExpressionParser::TokenMap vars = story_state.get_variables_with_locals();
 	//ExpressionParser::execute_expression(contents, vars);
-	ExpressionParser::execute_expression_tokens(contents_shunted_tokens, vars);
+	ExpressionParser::execute_expression_tokens(contents_shunted_tokens, vars, story_state.functions);
 }

@@ -56,6 +56,7 @@ struct InkStoryState {
 	bool just_diverted_to_non_knot = false;
 
 	ExpressionParser::TokenMap variables;
+	ExpressionParser::FunctionMap functions;
 
 	class InkObject* get_current_object(std::int64_t index_offset);
 	bool has_choice_been_taken(class InkObject* choice_object, std::size_t index);

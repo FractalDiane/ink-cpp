@@ -15,8 +15,7 @@ private:
 	InkStoryData* story_data;
 	InkStoryState story_state;
 
-	static ExpressionParser::FunctionMap builtin_functions;
-	static bool builtins_initialized;
+	ExpressionParser::FunctionMap builtin_functions;
 
 private:
 	void init_story();
@@ -40,5 +39,5 @@ public:
 	void choose_choice_index(std::size_t index);
 
 	ExpressionParser::PackedToken get_variable(const std::string& name) const;
-	void set_variable(const std::string& name, const ExpressionParser::PackedToken& value);
+	void set_variable(const std::string& name, ExpressionParser::PackedToken&& value);
 };

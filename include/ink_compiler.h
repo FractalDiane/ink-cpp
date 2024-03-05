@@ -80,6 +80,9 @@ private:
 	std::uint32_t current_uuid = 0;
 
 	std::unordered_set<std::string> declared_variables;
+	std::unordered_set<std::string> declared_functions = {
+		"RANDOM", "RANDOM_SEED", "CHOICE_COUNT", "TURNS", "TURNS_SINCE",
+	};
 	
 public:
 	InkStory compile_script(const std::string& script);

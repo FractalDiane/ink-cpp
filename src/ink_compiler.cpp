@@ -641,7 +641,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 								try {
 									//std::vector<ExpressionParser::Token*> tokenized = ExpressionParser::tokenize_expression(condition_string, {});
 									//current_condition = ExpressionParser::shunt(tokenized);
-									current_condition = ExpressionParser::tokenize_and_shunt_expression(condition_string, {});
+									current_condition = ExpressionParser::tokenize_and_shunt_expression(condition_string, {}, declared_functions);
 								} catch (...) {
 									throw std::runtime_error("Malformed condition in conditional");
 								}
@@ -698,7 +698,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 										try {
 											//std::vector<ExpressionParser::Token*> tokenized = ExpressionParser::tokenize_expression(this_condition, {});
 											//std::vector<ExpressionParser::Token*> shunted = ExpressionParser::shunt(tokenized);
-											std::vector<ExpressionParser::Token*> shunted = ExpressionParser::tokenize_and_shunt_expression(this_condition, {});
+											std::vector<ExpressionParser::Token*> shunted = ExpressionParser::tokenize_and_shunt_expression(this_condition, {}, declared_functions);
 											if (items_conditions.back().first.empty()) {
 												items_conditions.back().first = shunted;
 											} else {
@@ -747,7 +747,14 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					delete object;
 				}
 
-				choice_stack.back().conditions.push_back(condition);
+				try {
+					//std::vector<ExpressionParser::Token*> expression_tokenized = ExpressionParser::tokenize_expression(expression, {});
+					//std::vector<ExpressionParser::Token*> expression_shunted = ExpressionParser::shunt(expression_tokenized);
+					std::vector<ExpressionParser::Token*> condition_shunted = ExpressionParser::tokenize_and_shunt_expression(condition, {}, declared_functions);
+					choice_stack.back().conditions.push_back(condition_shunted);
+				} catch (...) {
+					throw std::runtime_error("Malformed choice condition");
+				}
 			} else {
 				if (is_conditional) {
 					if (!is_switch) {
@@ -763,7 +770,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					try {
 						//std::vector<ExpressionParser::Token*> tokenized = ExpressionParser::tokenize_expression(all_text, {});
 						//std::vector<ExpressionParser::Token*> shunted = ExpressionParser::shunt(tokenized);
-						std::vector<ExpressionParser::Token*> shunted = ExpressionParser::tokenize_and_shunt_expression(all_text, {});
+						std::vector<ExpressionParser::Token*> shunted = ExpressionParser::tokenize_and_shunt_expression(all_text, {}, declared_functions);
 						result_object = new InkObjectInterpolation(shunted);
 					} catch (...) {
 						throw std::runtime_error("Malformed interpolation");
@@ -850,7 +857,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				try {
 					//std::vector<ExpressionParser::Token*> expression_tokenized = ExpressionParser::tokenize_expression(expression, {});
 					//std::vector<ExpressionParser::Token*> expression_shunted = ExpressionParser::shunt(expression_tokenized);
-					std::vector<ExpressionParser::Token*> expression_shunted = ExpressionParser::tokenize_and_shunt_expression(expression, {});
+					std::vector<ExpressionParser::Token*> expression_shunted = ExpressionParser::tokenize_and_shunt_expression(expression, {}, declared_functions);
 					result_object = new InkObjectLogic(expression, expression_shunted);
 				} catch (...) {
 					throw std::runtime_error("Malformed logic statement");
@@ -907,7 +914,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					try {
 						//std::vector<ExpressionParser::Token*> expression_tokenized = ExpressionParser::tokenize_expression(identifier, {});
 						//std::vector<ExpressionParser::Token*> expression_shunted = ExpressionParser::shunt(expression_tokenized);
-						std::vector<ExpressionParser::Token*> expression_shunted = ExpressionParser::tokenize_and_shunt_expression(expression, {});
+						std::vector<ExpressionParser::Token*> expression_shunted = ExpressionParser::tokenize_and_shunt_expression(expression, {}, declared_functions);
 						result_object = new InkObjectGlobalVariable(identifier, expression_shunted);
 					} catch (...) {
 						throw std::runtime_error("Malformed value of VAR statement");

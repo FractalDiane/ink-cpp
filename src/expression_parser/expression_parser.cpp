@@ -3,6 +3,7 @@
 #include <cctype>
 #include <unordered_set>
 #include <cmath>
+#include <stack>
 
 using namespace ExpressionParser;
 
@@ -12,8 +13,8 @@ using namespace ExpressionParser;
 namespace {
 	static const std::unordered_map<std::string, TokenKeyword::Type> Keywords = {
 		{"temp", TokenKeyword::Type::Temp},
-		{"true", TokenKeyword::Type::True},
-		{"false", TokenKeyword::Type::False},
+		//{"true", TokenKeyword::Type::True},
+		//{"false", TokenKeyword::Type::False},
 		{"and", TokenKeyword::Type::And},
 		{"or", TokenKeyword::Type::Or},
 		{"not", TokenKeyword::Type::Not},
@@ -59,34 +60,39 @@ namespace {
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
-	Token* builtin_pow(std::stack<Token*>& stack) {
-		Token* expo = stack.top();
-		stack.pop();
-		Token* base = stack.top();
-		stack.pop();
+	PackedToken builtin_pow(TokenStack& stack) {
+		PackedToken& expo = stack.top(0);
+		PackedToken& base = stack.top(1);
 
-		return new TokenNumberFloat(std::pow(base->as_float(), expo->as_float()));
+		PackedToken result{new TokenNumberFloat(std::pow(base.as_float(), expo.as_float())), true};
+
+		stack.pop();
+		stack.pop();
+		return result;
 	}
 
-	Token* builtin_int(std::stack<Token*>& stack) {
-		Token* what = stack.top();
-		stack.pop();
+	PackedToken builtin_int(TokenStack& stack) {
+		PackedToken& what = stack.top();
+		PackedToken result{new TokenNumberInt(what.as_int()), true};
 
-		return new TokenNumberInt(what->as_int());
+		stack.pop();
+		return result;
 	}
 
-	Token* builtin_float(std::stack<Token*>& stack) {
-		Token* what = stack.top();
-		stack.pop();
+	PackedToken builtin_float(TokenStack& stack) {
+		PackedToken& what = stack.top();
+		PackedToken result{new TokenNumberFloat(what.as_float()), true};
 
-		return new TokenNumberFloat(what->as_float());
+		stack.pop();
+		return result;
 	}
 
-	Token* builtin_floor(std::stack<Token*>& stack) {
-		Token* what = stack.top();
+	PackedToken builtin_floor(TokenStack& stack) {
+		PackedToken& what = stack.top();
+		PackedToken result{new TokenNumberInt(static_cast<std::int64_t>(std::floor(what.as_float()))), true};
+		
 		stack.pop();
-
-		return new TokenNumberInt(static_cast<std::int64_t>(std::floor(what->as_float())));
+		return result;
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
@@ -490,14 +496,37 @@ Token* TokenVariable::get_value(const TokenMap& variables) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-void try_add_word(std::vector<Token*>& result, std::string& word, const FunctionMap& all_functions, bool in_knot_name) {
+PackedToken TokenFunction::call(TokenStack& stack, const FunctionMap& all_functions) {
+	if (!data.defer_fetch) {
+		return (data.function)(stack);
+	} else {
+		if (auto function = all_functions.find(data.name); function != all_functions.end()) {
+			return (function->second)(stack);
+		} else {
+			throw;
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+void try_add_word(std::vector<Token*>& result, std::string& word, const FunctionMap& all_functions, bool in_knot_name, const std::unordered_set<std::string>& deferred_functions) {
 	if (!word.empty()) {
 		bool found_result = false;
 		if (auto keyword = Keywords.find(word); keyword != Keywords.end()) {
 			result.push_back(new TokenKeyword(keyword->second));
 			found_result = true;
+		} else if (word == "true") {
+			result.push_back(new TokenBoolean(true));
+			found_result = true;
+		} else if (word == "false") {
+			result.push_back(new TokenBoolean(false));
+			found_result = true;
 		} else if (auto func = all_functions.find(word); func != all_functions.end()) {
-			result.push_back(new TokenFunction(func->second));
+			result.push_back(new TokenFunction(func->first, func->second, false));
+			found_result = true;
+		} else if (deferred_functions.contains(word)) {
+			result.push_back(new TokenFunction(word, nullptr, true));
 			found_result = true;
 		} else {
 			if (word.contains(".")) {
@@ -531,7 +560,7 @@ void try_add_word(std::vector<Token*>& result, std::string& word, const Function
 	}
 }
 
-std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& expression, const FunctionMap& all_functions) {
+std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& expression, const FunctionMap& all_functions, const std::unordered_set<std::string>& deferred_functions) {
 	std::vector<Token*> result;
 	result.reserve(128);
 
@@ -553,7 +582,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				case '+': {
 					if (next_char(expression, index) == '+') {
 						if (next_char(expression, index + 1) <= 32) {
-							try_add_word(result, current_word, all_functions, in_knot_name);
+							try_add_word(result, current_word, all_functions, in_knot_name, deferred_functions);
 							result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Postfix));
 						} else {
 							result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Prefix));
@@ -568,7 +597,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				case '-': {
 					if (next_char(expression, index) == '-') {
 						if (next_char(expression, index + 1) <= 32) {
-							try_add_word(result, current_word, all_functions, in_knot_name);
+							try_add_word(result, current_word, all_functions, in_knot_name, deferred_functions);
 							result.push_back(new TokenOperator(TokenOperator::Type::Decrement, UnaryType::Postfix));
 						} else {
 							result.push_back(new TokenOperator(TokenOperator::Type::Decrement, UnaryType::Prefix));
@@ -672,17 +701,17 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 
 				case '(': {
-					try_add_word(result, current_word, all_functions, in_knot_name);
+					try_add_word(result, current_word, all_functions, in_knot_name, deferred_functions);
 					result.push_back(new TokenParenComma(TokenParenComma::Type::LeftParen));
 				} break;
 
 				case ')': {
-					try_add_word(result, current_word, all_functions, in_knot_name);
+					try_add_word(result, current_word, all_functions, in_knot_name, deferred_functions);
 					result.push_back(new TokenParenComma(TokenParenComma::Type::RightParen));
 				} break;
 
 				case ',': {
-					try_add_word(result, current_word, all_functions, in_knot_name);
+					try_add_word(result, current_word, all_functions, in_knot_name, deferred_functions);
 					result.push_back(new TokenParenComma(TokenParenComma::Type::Comma));
 				} break;
 
@@ -701,7 +730,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 					if (this_char > 32) {
 						current_word.push_back(this_char);
 					} else {
-						try_add_word(result, current_word, all_functions, in_knot_name);
+						try_add_word(result, current_word, all_functions, in_knot_name, deferred_functions);
 					}
 				} break;
 			}
@@ -718,7 +747,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 		++index;
 	}
 
-	try_add_word(result, current_word, all_functions, in_knot_name);
+	try_add_word(result, current_word, all_functions, in_knot_name, deferred_functions);
 
 	return result;
 }
@@ -732,6 +761,7 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 		Token* this_token = infix[index];
 
 		switch (this_token->get_type()) {
+			case TokenType::Boolean:
 			case TokenType::NumberInt:
 			case TokenType::NumberFloat:
 			case TokenType::StringLiteral:
@@ -844,6 +874,7 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 
 	while (!stack.empty()) {
 		postfix.push_back(stack.top());
+		tokens_shunted.insert(stack.top());
 		stack.pop();
 	}
 
@@ -851,7 +882,7 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 }
 
 #define OP_UN(type, func_pre, func_post) case Type::type: {\
-		Token* operand = stack.top()->get_value(variables);\
+		Token* operand = stack.top().token->get_value(variables);\
 		stack.pop();\
 \
 		Token* result = nullptr;\
@@ -862,31 +893,31 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 		}\
 \
 		tokens_to_dealloc.insert(result);\
-		stack.push(result);\
+		stack.push(PackedToken(result, true));\
 	} break;
 
 #define OP_UN_PRE(type, func) case Type::type: {\
-		Token* operand = stack.top()->get_value(variables);\
+		Token* operand = stack.top().token->get_value(variables);\
 		stack.pop();\
 \
 		Token* result = operand->operator_##func();\
 		tokens_to_dealloc.insert(result);\
-		stack.push(result);\
+		stack.push(PackedToken(result, true));\
 	} break;
 
 #define OP_BIN(type, func) case Type::type: {\
-		Token* right = stack.top()->get_value(variables);\
+		Token* right = stack.top().token->get_value(variables);\
 		stack.pop();\
-		Token* left = stack.top()->get_value(variables);\
+		Token* left = stack.top().token->get_value(variables);\
 		stack.pop();\
 \
 		Token* result = left->operator_##func(right);\
 		tokens_to_dealloc.insert(result);\
-		stack.push(result);\
+		stack.push(PackedToken(result, true));\
 	} break;
 
-Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& expression_tokens, TokenMap& variables) {
-	std::stack<Token*> stack;
+PackedToken ExpressionParser::execute_expression_tokens(const std::vector<Token*>& expression_tokens, TokenMap& variables, const FunctionMap& all_functions) {
+	TokenStack stack;
 	std::unordered_set<Token*> tokens_to_dealloc;
 
 	std::size_t index = 0;
@@ -894,12 +925,13 @@ Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& ex
 		Token* this_token = expression_tokens[index];
 
 		switch (this_token->get_type()) {
+			case TokenType::Boolean:
 			case TokenType::NumberInt:
 			case TokenType::NumberFloat:
 			case TokenType::StringLiteral:
 			case TokenType::Variable:
 			case TokenType::KnotName: {
-				stack.push(this_token);
+				stack.push(PackedToken(this_token, false));
 			} break;
 
 			case TokenType::Operator: {
@@ -938,19 +970,28 @@ Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& ex
 					OP_UN_PRE(BitNot, bitnot);
 
 					case Type::Assign: {
-						Token* value = stack.top();
+						Token* value = stack.top().token;
 						stack.pop();
-						Token* var = stack.top();
+						Token* var = stack.top().token;
 						stack.pop();
 						if (var->get_type() != TokenType::Variable) {
 							throw;
 						}
 
-						const std::string& var_name = static_cast<TokenVariable*>(var)->data;
-						if (auto existing_var = variables.find(var_name); existing_var != variables.end()) {
+						std::string var_name = static_cast<TokenVariable*>(var)->data;
+						/*if (auto existing_var = variables.find(var_name); existing_var != variables.end()) {
 							existing_var->second = PackedToken(value);
 						} else {
 							variables.insert(std::make_pair(var_name, std::move(value)));
+						}*/
+
+						if (variables.contains(var_name)) {
+							variables.erase(var_name);
+							variables.emplace(var_name, PackedToken(value, true));
+						} else {
+							//variables.insert(std::make_pair(var_name, PackedToken(value, true)));
+							//const std::pair<std::string, PackedToken> entry = std::make_pair(var_name, PackedToken(value, true));
+							variables.emplace(var_name, PackedToken(value, true));
 						}
 
 						tokens_to_dealloc.erase(value);
@@ -963,7 +1004,7 @@ Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& ex
 			} break;
 
 			case TokenType::Function: {
-				if (Token* result = (static_cast<TokenFunction*>(this_token)->data)(stack)) {
+				if (PackedToken result = static_cast<TokenFunction*>(this_token)->call(stack, all_functions); result.token) {
 					stack.push(result);
 				}
 			} break;
@@ -976,10 +1017,11 @@ Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& ex
 		++index;
 	}
 
-	Token* result = nullptr;
+	//Token* result = nullptr;
+	PackedToken result{};
 	if (!stack.empty()) {
-		result = stack.top()->get_value(variables);
-		tokens_to_dealloc.erase(result);
+		result = PackedToken(stack.top().token->get_value(variables), false);
+		tokens_to_dealloc.erase(result.token);
 	}
 
 	for (Token* token : tokens_to_dealloc) {
@@ -991,57 +1033,59 @@ Token* ExpressionParser::execute_expression_tokens(const std::vector<Token*>& ex
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-PackedToken ExpressionParser::execute_expression(const std::string& expression, const FunctionMap& functions) {
+PackedToken ExpressionParser::execute_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
 	FunctionMap all_functions = BuiltinFunctions;
 	if (!functions.empty()) {
 		all_functions.insert(functions.begin(), functions.end());
 	}
 	
 	std::unordered_set<Token*> dummy;
-	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions);
+	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions, deferred_functions);
 	std::vector<Token*> shunted = shunt(tokenized, dummy);
 
 	TokenMap no_vars;
-	Token* result = execute_expression_tokens(shunted, no_vars);
+	PackedToken result = execute_expression_tokens(shunted, no_vars, all_functions);
 
 	for (Token* token : tokenized) {
-		if (token != result) {
+		if (token != result.token) {
 			delete token;
 		}
 	}
 
-	return PackedToken(result);
+	//return PackedToken(result);
+	return result;
 }
 
-PackedToken ExpressionParser::execute_expression(const std::string& expression, TokenMap& variables, const FunctionMap& functions) {
+PackedToken ExpressionParser::execute_expression(const std::string& expression, TokenMap& variables, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
 	FunctionMap all_functions = BuiltinFunctions;
 	if (!functions.empty()) {
 		all_functions.insert(functions.begin(), functions.end());
 	}
 
 	std::unordered_set<Token*> dummy;
-	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions);
+	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions, deferred_functions);
 	std::vector<Token*> shunted = shunt(tokenized, dummy);
 
-	Token* result = execute_expression_tokens(shunted, variables);
+	PackedToken result = execute_expression_tokens(shunted, variables, all_functions);
 
 	for (Token* token : tokenized) {
-		if (token != result) {
+		if (token != result.token) {
 			delete token;
 		}
 	}
 
-	return PackedToken(result);
+	//return PackedToken(result);
+	return result;
 }
 
-std::vector<Token*> ExpressionParser::tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions) {
+std::vector<Token*> ExpressionParser::tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
 	FunctionMap all_functions = BuiltinFunctions;
 	if (!functions.empty()) {
 		all_functions.insert(functions.begin(), functions.end());
 	}
 
 	std::unordered_set<Token*> tokens_shunted;
-	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions);
+	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions, deferred_functions);
 	std::vector<Token*> shunted = shunt(tokenized, tokens_shunted);
 
 	for (Token* token : tokenized) {
