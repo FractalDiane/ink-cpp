@@ -590,23 +590,23 @@ std::string TokenKnotName::to_printable_string() const {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-Token* TokenVariable::get_value(const VariableMap& variables, const VariableMap& constants) {
+Token::ValueResult TokenVariable::get_value(const VariableMap& variables, const VariableMap& constants) {
 	if (auto var_value = variables.find(data); var_value != variables.end()) {
 		switch (var_value->second.index()) {
 			case Variant_Bool: {
-				return new TokenBoolean(std::get<bool>(var_value->second));
+				return {new TokenBoolean(std::get<bool>(var_value->second)), true};
 			} break;
 
 			case Variant_Int: {
-				return new TokenNumberInt(std::get<std::int64_t>(var_value->second));
+				return {new TokenNumberInt(std::get<std::int64_t>(var_value->second)), true};
 			} break;
 
 			case Variant_Float: {
-				return new TokenNumberFloat(std::get<double>(var_value->second));
+				return {new TokenNumberFloat(std::get<double>(var_value->second)), true};
 			} break;
 
 			case Variant_String: {
-				return new TokenStringLiteral(std::get<std::string>(var_value->second));
+				return {new TokenStringLiteral(std::get<std::string>(var_value->second)), true};
 			} break;
 
 			default: {
@@ -617,19 +617,19 @@ Token* TokenVariable::get_value(const VariableMap& variables, const VariableMap&
 		// TODO: dry it
 		switch (const_value->second.index()) {
 			case Variant_Bool: {
-				return new TokenBoolean(std::get<bool>(const_value->second));
+				return {new TokenBoolean(std::get<bool>(const_value->second)), true};
 			} break;
 
 			case Variant_Int: {
-				return new TokenNumberInt(std::get<std::int64_t>(const_value->second));
+				return {new TokenNumberInt(std::get<std::int64_t>(const_value->second)), true};
 			} break;
 
 			case Variant_Float: {
-				return new TokenNumberFloat(std::get<double>(const_value->second));
+				return {new TokenNumberFloat(std::get<double>(const_value->second)), true};
 			} break;
 
 			case Variant_String: {
-				return new TokenStringLiteral(std::get<std::string>(const_value->second));
+				return {new TokenStringLiteral(std::get<std::string>(const_value->second)), true};
 			} break;
 
 			default: {
@@ -637,7 +637,7 @@ Token* TokenVariable::get_value(const VariableMap& variables, const VariableMap&
 			} break;
 		}
 	} else {
-		return nullptr;
+		return {nullptr, false};
 	}
 }
 
@@ -1034,36 +1034,54 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 }
 
 #define OP_UN(type, func_pre, func_post) case Type::type: {\
-		Token* operand = stack.top()->get_value(variables, constants);\
+		Token::ValueResult operand = stack.top()->get_value(variables, constants);\
 		stack.pop();\
 \
 		Token* result = nullptr;\
 		if (op->data.unary_type == TokenOperator::UnaryType::Prefix) {\
-			result = operand->operator_##func_pre();\
+			result = operand.token->operator_##func_pre();\
 		} else {\
-			result = operand->operator_##func_post();\
+			result = operand.token->operator_##func_post();\
+		}\
+\
+		if (operand.from_variable) {\
+			delete operand.token;\
 		}\
 \
 		stack.push(result);\
 	} break;
 
 #define OP_UN_PRE(type, func) case Type::type: {\
-		Token* operand = stack.top()->get_value(variables, constants);\
+		Token::ValueResult operand = stack.top()->get_value(variables, constants);\
 		stack.pop();\
 \
-		Token* result = operand->operator_##func();\
+		Token* result = operand.token->operator_##func();\
 		tokens_to_dealloc.insert(result);\
+\
+		if (operand.from_variable) {\
+			delete operand.token;\
+		}\
+\
 		stack.push(result);\
 	} break;
 
 #define OP_BIN(type, func) case Type::type: {\
-		Token* right = stack.top()->get_value(variables, constants);\
+		Token::ValueResult right = stack.top()->get_value(variables, constants);\
 		stack.pop();\
-		Token* left = stack.top()->get_value(variables, constants);\
+		Token::ValueResult left = stack.top()->get_value(variables, constants);\
 		stack.pop();\
 \
-		Token* result = left->operator_##func(right);\
+		Token* result = left.token->operator_##func(right.token);\
 		tokens_to_dealloc.insert(result);\
+\
+		if (left.from_variable) {\
+			delete left.token;\
+		}\
+\
+		if (right.from_variable) {\
+			delete right.token;\
+		}\
+\
 		stack.push(result);\
 	} break;
 
@@ -1160,19 +1178,16 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 		++index;
 	}
 
-	//Token* result = nullptr;
-	Token* result = nullptr;
+	std::optional<Variant> result{};
 	if (!stack.empty()) {
-		result = stack.top()->get_value(variables, constants);
+		result = stack.top()->get_variant_value(variables, constants);
 	}
-
-	std::optional<Variant> final_result = result ? result->get_variant_value(variables, constants) : std::optional<Variant>();
 
 	for (Token* token : tokens_to_dealloc) {
 		delete token;
 	}
 
-	return final_result;
+	return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

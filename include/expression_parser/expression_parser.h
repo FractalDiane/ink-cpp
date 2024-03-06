@@ -94,7 +94,12 @@ struct Token {
 
 	virtual std::string to_printable_string() const;
 
-	virtual Token* get_value(const VariableMap& variables, const VariableMap& constants) { return this; }
+	struct ValueResult {
+		Token* token;
+		bool from_variable;
+	};
+
+	virtual ValueResult get_value(const VariableMap& variables, const VariableMap& constants) { return {this, false}; }
 	virtual std::optional<Variant> get_variant_value(const VariableMap& variables, const VariableMap& constants) const { return {}; }
 
 	virtual Token* operator_plus(const Token* other) const;
@@ -384,7 +389,7 @@ struct TokenVariable : public Token {
 
 	virtual TokenType get_type() const override { return TokenType::Variable; }
 
-	virtual Token* get_value(const VariableMap& variables, const VariableMap& constants) override;
+	virtual ValueResult get_value(const VariableMap& variables, const VariableMap& constants) override;
 	virtual std::optional<Variant> get_variant_value(const VariableMap& variables, const VariableMap& constants) const override;
 };
 
