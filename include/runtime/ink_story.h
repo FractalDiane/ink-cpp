@@ -36,6 +36,6 @@ public:
 
 	void choose_choice_index(std::size_t index);
 
-	std::optional<ExpressionParser::PackToken> get_variable(const std::string& name) const;
-	void set_variable(const std::string& name, ExpressionParser::PackToken&& value);
+	std::optional<ExpressionParser::Variant> get_variable(const std::string& name) const;
+	void set_variable(const std::string& name, ExpressionParser::Variant&& value);
 };

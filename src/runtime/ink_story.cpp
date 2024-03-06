@@ -157,7 +157,7 @@ void InkStory::bind_ink_functions() {
 	EXP_FUNC("TURNS", { return new TokenNumberInt(story_state.total_choices_taken); });
 
 	EXP_FUNC("TURNS_SINCE", {
-		std::string knot = std::get<std::string>(stack.top()->get_variant_value(variables, constants).value());
+		std::string knot = as_string(stack.top()->get_variant_value(variables, constants).value());
 		
 		if (GetContentResult content = story_data->get_content(knot, story_state.current_knot().knot, story_state.current_stitch); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
@@ -172,7 +172,7 @@ void InkStory::bind_ink_functions() {
 	});
 
 	EXP_FUNC("SEED_RANDOM", {
-		std::int64_t seed = std::get<std::int64_t>(stack.top()->get_variant_value(variables, constants).value());
+		std::int64_t seed = as_int(stack.top()->get_variant_value(variables, constants).value());
 		stack.pop();
 
 		story_state.rng.seed(static_cast<unsigned int>(seed));
@@ -180,9 +180,9 @@ void InkStory::bind_ink_functions() {
 	});
 
 	EXP_FUNC("RANDOM", {
-		std::int64_t to = std::get<std::int64_t>(stack.top()->get_variant_value(variables, constants).value());
+		std::int64_t to = as_int(stack.top()->get_variant_value(variables, constants).value());
 		stack.pop();
-		std::int64_t from = std::get<std::int64_t>(stack.top()->get_variant_value(variables, constants).value());
+		std::int64_t from = as_int(stack.top()->get_variant_value(variables, constants).value());
 		stack.pop();
 
 		std::int64_t result = randi_range(from, to, story_state.rng);
@@ -361,7 +361,7 @@ void InkStory::choose_choice_index(std::size_t index) {
 	}
 }
 
-std::optional<ExpressionParser::PackToken> InkStory::get_variable(const std::string& name) const {
+std::optional<ExpressionParser::Variant> InkStory::get_variable(const std::string& name) const {
 	/*if (const cparse::packToken* variable = story_state.variables.find(name)) {
 		return *variable;
 	}*/
@@ -381,6 +381,6 @@ std::optional<ExpressionParser::PackToken> InkStory::get_variable(const std::str
 	return {};
 }
 
-void InkStory::set_variable(const std::string& name, ExpressionParser::PackToken&& value) {
+void InkStory::set_variable(const std::string& name, ExpressionParser::Variant&& value) {
 	story_state.variables[name] = value;
 }

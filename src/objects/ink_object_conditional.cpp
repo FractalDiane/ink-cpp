@@ -45,8 +45,8 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 	if (!is_switch) {
 		for (auto& entry : branches) {
 			//cparse::packToken condition_result = cparse::calculator::calculate(deinkify_expression(entry.first).c_str(), vars);
-			ExpressionParser::PackToken condition_result = ExpressionParser::execute_expression_tokens(entry.first, story_state.variables, knot_vars, story_state.functions).value();
-			if (std::get<bool>(condition_result)) {
+			ExpressionParser::Variant condition_result = ExpressionParser::execute_expression_tokens(entry.first, story_state.variables, knot_vars, story_state.functions).value();
+			if (ExpressionParser::as_bool(condition_result)) {
 				/*for (InkObject* object : entry.second) {
 					object->execute(story_state, eval_result);
 				}*/
@@ -59,10 +59,10 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 	} else {
 		// TODO: this might be redundant and strictly worse performance than the above version
 		//cparse::packToken result = cparse::calculator::calculate(deinkify_expression(switch_expression).c_str(), vars);
-		ExpressionParser::PackToken result = ExpressionParser::execute_expression_tokens(switch_expression, story_state.variables, knot_vars, story_state.functions).value();
+		ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(switch_expression, story_state.variables, knot_vars, story_state.functions).value();
 		for (auto& entry : branches) {
 			//cparse::packToken condition_result = cparse::calculator::calculate(deinkify_expression(entry.first).c_str(), vars);
-			ExpressionParser::PackToken condition_result = ExpressionParser::execute_expression_tokens(entry.first, story_state.variables, knot_vars, story_state.functions).value();
+			ExpressionParser::Variant condition_result = ExpressionParser::execute_expression_tokens(entry.first, story_state.variables, knot_vars, story_state.functions).value();
 			if (condition_result == result) {
 				/*for (InkObject* object : entry.second) {
 					object->execute(story_state, eval_result);

@@ -106,7 +106,7 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 
 	ExpressionParser::VariableMap variables;
 	ExpressionParser::VariableMap constants;
-	std::optional<ExpressionParser::PackToken> result_token = ExpressionParser::execute_expression_tokens(result_postfix, variables, constants, {});
+	std::optional<ExpressionParser::Variant> result_token = ExpressionParser::execute_expression_tokens(result_postfix, variables, constants, {});
 	EXPECT_FALSE(result_token.has_value());
 	EXPECT_EQ(std::get<std::int64_t>(variables["test"]), 12);
 
@@ -116,59 +116,59 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 }
 
 TEST_F(ExpressionParserTests, ExpressionEvaluation) {
-	using ExpressionParser::PackToken;
+	using ExpressionParser::Variant;
 	using ExpressionParser::execute_expression;
 
-	PackToken t1 = execute_expression("5 + 7").value();
+	Variant t1 = execute_expression("5 + 7").value();
 	EXPECT_EQ(std::get<std::int64_t>(t1), 12);
 
-	PackToken t2 = execute_expression("5 + 7 * 52 - 8").value();
+	Variant t2 = execute_expression("5 + 7 * 52 - 8").value();
 	EXPECT_EQ(std::get<std::int64_t>(t2), 361);
 
-	PackToken t3 = execute_expression("5.0 * 4.2").value();
+	Variant t3 = execute_expression("5.0 * 4.2").value();
 	EXPECT_EQ(std::get<double>(t3), 21.0);
 
-	PackToken t4 = execute_expression("5.0 - 4.2 - 3.7 / 2.5").value();
+	Variant t4 = execute_expression("5.0 - 4.2 - 3.7 / 2.5").value();
 	EXPECT_TRUE(std::abs(std::get<double>(t4) - -0.68) < 0.0001);
 
-	PackToken t5 = execute_expression("5 == 2").value();
+	Variant t5 = execute_expression("5 == 2").value();
 	EXPECT_EQ(std::get<bool>(t5), false);
 
-	PackToken t6 = execute_expression("3 != 6").value();
+	Variant t6 = execute_expression("3 != 6").value();
 	EXPECT_EQ(std::get<bool>(t6), true);
 
-	PackToken t7 = execute_expression("7 < 12").value();
+	Variant t7 = execute_expression("7 < 12").value();
 	EXPECT_EQ(std::get<bool>(t7), true);
 
-	PackToken t8 = execute_expression(R"("hello" + " " + "there")").value();
+	Variant t8 = execute_expression(R"("hello" + " " + "there")").value();
 	EXPECT_EQ(std::get<std::string>(t8), "hello there");
 
-	PackToken t9 = execute_expression("++5").value();
+	Variant t9 = execute_expression("++5").value();
 	EXPECT_EQ(std::get<std::int64_t>(t9), 6);
 
-	PackToken t10 = execute_expression("5++").value();
+	Variant t10 = execute_expression("5++").value();
 	EXPECT_EQ(std::get<std::int64_t>(t10), 5);
 
-	PackToken t11 = execute_expression(R"("hello" ? "llo")").value();
+	Variant t11 = execute_expression(R"("hello" ? "llo")").value();
 	EXPECT_EQ(std::get<bool>(t11), true);
 
-	PackToken t12 = execute_expression(R"("hello" ? "blah")").value();
+	Variant t12 = execute_expression(R"("hello" ? "blah")").value();
 	EXPECT_EQ(std::get<bool>(t12), false);
 
-	PackToken t13 = execute_expression("5 * (3 + 4)").value();
+	Variant t13 = execute_expression("5 * (3 + 4)").value();
 	EXPECT_EQ(std::get<std::int64_t>(t13), 35);
 
-	PackToken t14 = execute_expression("POW(3, 2)").value();
+	Variant t14 = execute_expression("POW(3, 2)").value();
 	EXPECT_EQ(std::get<double>(t14), 9);
 
-	PackToken t15 = execute_expression("-> my_knot").value();
+	Variant t15 = execute_expression("-> my_knot").value();
 	EXPECT_EQ(std::get<std::string>(t15), "my_knot");
 
-	PackToken t16 = execute_expression("POW(FLOOR(3.5), FLOOR(2.9)").value();
+	Variant t16 = execute_expression("POW(FLOOR(3.5), FLOOR(2.9)").value();
 	EXPECT_EQ(std::get<double>(t16), 9);
 
 	ExpressionParser::VariableMap vars = {{"test", 6}};
-	PackToken t17 = execute_expression("POW(test, 2)", vars, {}).value();
+	Variant t17 = execute_expression("POW(test, 2)", vars, {}).value();
 	EXPECT_EQ(std::get<double>(t17), 36);
 }
 #pragma endregion

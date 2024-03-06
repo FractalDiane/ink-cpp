@@ -57,28 +57,12 @@ namespace {
 
 		{O::Assign, C(16)},
 	};
-	
-	std::int64_t as_int(const PackToken& token) {
-		if (token.index() == Variant_Int) {
-			return std::get<std::int64_t>(token);
-		} else {
-			return static_cast<std::int64_t>(std::get<double>(token));
-		}
-	}
-
-	double as_float(const PackToken& token) {
-		if (token.index() == Variant_Int) {
-			return static_cast<double>(std::get<std::int64_t>(token));
-		} else {
-			return std::get<double>(token);
-		}
-	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
 	Token* builtin_pow(TokenStack& stack, VariableMap& variables, const VariableMap& constants) {
-		PackToken expo = stack.top(0)->get_variant_value(variables, constants).value();
-		PackToken base = stack.top(1)->get_variant_value(variables, constants).value();
+		Variant expo = stack.top(0)->get_variant_value(variables, constants).value();
+		Variant base = stack.top(1)->get_variant_value(variables, constants).value();
 
 		Token* result = new TokenNumberFloat(std::pow(as_float(base), as_float(expo)));
 
@@ -88,7 +72,7 @@ namespace {
 	}
 
 	Token* builtin_int(TokenStack& stack, VariableMap& variables, const VariableMap& constants) {
-		PackToken what = stack.top()->get_variant_value(variables, constants).value();
+		Variant what = stack.top()->get_variant_value(variables, constants).value();
 		Token* result = new TokenNumberInt(as_int(what));
 
 		stack.pop();
@@ -96,7 +80,7 @@ namespace {
 	}
 
 	Token* builtin_float(TokenStack& stack, VariableMap& variables, const VariableMap& constants) {
-		PackToken what = stack.top()->get_variant_value(variables, constants).value();
+		Variant what = stack.top()->get_variant_value(variables, constants).value();
 		Token* result = new TokenNumberFloat(as_float(what));
 
 		stack.pop();
@@ -104,7 +88,7 @@ namespace {
 	}
 
 	Token* builtin_floor(TokenStack& stack, VariableMap& variables, const VariableMap& constants) {
-		PackToken what = stack.top()->get_variant_value(variables, constants).value();
+		Variant what = stack.top()->get_variant_value(variables, constants).value();
 		Token* result = new TokenNumberInt(static_cast<std::int64_t>(std::floor(as_float(what))));
 		
 		stack.pop();
@@ -131,21 +115,101 @@ namespace {
 #undef O
 #undef C
 
-std::string ExpressionParser::token_to_printable_string(const PackToken& token) {
+bool ExpressionParser::as_bool(const Variant& variant) {
+	switch (variant.index()) {
+		case Variant_Bool: {
+			return std::get<bool>(variant);
+		} break;
+
+		case Variant_Int: {
+			return std::get<std::int64_t>(variant) != 0;
+		} break;
+
+		case Variant_Float: {
+			return std::get<double>(variant) != 0.0;
+		} break;
+
+		default: {
+			throw;
+		}
+	}
+}
+
+std::int64_t ExpressionParser::as_int(const Variant& variant) {
+	switch (variant.index()) {
+		case Variant_Bool: {
+			return static_cast<std::int64_t>(std::get<bool>(variant));
+		} break;
+
+		case Variant_Int: {
+			return std::get<std::int64_t>(variant);
+		} break;
+
+		case Variant_Float: {
+			return static_cast<std::int64_t>(std::get<double>(variant));
+		} break;
+
+		case Variant_String: {
+			return std::stoll(std::get<std::string>(variant));
+		} break;
+
+		default: {
+			throw;
+		}
+	}
+}
+
+double ExpressionParser::as_float(const Variant& variant) {
+	switch (variant.index()) {
+		case Variant_Bool: {
+			return static_cast<double>(std::get<bool>(variant));
+		} break;
+
+		case Variant_Int: {
+			return static_cast<double>(std::get<std::int64_t>(variant));
+		} break;
+
+		case Variant_Float: {
+			return std::get<double>(variant);
+		} break;
+
+		case Variant_String: {
+			return std::stod(std::get<std::string>(variant));
+		} break;
+
+		default: {
+			throw;
+		}
+	}
+}
+
+std::string ExpressionParser::as_string(const Variant& variant) {
+	switch (variant.index()) {
+		case Variant_String: {
+			return std::get<std::string>(variant);
+		} break;
+
+		default: {
+			throw;
+		}
+	}
+}
+
+std::string ExpressionParser::to_printable_string(const Variant& token) {
 	switch (token.index()) {
-		case Variant_Bool: { // bool
+		case Variant_Bool: {
 			return std::get<bool>(token) ? "true" : "false";
 		} break;
 
-		case Variant_Int: { // int
+		case Variant_Int: {
 			return std::to_string(std::get<std::int64_t>(token));
 		} break;
 
-		case Variant_Float: { // float
+		case Variant_Float: {
 			return std::to_string(std::get<double>(token));
 		} break;
 
-		case Variant_String: { // string
+		case Variant_String: {
 			return std::get<std::string>(token);
 		} break;
 
@@ -529,19 +593,19 @@ std::string TokenKnotName::to_printable_string() const {
 Token* TokenVariable::get_value(const VariableMap& variables, const VariableMap& constants) {
 	if (auto var_value = variables.find(data); var_value != variables.end()) {
 		switch (var_value->second.index()) {
-			case Variant_Bool: { // bool
+			case Variant_Bool: {
 				return new TokenBoolean(std::get<bool>(var_value->second));
 			} break;
 
-			case Variant_Int: { // int
+			case Variant_Int: {
 				return new TokenNumberInt(std::get<std::int64_t>(var_value->second));
 			} break;
 
-			case Variant_Float: { // float
+			case Variant_Float: {
 				return new TokenNumberFloat(std::get<double>(var_value->second));
 			} break;
 
-			case Variant_String: { // string
+			case Variant_String: {
 				return new TokenStringLiteral(std::get<std::string>(var_value->second));
 			} break;
 
@@ -552,19 +616,19 @@ Token* TokenVariable::get_value(const VariableMap& variables, const VariableMap&
 	} else if (auto const_value = constants.find(data); const_value != constants.end()) {
 		// TODO: dry it
 		switch (const_value->second.index()) {
-			case Variant_Bool: { // bool
+			case Variant_Bool: {
 				return new TokenBoolean(std::get<bool>(const_value->second));
 			} break;
 
-			case Variant_Int: { // int
+			case Variant_Int: {
 				return new TokenNumberInt(std::get<std::int64_t>(const_value->second));
 			} break;
 
-			case Variant_Float: { // float
+			case Variant_Float: {
 				return new TokenNumberFloat(std::get<double>(const_value->second));
 			} break;
 
-			case Variant_String: { // string
+			case Variant_String: {
 				return new TokenStringLiteral(std::get<std::string>(const_value->second));
 			} break;
 
@@ -577,7 +641,7 @@ Token* TokenVariable::get_value(const VariableMap& variables, const VariableMap&
 	}
 }
 
-std::optional<PackToken> TokenVariable::get_variant_value(const VariableMap& variables, const VariableMap& constants) const {
+std::optional<Variant> TokenVariable::get_variant_value(const VariableMap& variables, const VariableMap& constants) const {
 	if (auto var_value = variables.find(data); var_value != variables.end()) {
 		return var_value->second;
 	} else if (auto const_value = constants.find(data); const_value != constants.end()) {
@@ -1003,7 +1067,7 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 		stack.push(result);\
 	} break;
 
-std::optional<PackToken> ExpressionParser::execute_expression_tokens(const std::vector<Token*>& expression_tokens, VariableMap& variables, const VariableMap& constants, const FunctionMap& all_functions) {
+std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::vector<Token*>& expression_tokens, VariableMap& variables, const VariableMap& constants, const FunctionMap& all_functions) {
 	TokenStack stack;
 	std::unordered_set<Token*> tokens_to_dealloc;
 
@@ -1066,7 +1130,7 @@ std::optional<PackToken> ExpressionParser::execute_expression_tokens(const std::
 						}
 
 						std::string var_name = static_cast<TokenVariable*>(var)->data;
-						if (std::optional<PackToken> var_value = value->get_variant_value(variables, constants); var_value.has_value()) {
+						if (std::optional<Variant> var_value = value->get_variant_value(variables, constants); var_value.has_value()) {
 							variables[var_name] = var_value.value();
 						} else {
 							throw;
@@ -1102,7 +1166,7 @@ std::optional<PackToken> ExpressionParser::execute_expression_tokens(const std::
 		result = stack.top()->get_value(variables, constants);
 	}
 
-	std::optional<PackToken> final_result = result ? result->get_variant_value(variables, constants) : std::optional<PackToken>();
+	std::optional<Variant> final_result = result ? result->get_variant_value(variables, constants) : std::optional<Variant>();
 
 	for (Token* token : tokens_to_dealloc) {
 		delete token;
@@ -1113,7 +1177,7 @@ std::optional<PackToken> ExpressionParser::execute_expression_tokens(const std::
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::optional<PackToken> ExpressionParser::execute_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
+std::optional<Variant> ExpressionParser::execute_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
 	FunctionMap all_functions = BuiltinFunctions;
 	if (!functions.empty()) {
 		all_functions.insert(functions.begin(), functions.end());
@@ -1125,7 +1189,7 @@ std::optional<PackToken> ExpressionParser::execute_expression(const std::string&
 
 	VariableMap no_vars;
 	VariableMap no_consts;
-	std::optional<PackToken> result = execute_expression_tokens(shunted, no_vars, no_consts, all_functions);
+	std::optional<Variant> result = execute_expression_tokens(shunted, no_vars, no_consts, all_functions);
 
 	for (Token* token : tokenized) {
 		delete token;
@@ -1134,7 +1198,7 @@ std::optional<PackToken> ExpressionParser::execute_expression(const std::string&
 	return result;
 }
 
-std::optional<PackToken> ExpressionParser::execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
+std::optional<Variant> ExpressionParser::execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
 	FunctionMap all_functions = BuiltinFunctions;
 	if (!functions.empty()) {
 		all_functions.insert(functions.begin(), functions.end());
@@ -1144,7 +1208,7 @@ std::optional<PackToken> ExpressionParser::execute_expression(const std::string&
 	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions, deferred_functions);
 	std::vector<Token*> shunted = shunt(tokenized, dummy);
 
-	std::optional<PackToken> result = execute_expression_tokens(shunted, variables, constants, all_functions);
+	std::optional<Variant> result = execute_expression_tokens(shunted, variables, constants, all_functions);
 
 	for (Token* token : tokenized) {
 		delete token;
