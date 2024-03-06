@@ -55,7 +55,7 @@ struct InkStoryState {
 	bool at_choice = false;
 	bool just_diverted_to_non_knot = false;
 
-	ExpressionParser::TokenMap variables;
+	ExpressionParser::VariableMap variables;
 	ExpressionParser::FunctionMap functions;
 
 	class InkObject* get_current_object(std::int64_t index_offset);
@@ -66,7 +66,7 @@ struct InkStoryState {
 	inline std::size_t current_knot_size() const { return current_knots_stack.back().knot->objects.size(); }
 	KnotStatus& current_nonchoice_knot();
 
-	ExpressionParser::TokenMap get_variables_with_locals();
+	ExpressionParser::VariableMap get_variables_with_locals();
 };
 
 struct InkStoryEvalResult {

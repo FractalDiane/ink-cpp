@@ -158,40 +158,40 @@ void InkStory::bind_ink_functions() {
 		return new TokenNumberInt(story_state.current_choices.size());
 	}});*/
 
-	EXP_FUNC("CHOICE_COUNT", { return PackedToken::from_int(story_state.current_choices.size()); });
-	EXP_FUNC("TURNS", { return PackedToken::from_int(story_state.total_choices_taken); });
+	EXP_FUNC("CHOICE_COUNT", { return new TokenNumberInt(story_state.current_choices.size()); });
+	EXP_FUNC("TURNS", { return new TokenNumberInt(story_state.total_choices_taken); });
 
 	EXP_FUNC("TURNS_SINCE", {
-		const std::string& knot = stack.top().as_string();
+		const std::string& knot = stack.top()->as_string();
 		
 		if (GetContentResult content = story_data->get_content(knot, story_state.current_knot().knot, story_state.current_stitch); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
 			if (story_state.story_tracking.get_content_stats(content.get_target(), stats)) {
 				stack.pop();
-				return PackedToken::from_int(stats.turns_since_visited);
+				return new TokenNumberInt(stats.turns_since_visited);
 			}
 		}
 		
 		stack.pop();
-		return PackedToken::from_int(-1);
+		return new TokenNumberInt(-1);
 	});
 
 	EXP_FUNC("SEED_RANDOM", {
-		std::int64_t seed = stack.top().as_int();
+		std::int64_t seed = stack.top()->as_int();
 		stack.pop();
 
 		story_state.rng.seed(static_cast<unsigned int>(seed));
-		return PackedToken();
+		return nullptr;
 	});
 
 	EXP_FUNC("RANDOM", {
-		std::int64_t to = stack.top().as_int();
+		std::int64_t to = stack.top()->as_int();
 		stack.pop();
-		std::int64_t from = stack.top().as_int();
+		std::int64_t from = stack.top()->as_int();
 		stack.pop();
 
 		std::int64_t result = randi_range(from, to, story_state.rng);
-		return PackedToken::from_int(result);
+		return new TokenNumberInt(result);
 	});
 
 	#undef EXP_FUNC
@@ -272,7 +272,7 @@ std::string InkStory::continue_story() {
 			GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 			if (!target.found_any) {
 				if (auto target_var = story_state.variables.find(eval_result.target_knot); target_var != story_state.variables.end()) {
-					target = story_data->get_content(target_var->second.as_string(), story_state.current_nonchoice_knot().knot, story_state.current_stitch);
+					target = story_data->get_content(std::get<std::string>(target_var->second), story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 				}
 			}
 
@@ -401,20 +401,26 @@ void InkStory::choose_choice_index(std::size_t index) {
 	}
 }
 
-ExpressionParser::PackedToken InkStory::get_variable(const std::string& name) const {
+std::optional<ExpressionParser::PackToken> InkStory::get_variable(const std::string& name) const {
 	/*if (const cparse::packToken* variable = story_state.variables.find(name)) {
 		return *variable;
 	}*/
 
-	if (auto variable = story_state.variables.find(name); variable != story_state.variables.end()) {
+	/*if (auto variable = story_state.variables.find(name); variable != story_state.variables.end()) {
 		// HACK: can this be less bad?
-		return ExpressionParser::PackedToken::from_other(const_cast<ExpressionParser::PackedToken&>(variable->second), false);
+		return ExpressionParser::InternalPackedToken::from_other(const_cast<ExpressionParser::InternalPackedToken&>(variable->second), false);
 	}
 
 	// TODO: maybe make this crash instead
-	return ExpressionParser::PackedToken();
+	return ExpressionParser::InternalPackedToken();*/
+
+	if (auto variable = story_state.variables.find(name); variable != story_state.variables.end()) {
+		return variable->second;
+	}
+
+	return {};
 }
 
-void InkStory::set_variable(const std::string& name, ExpressionParser::PackedToken&& value) {
-	story_state.variables[name] = ExpressionParser::PackedToken::from_other(value, true);
+void InkStory::set_variable(const std::string& name, ExpressionParser::PackToken&& value) {
+	story_state.variables[name] = value;
 }

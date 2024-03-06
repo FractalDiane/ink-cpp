@@ -81,7 +81,7 @@ private:
 
 	std::unordered_set<std::string> declared_variables;
 	std::unordered_set<std::string> declared_functions = {
-		"RANDOM", "RANDOM_SEED", "CHOICE_COUNT", "TURNS", "TURNS_SINCE",
+		"RANDOM", "SEED_RANDOM", "CHOICE_COUNT", "TURNS", "TURNS_SINCE",
 	};
 	
 public:

@@ -15,8 +15,6 @@ private:
 	InkStoryData* story_data;
 	InkStoryState story_state;
 
-	ExpressionParser::FunctionMap builtin_functions;
-
 private:
 	void init_story();
 	void bind_ink_functions();
@@ -38,6 +36,6 @@ public:
 
 	void choose_choice_index(std::size_t index);
 
-	ExpressionParser::PackedToken get_variable(const std::string& name) const;
-	void set_variable(const std::string& name, ExpressionParser::PackedToken&& value);
+	std::optional<ExpressionParser::PackToken> get_variable(const std::string& name) const;
+	void set_variable(const std::string& name, ExpressionParser::PackToken&& value);
 };

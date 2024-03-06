@@ -7,6 +7,8 @@
 #include <unordered_set>
 #include <deque>
 #include <functional>
+#include <variant>
+#include <optional>
 
 namespace ExpressionParser {
 
@@ -24,7 +26,8 @@ enum class TokenType {
 };
 
 struct Token;
-struct PackedToken;
+struct TokenFunction;
+struct InternalPackedToken;
 
 template <typename T>
 class Stack {
@@ -41,10 +44,30 @@ public:
 	bool empty() const { return deque.empty(); }
 };
 
-using TokenStack = Stack<PackedToken>;
+using PackToken = std::variant<bool, std::int64_t, double, std::string, const TokenFunction*>;
 
-using PtrTokenFunc = std::function<PackedToken(TokenStack&)>;
-typedef std::unordered_map<std::string, PackedToken> TokenMap;
+std::string token_to_printable_string(const PackToken& token);
+
+/*class WrappedPackToken {
+private:
+	PackToken value;
+
+public:
+	WrappedPackToken(const PackToken& from) : value{from} {}
+	WrappedPackToken(PackToken&& from) : value{from} {}
+
+	bool as_bool() const { return std::get<bool>(value); }
+	std::int64_t as_int() const { return std::get<std::int64_t>(value); }
+	double as_float() const { return std::get<double>(value); }
+	const std::string& as_string() const { return std::get<std::string>(value); }
+	const TokenFunction* const as_function() const { return std::get<const TokenFunction* const>(value); }
+};*/
+
+using TokenStack = Stack<Token*>;
+
+using PtrTokenFunc = std::function<Token*(TokenStack&)>;
+typedef std::unordered_map<std::string, Token*> TokenMap;
+typedef std::unordered_map<std::string, PackToken> VariableMap;
 typedef std::unordered_map<std::string, PtrTokenFunc> FunctionMap;
 
 struct Token {
@@ -60,7 +83,8 @@ struct Token {
 
 	virtual std::string to_printable_string() const;
 
-	virtual Token* get_value(const TokenMap& variables) { return this; }
+	virtual Token* get_value(const VariableMap& variables) { return this; }
+	virtual std::optional<PackToken> get_variant_value(const VariableMap& variables) const { return {}; }
 
 	virtual Token* operator_plus(const Token* other) const;
 	virtual Token* operator_minus(const Token* other) const;
@@ -123,6 +147,7 @@ struct TokenBoolean : public Token {
 	TokenBoolean(bool value) : data{value} {}
 
 	virtual TokenType get_type() const override { return TokenType::Boolean; }
+	virtual std::optional<PackToken> get_variant_value(const VariableMap& variables) const override { return data; }
 
 	virtual Token* copy() const override { return new TokenBoolean(data); }
 
@@ -149,6 +174,7 @@ struct TokenNumberInt : public Token {
 	TokenNumberInt(std::int64_t value) : data{value} {}
 
 	virtual TokenType get_type() const override { return TokenType::NumberInt; }
+	virtual std::optional<PackToken> get_variant_value(const VariableMap& variables) const override { return data; }
 
 	virtual Token* copy() const override { return new TokenNumberInt(data); }
 
@@ -184,6 +210,7 @@ struct TokenNumberFloat : public Token {
 	TokenNumberFloat(double value) : data{value} {}
 
 	virtual TokenType get_type() const override { return TokenType::NumberFloat; }
+	virtual std::optional<PackToken> get_variant_value(const VariableMap& variables) const override { return data; }
 
 	virtual Token* copy() const override { return new TokenNumberFloat(data); }
 
@@ -226,6 +253,7 @@ struct TokenStringLiteral : public Token {
 	virtual std::string to_printable_string() const override;
 
 	virtual TokenType get_type() const override { return TokenType::StringLiteral; }
+	virtual std::optional<PackToken> get_variant_value(const VariableMap& variables) const override { return data; }
 
 	virtual Token* operator_plus(const Token* other) const override;
 
@@ -250,6 +278,7 @@ struct TokenKnotName : public Token {
 	virtual std::string to_printable_string() const override;
 
 	virtual TokenType get_type() const override { return TokenType::KnotName; }
+	virtual std::optional<PackToken> get_variant_value(const VariableMap& variables) const override { return data.knot; }
 };
 
 struct TokenOperator : public Token {
@@ -332,7 +361,7 @@ struct TokenFunction : public Token {
 
 	virtual TokenType get_type() const override { return TokenType::Function; }
 
-	PackedToken call(TokenStack& stack, const FunctionMap& all_functions);
+	Token* call(TokenStack& stack, const FunctionMap& all_functions);
 };
 
 struct TokenVariable : public Token {
@@ -344,54 +373,55 @@ struct TokenVariable : public Token {
 
 	virtual TokenType get_type() const override { return TokenType::Variable; }
 
-	virtual Token* get_value(const TokenMap& variables) override;
+	virtual Token* get_value(const VariableMap& variables) override;
+	virtual std::optional<PackToken> get_variant_value(const VariableMap& variables) const override;
 };
 
-struct PackedToken {
+struct InternalPackedToken {
 	Token* token;
 	bool owner;
 
-	PackedToken() : token{nullptr}, owner{false} {}
-	explicit PackedToken(Token* token, bool owner) : token{token}, owner{owner} {}
-	/*PackedToken(bool from) : token{new TokenBoolean(from)}, owner{true} {}
-	PackedToken(std::int64_t from) : token{new TokenNumberInt(from)}, owner{true} {}
-	PackedToken(int from) : token{new TokenNumberInt(static_cast<std::int64_t>(from))}, owner{true} {}
-	PackedToken(double from) : token{new TokenNumberFloat(from)}, owner{true} {}
-	PackedToken(const std::string& from) : token{new TokenStringLiteral(from)}, owner{true} {}
-	PackedToken(std::string&& from) : token{new TokenStringLiteral(from)}, owner{true} {}*/
+	InternalPackedToken() : token{nullptr}, owner{false} {}
+	explicit InternalPackedToken(Token* token, bool owner) : token{token}, owner{owner} {}
+	/*InternalPackedToken(bool from) : token{new TokenBoolean(from)}, owner{true} {}
+	InternalPackedToken(std::int64_t from) : token{new TokenNumberInt(from)}, owner{true} {}
+	InternalPackedToken(int from) : token{new TokenNumberInt(static_cast<std::int64_t>(from))}, owner{true} {}
+	InternalPackedToken(double from) : token{new TokenNumberFloat(from)}, owner{true} {}
+	InternalPackedToken(const std::string& from) : token{new TokenStringLiteral(from)}, owner{true} {}
+	InternalPackedToken(std::string&& from) : token{new TokenStringLiteral(from)}, owner{true} {}*/
 
-	~PackedToken() {
+	~InternalPackedToken() {
 		//if (owner) {
 		//	delete token;
 		//}
 	}
 
-	static PackedToken from_bool(bool from) { return PackedToken(new TokenBoolean(from), true); }
-	static PackedToken from_int(std::int64_t from) { return PackedToken(new TokenNumberInt(from), true); }
-	static PackedToken from_float(double from) { return PackedToken(new TokenNumberFloat(from), true); }
-	static PackedToken from_string(const std::string& from) { return PackedToken(new TokenStringLiteral(from), true); }
-	static PackedToken from_string(std::string&& from) { return PackedToken(new TokenStringLiteral(from), true); }
+	static InternalPackedToken from_bool(bool from) { return InternalPackedToken(new TokenBoolean(from), true); }
+	static InternalPackedToken from_int(std::int64_t from) { return InternalPackedToken(new TokenNumberInt(from), true); }
+	static InternalPackedToken from_float(double from) { return InternalPackedToken(new TokenNumberFloat(from), true); }
+	static InternalPackedToken from_string(const std::string& from) { return InternalPackedToken(new TokenStringLiteral(from), true); }
+	static InternalPackedToken from_string(std::string&& from) { return InternalPackedToken(new TokenStringLiteral(from), true); }
 
-	static PackedToken from_other(PackedToken& from, bool transfer_ownership) {
+	static InternalPackedToken from_other(InternalPackedToken& from, bool transfer_ownership) {
 		if (transfer_ownership) {
 			from.owner = false;
 		}
 
-		return PackedToken(from.token, transfer_ownership);
+		return InternalPackedToken(from.token, transfer_ownership);
 	}
 
-	/*explicit PackedToken(PackedToken& from, bool transfer_ownership) : token{from.token}, owner{transfer_ownership} {
+	/*explicit InternalPackedToken(InternalPackedToken& from, bool transfer_ownership) : token{from.token}, owner{transfer_ownership} {
 		if (transfer_ownership) {
 			from.owner = false;
 		}
 	}*/
 
-	PackedToken(PackedToken&& from) : token{from.token}, owner{from.owner} {
+	InternalPackedToken(InternalPackedToken&& from) : token{from.token}, owner{from.owner} {
 		from.token = nullptr;
 		from.owner = false;
 	}
 
-	PackedToken& operator=(PackedToken&& other) {
+	InternalPackedToken& operator=(InternalPackedToken&& other) {
 		if (this != &other) {
 			token = other.token;
 			owner = other.owner;
@@ -402,9 +432,9 @@ struct PackedToken {
 		return *this;
 	}
 
-	PackedToken(const PackedToken& from) : token{from.token}, owner{false} {}
-	//PackedToken(PackedToken&& from) = delete;
-	PackedToken& operator=(const PackedToken& other) {
+	InternalPackedToken(const InternalPackedToken& from) : token{from.token}, owner{false} {}
+	//InternalPackedToken(InternalPackedToken&& from) = delete;
+	InternalPackedToken& operator=(const InternalPackedToken& other) {
 		if (this != &other) {
 			token = other.token;
 			owner = false;
@@ -412,11 +442,11 @@ struct PackedToken {
 
 		return *this;
 	}
-	//PackedToken& operator=(PackedToken&& from) = delete;
+	//InternalPackedToken& operator=(InternalPackedToken&& from) = delete;
 	
-	/*PackedToken(const PackedToken& from) : token{from.token->copy()} {}
+	/*InternalPackedToken(const InternalPackedToken& from) : token{from.token->copy()} {}
 
-	PackedToken(PackedToken&& from) {
+	InternalPackedToken(InternalPackedToken&& from) {
 		if (token) {
 			delete token;
 		}
@@ -425,7 +455,7 @@ struct PackedToken {
 		from.token = nullptr;
 	}
 
-	PackedToken& operator=(const PackedToken& other) {
+	InternalPackedToken& operator=(const InternalPackedToken& other) {
 		if (this != &other) {
 			token = other.token->copy();
 		}
@@ -433,7 +463,7 @@ struct PackedToken {
 		return *this;
 	}
 
-	PackedToken& operator=(PackedToken&& other) {
+	InternalPackedToken& operator=(InternalPackedToken&& other) {
 		if (this != &other) {
 			if (token) {
 				delete token;
@@ -446,11 +476,11 @@ struct PackedToken {
 		return *this;
 	}*/
 
-	bool operator==(const PackedToken& other) const {
+	bool operator==(const InternalPackedToken& other) const {
 		return token->operator_equal(other.token);
 	}
 
-	bool operator!=(const PackedToken& other) const {
+	bool operator!=(const InternalPackedToken& other) const {
 		return token->operator_notequal(other.token);
 	}
 
@@ -479,10 +509,10 @@ std::vector<Token*> tokenize_expression(const std::string& expression, const Fun
 
 std::vector<Token*> shunt(const std::vector<Token*>& infix, std::unordered_set<Token*>& tokens_shunted);
 
-PackedToken execute_expression_tokens(const std::vector<Token*>& tokens, TokenMap& variables, const FunctionMap& all_functions);
+std::optional<PackToken> execute_expression_tokens(const std::vector<Token*>& tokens, VariableMap& variables, const FunctionMap& all_functions);
 
-PackedToken execute_expression(const std::string& expression, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
-PackedToken execute_expression(const std::string& expression, TokenMap& variables, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
+std::optional<PackToken> execute_expression(const std::string& expression, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
+std::optional<PackToken> execute_expression(const std::string& expression, VariableMap& variables, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
 
 std::vector<Token*> tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions);
 

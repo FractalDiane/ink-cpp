@@ -32,9 +32,9 @@ void InkStoryTracking::increment_turns_since() {
 	}
 }
 
-ExpressionParser::TokenMap InkStoryTracking::add_visit_count_variables(const ExpressionParser::TokenMap& variables, Knot* current_knot, Stitch* current_stitch) {
-	ExpressionParser::TokenMap result = variables;
-	#define TK(what) ExpressionParser::PackedToken::from_int(static_cast<std::int64_t>(what))
+ExpressionParser::VariableMap InkStoryTracking::add_visit_count_variables(const ExpressionParser::VariableMap& variables, Knot* current_knot, Stitch* current_stitch) {
+	ExpressionParser::VariableMap result = variables;
+	#define TK(what) static_cast<std::int64_t>(what)
 
 	for (auto& knot : knot_stats) {
 		result[knot.second.name] = TK(knot.second.times_visited);
