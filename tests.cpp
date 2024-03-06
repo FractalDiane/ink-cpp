@@ -177,6 +177,10 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	ExpressionParser::VariableMap vars2 = {{"test", 6}};
 	Variant t19 = execute_expression("POW(test, 2)", vars2, {}).value();
 	EXPECT_EQ(std::get<double>(t19), 36);
+
+	ExpressionParser::VariableMap vars3 = {{"visited_snakes", true}, {"dream_about_snakes", false}};
+	Variant t20 = execute_expression("visited_snakes && not dream_about_snakes", vars3, {}).value();
+	EXPECT_EQ(std::get<bool>(t20), true);
 }
 #pragma endregion
 

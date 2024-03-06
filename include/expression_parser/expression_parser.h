@@ -211,6 +211,7 @@ struct TokenNumberInt : public Token {
 	virtual Token* operator_dec_pre() override;
 	virtual Token* operator_dec_post() override;
 	virtual Token* operator_negative() const override;
+	virtual Token* operator_not() const override;
 
 	virtual Token* operator_equal(const Token* other) const override;
 	virtual Token* operator_notequal(const Token* other) const override;
@@ -218,6 +219,12 @@ struct TokenNumberInt : public Token {
 	virtual Token* operator_greater(const Token* other) const override;
 	virtual Token* operator_lessequal(const Token* other) const override;
 	virtual Token* operator_greaterequal(const Token* other) const override;
+
+	virtual Token* operator_and(const Token* other) const override;
+	virtual Token* operator_or(const Token* other) const override;
+	virtual Token* operator_bitand(const Token* other) const override;
+	virtual Token* operator_bitor(const Token* other) const override;
+	virtual Token* operator_bitxor(const Token* other) const override;
 };
 
 struct TokenNumberFloat : public Token {
@@ -241,6 +248,7 @@ struct TokenNumberFloat : public Token {
 	virtual Token* operator_multiply(const Token* other) const override;
 	virtual Token* operator_divide(const Token* other) const override;
 	virtual Token* operator_mod(const Token* other) const override;
+	virtual Token* operator_not() const override;
 
 	virtual Token* operator_inc_pre() override;
 	virtual Token* operator_inc_post() override;
@@ -254,6 +262,9 @@ struct TokenNumberFloat : public Token {
 	virtual Token* operator_greater(const Token* other) const override;
 	virtual Token* operator_lessequal(const Token* other) const override;
 	virtual Token* operator_greaterequal(const Token* other) const override;
+
+	virtual Token* operator_and(const Token* other) const override;
+	virtual Token* operator_or(const Token* other) const override;
 };
 
 struct TokenStringLiteral : public Token {

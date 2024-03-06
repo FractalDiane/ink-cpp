@@ -390,6 +390,10 @@ Token* TokenBoolean::operator_notequal(const Token* other) const {
 Token* TokenBoolean::operator_and(const Token* other) const {
 	if (other->get_type() == TokenType::Boolean) {
 		return new TokenBoolean(data && static_cast<const TokenBoolean*>(other)->data);
+	} else if (other->get_type() == TokenType::NumberInt) {
+		return new TokenBoolean(data && static_cast<bool>(static_cast<const TokenNumberInt*>(other)->data));
+	} else if (other->get_type() == TokenType::NumberFloat) {
+		return new TokenBoolean(data && static_cast<bool>(static_cast<const TokenNumberFloat*>(other)->data));
 	} else {
 		throw;
 	}
@@ -398,6 +402,10 @@ Token* TokenBoolean::operator_and(const Token* other) const {
 Token* TokenBoolean::operator_or(const Token* other) const {
 	if (other->get_type() == TokenType::Boolean) {
 		return new TokenBoolean(data || static_cast<const TokenBoolean*>(other)->data);
+	} else if (other->get_type() == TokenType::NumberInt) {
+		return new TokenBoolean(data || static_cast<bool>(static_cast<const TokenNumberInt*>(other)->data));
+	} else if (other->get_type() == TokenType::NumberFloat) {
+		return new TokenBoolean(data || static_cast<bool>(static_cast<const TokenNumberFloat*>(other)->data));
 	} else {
 		throw;
 	}
@@ -406,6 +414,10 @@ Token* TokenBoolean::operator_or(const Token* other) const {
 Token* TokenBoolean::operator_bitand(const Token* other) const {
 	if (other->get_type() == TokenType::Boolean) {
 		return new TokenBoolean(data & static_cast<const TokenBoolean*>(other)->data);
+	} else if (other->get_type() == TokenType::NumberInt) {
+		return new TokenBoolean(data & static_cast<bool>(static_cast<const TokenNumberInt*>(other)->data));
+	} else if (other->get_type() == TokenType::NumberFloat) {
+		return new TokenBoolean(data & static_cast<bool>(static_cast<const TokenNumberFloat*>(other)->data));
 	} else {
 		throw;
 	}
@@ -414,6 +426,10 @@ Token* TokenBoolean::operator_bitand(const Token* other) const {
 Token* TokenBoolean::operator_bitor(const Token* other) const {
 	if (other->get_type() == TokenType::Boolean) {
 		return new TokenBoolean(data | static_cast<const TokenBoolean*>(other)->data);
+	} else if (other->get_type() == TokenType::NumberInt) {
+		return new TokenBoolean(data | static_cast<bool>(static_cast<const TokenNumberInt*>(other)->data));
+	} else if (other->get_type() == TokenType::NumberFloat) {
+		return new TokenBoolean(data | static_cast<bool>(static_cast<const TokenNumberFloat*>(other)->data));
 	} else {
 		throw;
 	}
@@ -422,6 +438,10 @@ Token* TokenBoolean::operator_bitor(const Token* other) const {
 Token* TokenBoolean::operator_bitxor(const Token* other) const {
 	if (other->get_type() == TokenType::Boolean) {
 		return new TokenBoolean(data ^ static_cast<const TokenBoolean*>(other)->data);
+	} else if (other->get_type() == TokenType::NumberInt) {
+		return new TokenBoolean(data ^ static_cast<bool>(static_cast<const TokenNumberInt*>(other)->data));
+	} else if (other->get_type() == TokenType::NumberFloat) {
+		return new TokenBoolean(data ^ static_cast<bool>(static_cast<const TokenNumberFloat*>(other)->data));
 	} else {
 		throw;
 	}
@@ -475,12 +495,76 @@ Token* TokenNumberInt::operator_negative() const {
 	return new TokenNumberInt(-data);
 }
 
+Token* TokenNumberInt::operator_not() const {
+	return new TokenNumberInt(data == 0 ? 1 : 0);
+}
+
 OP_CMP_INT(TokenNumberInt, equal, ==);
 OP_CMP_INT(TokenNumberInt, notequal, !=);
 OP_CMP_INT(TokenNumberInt, less, <);
 OP_CMP_INT(TokenNumberInt, greater, >);
 OP_CMP_INT(TokenNumberInt, lessequal, <=);
 OP_CMP_INT(TokenNumberInt, greaterequal, >=);
+
+Token* TokenNumberInt::operator_and(const Token* other) const {
+	if (other->get_type() == TokenType::Boolean) {
+		return new TokenNumberInt(data && static_cast<std::int64_t>(static_cast<const TokenBoolean*>(other)->data));
+	} else if (other->get_type() == TokenType::NumberInt) {
+		return new TokenNumberInt(data && static_cast<const TokenNumberInt*>(other)->data);
+	} else if (other->get_type() == TokenType::NumberFloat) {
+		return new TokenNumberInt(data && static_cast<std::int64_t>(static_cast<const TokenNumberFloat*>(other)->data));
+	} else {
+		throw;
+	}
+}
+
+Token* TokenNumberInt::operator_or(const Token* other) const {
+	if (other->get_type() == TokenType::Boolean) {
+		return new TokenNumberInt(data || static_cast<std::int64_t>(static_cast<const TokenBoolean*>(other)->data));
+	} else if (other->get_type() == TokenType::NumberInt) {
+		return new TokenNumberInt(data || static_cast<const TokenNumberInt*>(other)->data);
+	} else if (other->get_type() == TokenType::NumberFloat) {
+		return new TokenNumberInt(data || static_cast<std::int64_t>(static_cast<const TokenNumberFloat*>(other)->data));
+	} else {
+		throw;
+	}
+}
+
+Token* TokenNumberInt::operator_bitand(const Token* other) const {
+	if (other->get_type() == TokenType::Boolean) {
+		return new TokenNumberInt(data & static_cast<std::int64_t>(static_cast<const TokenBoolean*>(other)->data));
+	} else if (other->get_type() == TokenType::NumberInt) {
+		return new TokenNumberInt(data & static_cast<const TokenNumberInt*>(other)->data);
+	} else if (other->get_type() == TokenType::NumberFloat) {
+		return new TokenNumberInt(data & static_cast<std::int64_t>(static_cast<const TokenNumberFloat*>(other)->data));
+	} else {
+		throw;
+	}
+}
+
+Token* TokenNumberInt::operator_bitor(const Token* other) const {
+	if (other->get_type() == TokenType::Boolean) {
+		return new TokenNumberInt(data | static_cast<std::int64_t>(static_cast<const TokenBoolean*>(other)->data));
+	} else if (other->get_type() == TokenType::NumberInt) {
+		return new TokenNumberInt(data | static_cast<const TokenNumberInt*>(other)->data);
+	} else if (other->get_type() == TokenType::NumberFloat) {
+		return new TokenNumberInt(data | static_cast<std::int64_t>(static_cast<const TokenNumberFloat*>(other)->data));
+	} else {
+		throw;
+	}
+}
+
+Token* TokenNumberInt::operator_bitxor(const Token* other) const {
+	if (other->get_type() == TokenType::Boolean) {
+		return new TokenNumberInt(data ^ static_cast<std::int64_t>(static_cast<const TokenBoolean*>(other)->data));
+	} else if (other->get_type() == TokenType::NumberInt) {
+		return new TokenNumberInt(data ^ static_cast<const TokenNumberInt*>(other)->data);
+	} else if (other->get_type() == TokenType::NumberFloat) {
+		return new TokenNumberInt(data ^ static_cast<std::int64_t>(static_cast<const TokenNumberFloat*>(other)->data));
+	} else {
+		throw;
+	}
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -530,12 +614,40 @@ Token* TokenNumberFloat::operator_negative() const {
 	return new TokenNumberFloat(-data);
 }
 
+Token* TokenNumberFloat::operator_not() const {
+	return new TokenNumberFloat(data == 0.0 ? 1.0 : 0.0);
+}
+
 OP_CMP_FLOAT(TokenNumberFloat, equal, ==);
 OP_CMP_FLOAT(TokenNumberFloat, notequal, !=);
 OP_CMP_FLOAT(TokenNumberFloat, less, <);
 OP_CMP_FLOAT(TokenNumberFloat, greater, >);
 OP_CMP_FLOAT(TokenNumberFloat, lessequal, <=);
 OP_CMP_FLOAT(TokenNumberFloat, greaterequal, >=);
+
+Token* TokenNumberFloat::operator_and(const Token* other) const {
+	if (other->get_type() == TokenType::Boolean) {
+		return new TokenNumberFloat(data && static_cast<double>(static_cast<const TokenBoolean*>(other)->data));
+	} else if (other->get_type() == TokenType::NumberInt) {
+		return new TokenNumberFloat(data && static_cast<double>(static_cast<const TokenNumberInt*>(other)->data));
+	} else if (other->get_type() == TokenType::NumberFloat) {
+		return new TokenNumberFloat(data && static_cast<const TokenNumberFloat*>(other)->data);
+	} else {
+		throw;
+	}
+}
+
+Token* TokenNumberFloat::operator_or(const Token* other) const {
+	if (other->get_type() == TokenType::Boolean) {
+		return new TokenNumberFloat(data || static_cast<double>(static_cast<const TokenBoolean*>(other)->data));
+	} else if (other->get_type() == TokenType::NumberInt) {
+		return new TokenNumberFloat(data || static_cast<double>(static_cast<const TokenNumberInt*>(other)->data));
+	} else if (other->get_type() == TokenType::NumberFloat) {
+		return new TokenNumberFloat(data || static_cast<const TokenNumberFloat*>(other)->data);
+	} else {
+		throw;
+	}
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1038,24 +1150,6 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 	return postfix;
 }
 
-#define OP_UN(type, func_pre, func_post) case Type::type: {\
-		Token::ValueResult operand = stack.top()->get_value(variables, constants);\
-		stack.pop();\
-\
-		Token* result = nullptr;\
-		if (op->data.unary_type == TokenOperator::UnaryType::Prefix) {\
-			result = operand.token->operator_##func_pre();\
-		} else {\
-			result = operand.token->operator_##func_post();\
-		}\
-\
-		if (operand.from_variable) {\
-			delete operand.token;\
-		}\
-\
-		stack.push(result);\
-	} break;
-
 #define OP_UN_PRE(type, func) case Type::type: {\
 		Token::ValueResult operand = stack.top()->get_value(variables, constants);\
 		stack.pop();\
@@ -1136,12 +1230,32 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 
 					OP_BIN(Substring, substring);
 
-					OP_UN(Increment, inc_pre, inc_post);
-					OP_UN(Decrement, dec_pre, dec_post);
-
 					OP_UN_PRE(Negative, negative);
 					OP_UN_PRE(Not, not);
 					OP_UN_PRE(BitNot, bitnot);
+
+					case Type::Increment:
+					case Type::Decrement: {
+						Token::ValueResult operand = stack.top()->get_value(variables, constants);
+
+						Token* result = nullptr;
+						if (op->data.unary_type == TokenOperator::UnaryType::Prefix) {
+							result = op->data.type == Type::Increment ? operand.token->operator_inc_pre() : operand.token->operator_dec_pre();
+						} else {
+							result = op->data.type == Type::Increment ? operand.token->operator_inc_post() : operand.token->operator_dec_post();
+						}
+
+						if (operand.from_variable && op->data.unary_type == TokenOperator::UnaryType::Postfix) {
+							TokenNumberInt add{op->data.type == Type::Increment ? 1 : -1};
+							Token* new_result = result->operator_plus(&add);
+							variables[static_cast<TokenVariable*>(stack.top())->data] = new_result->get_variant_value(variables, constants).value();
+							delete operand.token;
+							delete new_result;
+						}
+
+						stack.pop();
+						stack.push(result);
+					} break;
 
 					case Type::Assign: {
 						Token* value = stack.top();
