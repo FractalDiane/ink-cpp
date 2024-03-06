@@ -58,7 +58,7 @@ std::int64_t as_int(const Variant& variant);
 double as_float(const Variant& variant);
 std::string as_string(const Variant& variant);
 
-std::string to_printable_string(const Variant& token);
+std::string to_printable_string(const Variant& variant);
 
 /*class WrappedVariant {
 private:

@@ -11,14 +11,14 @@ using namespace ExpressionParser;
 #define C(i) static_cast<std::uint8_t>(i)
 
 namespace {
-	static const std::unordered_map<std::string, TokenKeyword::Type> Keywords = {
-		{"temp", TokenKeyword::Type::Temp},
+	static const std::unordered_map<std::string, TokenOperator::Data> OperatorKeywords = {
+		//{"temp", TokenKeyword::Type::Temp},
 		//{"true", TokenKeyword::Type::True},
 		//{"false", TokenKeyword::Type::False},
-		{"and", TokenKeyword::Type::And},
-		{"or", TokenKeyword::Type::Or},
-		{"not", TokenKeyword::Type::Not},
-		{"mod", TokenKeyword::Type::Mod},
+		{"and", {TokenOperator::Type::And, TokenOperator::UnaryType::NotUnary}},
+		{"or", {TokenOperator::Type::Or, TokenOperator::UnaryType::NotUnary}},
+		{"not", {TokenOperator::Type::Not, TokenOperator::UnaryType::Prefix}},
+		{"mod", {TokenOperator::Type::Modulus, TokenOperator::UnaryType::NotUnary}},
 	};
 
 	static const std::unordered_map<TokenOperator::Type, std::uint8_t> OperatorPrecedences = {
@@ -195,22 +195,27 @@ std::string ExpressionParser::as_string(const Variant& variant) {
 	}
 }
 
-std::string ExpressionParser::to_printable_string(const Variant& token) {
-	switch (token.index()) {
+std::string ExpressionParser::to_printable_string(const Variant& variant) {
+	switch (variant.index()) {
 		case Variant_Bool: {
-			return std::get<bool>(token) ? "true" : "false";
+			return std::get<bool>(variant) ? "true" : "false";
 		} break;
 
 		case Variant_Int: {
-			return std::to_string(std::get<std::int64_t>(token));
+			return std::to_string(std::get<std::int64_t>(variant));
 		} break;
 
 		case Variant_Float: {
-			return std::to_string(std::get<double>(token));
+			double value = std::get<double>(variant);
+			if (std::rint(value) == value) {
+				return std::to_string(static_cast<std::int64_t>(value));
+			} else {
+				return std::to_string(value);
+			}
 		} break;
 
 		case Variant_String: {
-			return std::get<std::string>(token);
+			return std::get<std::string>(variant);
 		} break;
 
 		default: {
@@ -670,8 +675,8 @@ Token* TokenFunction::call(TokenStack& stack, const FunctionMap& all_functions, 
 void try_add_word(std::vector<Token*>& result, std::string& word, const FunctionMap& all_functions, bool in_knot_name, const std::unordered_set<std::string>& deferred_functions) {
 	if (!word.empty()) {
 		bool found_result = false;
-		if (auto keyword = Keywords.find(word); keyword != Keywords.end()) {
-			result.push_back(new TokenKeyword(keyword->second));
+		if (auto keyword = OperatorKeywords.find(word); keyword != OperatorKeywords.end()) {
+			result.push_back(new TokenOperator(keyword->second.type, keyword->second.unary_type));
 			found_result = true;
 		} else if (word == "true") {
 			result.push_back(new TokenBoolean(true));
@@ -765,7 +770,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 						in_knot_name = true;
 						++index;
 					} else {
-						if (next_char(expression, index) > 32) {
+						if (next_char(expression, index) > 32 && !result.empty() && result.back()->get_type() == TokenType::Operator) {
 							result.push_back(new TokenOperator(TokenOperator::Type::Negative, UnaryType::Prefix));
 						} else {
 							result.push_back(new TokenOperator(TokenOperator::Type::Minus, UnaryType::NotUnary));

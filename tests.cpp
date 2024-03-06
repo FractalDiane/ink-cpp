@@ -167,9 +167,16 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	Variant t16 = execute_expression("POW(FLOOR(3.5), FLOOR(2.9)").value();
 	EXPECT_EQ(std::get<double>(t16), 9);
 
-	ExpressionParser::VariableMap vars = {{"test", 6}};
-	Variant t17 = execute_expression("POW(test, 2)", vars, {}).value();
-	EXPECT_EQ(std::get<double>(t17), 36);
+	Variant t17 = execute_expression("(5 * 5) - (3 * 3) + 3").value();
+	EXPECT_EQ(std::get<std::int64_t>(t17), 19);
+
+	ExpressionParser::VariableMap vars = {{"x", 5}, {"y", 3}, {"c", 3}};
+	execute_expression("x = (x * x) - (y * y) + c", vars, {});
+	EXPECT_EQ(std::get<std::int64_t>(vars["x"]), 19);
+
+	ExpressionParser::VariableMap vars2 = {{"test", 6}};
+	Variant t19 = execute_expression("POW(test, 2)", vars2, {}).value();
+	EXPECT_EQ(std::get<double>(t19), 36);
 }
 #pragma endregion
 
