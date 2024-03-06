@@ -105,7 +105,8 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 	EXPECT_EQ(result.size(), result_postfix.size());
 
 	ExpressionParser::VariableMap variables;
-	std::optional<ExpressionParser::PackToken> result_token = ExpressionParser::execute_expression_tokens(result_postfix, variables, {});
+	ExpressionParser::VariableMap constants;
+	std::optional<ExpressionParser::PackToken> result_token = ExpressionParser::execute_expression_tokens(result_postfix, variables, constants, {});
 	EXPECT_FALSE(result_token.has_value());
 	EXPECT_EQ(std::get<std::int64_t>(variables["test"]), 12);
 
@@ -162,6 +163,13 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 
 	PackToken t15 = execute_expression("-> my_knot").value();
 	EXPECT_EQ(std::get<std::string>(t15), "my_knot");
+
+	PackToken t16 = execute_expression("POW(FLOOR(3.5), FLOOR(2.9)").value();
+	EXPECT_EQ(std::get<double>(t16), 9);
+
+	ExpressionParser::VariableMap vars = {{"test", 6}};
+	PackToken t17 = execute_expression("POW(test, 2)", vars, {}).value();
+	EXPECT_EQ(std::get<double>(t17), 36);
 }
 #pragma endregion
 

@@ -151,18 +151,13 @@ void InkStory::init_story() {
 void InkStory::bind_ink_functions() {
 	using namespace ExpressionParser;
 
-	#define EXP_FUNC(name, body) story_state.functions.insert({name, [this](TokenStack& stack) body});
-
-	//ExpressionParser::PtrTokenFunc = [this](std::stack<ExpressionParser::Token*>& stack) -> ExpressionParser::Token* { return nullptr; };
-	/*builtin_functions.insert({"CHOICE_COUNT", [this](std::stack<Token*>& stack) {
-		return new TokenNumberInt(story_state.current_choices.size());
-	}});*/
+	#define EXP_FUNC(name, body) story_state.functions.insert({name, [this](TokenStack& stack, VariableMap& variables, const VariableMap& constants) body});
 
 	EXP_FUNC("CHOICE_COUNT", { return new TokenNumberInt(story_state.current_choices.size()); });
 	EXP_FUNC("TURNS", { return new TokenNumberInt(story_state.total_choices_taken); });
 
 	EXP_FUNC("TURNS_SINCE", {
-		const std::string& knot = stack.top()->as_string();
+		std::string knot = std::get<std::string>(stack.top()->get_variant_value(variables, constants).value());
 		
 		if (GetContentResult content = story_data->get_content(knot, story_state.current_knot().knot, story_state.current_stitch); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
@@ -177,7 +172,7 @@ void InkStory::bind_ink_functions() {
 	});
 
 	EXP_FUNC("SEED_RANDOM", {
-		std::int64_t seed = stack.top()->as_int();
+		std::int64_t seed = std::get<std::int64_t>(stack.top()->get_variant_value(variables, constants).value());
 		stack.pop();
 
 		story_state.rng.seed(static_cast<unsigned int>(seed));
@@ -185,9 +180,9 @@ void InkStory::bind_ink_functions() {
 	});
 
 	EXP_FUNC("RANDOM", {
-		std::int64_t to = stack.top()->as_int();
+		std::int64_t to = std::get<std::int64_t>(stack.top()->get_variant_value(variables, constants).value());
 		stack.pop();
-		std::int64_t from = stack.top()->as_int();
+		std::int64_t from = std::get<std::int64_t>(stack.top()->get_variant_value(variables, constants).value());
 		stack.pop();
 
 		std::int64_t result = randi_range(from, to, story_state.rng);
@@ -195,41 +190,6 @@ void InkStory::bind_ink_functions() {
 	});
 
 	#undef EXP_FUNC
-
-	//auto test = cparse::CppFunction([this](cparse::TokenMap scope) -> cparse::packToken { return cparse::packToken::None(); });
-	/*#define CP_FUNC(name, body, ...) {\
-		auto func_##name = [this](cparse::TokenMap scope) -> cparse::packToken body;\
-		story_state.variables[#name] = cparse::CppFunction(func_##name, {__VA_ARGS__}, #name);\
-	}
-
-	CP_FUNC(CHOICE_COUNT, { return story_state.current_choices.size(); });
-	CP_FUNC(TURNS, { return story_state.total_choices_taken; });
-	CP_FUNC(TURNS_SINCE, {
-		if (GetContentResult content = story_data->get_content(scope["__knot"].asString(), story_state.current_knot().knot, story_state.current_stitch); content.found_any) {
-			InkStoryTracking::SubKnotStats stats;
-			if (story_state.story_tracking.get_content_stats(content.get_target(), stats)) {
-				return stats.turns_since_visited;
-			}
-		}
-		
-		return -1;
-	}, "__knot");
-
-	CP_FUNC(SEED_RANDOM, {
-		story_state.rng.seed(static_cast<unsigned int>(scope["__seed"].asInt()));
-		return cparse::packToken::None();
-	}, "__seed");
-
-	CP_FUNC(RANDOM, {
-		return randi_range(scope["__from"].asInt(), scope["__to"].asInt(), story_state.rng);
-	}, "__from", "__to");
-
-	CP_FUNC(INT, { return scope["__what"].asInt(); }, "__what");
-	CP_FUNC(FLOOR, { return std::floor(scope["__what"].asDouble()); }, "__what");
-	CP_FUNC(FLOAT, { return scope["__what"].asDouble(); }, "__what");
-	CP_FUNC(POW, { return std::pow(scope["__base"].asDouble(), scope["__exp"].asDouble()); }, "__base", "__exp");
-
-	#undef CP_FUNC*/
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
