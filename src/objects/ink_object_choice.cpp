@@ -2,9 +2,6 @@
 
 #include "ink_utils.h"
 
-#include "shunting-yard.h"
-#include "builtin-features.inc"
-
 #include "expression_parser/expression_parser.h"
 
 /*std::vector<std::uint8_t> InkObjectChoice::to_bytes() const {

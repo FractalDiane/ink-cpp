@@ -3,8 +3,6 @@
 #include "objects/ink_object.h"
 #include "ink_utils.h"
 
-#include "shunting-yard.h"
-
 #include <format>
 
 InkObject* InkStoryState::get_current_object(std::int64_t index_offset) {

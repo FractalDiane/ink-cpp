@@ -7,8 +7,6 @@
 
 #include "runtime/ink_story_structs.h"
 
-#include "shunting-yard.h"
-
 #include "expression_parser/expression_parser.h"
 
 struct InkStoryTracking {

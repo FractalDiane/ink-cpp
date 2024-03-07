@@ -708,53 +708,35 @@ std::string TokenKnotName::to_printable_string() const {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 Token::ValueResult TokenVariable::get_value(const VariableMap& variables, const VariableMap& constants) {
+	const Variant* value = nullptr;
 	if (auto var_value = variables.find(data); var_value != variables.end()) {
-		switch (var_value->second.index()) {
-			case Variant_Bool: {
-				return {new TokenBoolean(std::get<bool>(var_value->second)), true};
-			} break;
-
-			case Variant_Int: {
-				return {new TokenNumberInt(std::get<std::int64_t>(var_value->second)), true};
-			} break;
-
-			case Variant_Float: {
-				return {new TokenNumberFloat(std::get<double>(var_value->second)), true};
-			} break;
-
-			case Variant_String: {
-				return {new TokenStringLiteral(std::get<std::string>(var_value->second)), true};
-			} break;
-
-			default: {
-				throw;
-			} break;
-		}
+		value = &var_value->second;
 	} else if (auto const_value = constants.find(data); const_value != constants.end()) {
-		// TODO: dry it
-		switch (const_value->second.index()) {
-			case Variant_Bool: {
-				return {new TokenBoolean(std::get<bool>(const_value->second)), true};
-			} break;
-
-			case Variant_Int: {
-				return {new TokenNumberInt(std::get<std::int64_t>(const_value->second)), true};
-			} break;
-
-			case Variant_Float: {
-				return {new TokenNumberFloat(std::get<double>(const_value->second)), true};
-			} break;
-
-			case Variant_String: {
-				return {new TokenStringLiteral(std::get<std::string>(const_value->second)), true};
-			} break;
-
-			default: {
-				throw;
-			} break;
-		}
+		value = &const_value->second;
 	} else {
 		return {nullptr, false};
+	}
+
+	switch (value->index()) {
+		case Variant_Bool: {
+			return {new TokenBoolean(std::get<bool>(*value)), true};
+		} break;
+
+		case Variant_Int: {
+			return {new TokenNumberInt(std::get<std::int64_t>(*value)), true};
+		} break;
+
+		case Variant_Float: {
+			return {new TokenNumberFloat(std::get<double>(*value)), true};
+		} break;
+
+		case Variant_String: {
+			return {new TokenStringLiteral(std::get<std::string>(*value)), true};
+		} break;
+
+		default: {
+			throw;
+		} break;
 	}
 }
 
@@ -809,7 +791,7 @@ void try_add_word(std::vector<Token*>& result, std::string& word, const Function
 					result.push_back(new TokenNumberFloat(word_float));
 					found_result = true;
 				} catch (...) {
-					//result.push_back(new TokenVariable(word));
+					
 				}
 			} else {
 				try {
@@ -817,7 +799,7 @@ void try_add_word(std::vector<Token*>& result, std::string& word, const Function
 					result.push_back(new TokenNumberInt(word_int));
 					found_result = true;
 				} catch (...) {
-					//result.push_back(new TokenVariable(word));
+					
 				}
 			}
 		}
@@ -1276,8 +1258,6 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 						} else {
 							throw;
 						}
-
-						//tokens_to_dealloc.erase(value);
 					} break;
 
 					default: {
@@ -1352,7 +1332,6 @@ std::optional<Variant> ExpressionParser::execute_expression(const std::string& e
 		delete token;
 	}
 
-	//return InternalPackedToken(result);
 	return result;
 }
 

@@ -2,12 +2,9 @@
 
 #include "ink_compiler.h"
 #include "runtime/ink_story.h"
-#include "ink_cparse_ext.h"
 #include "ink_utils.h"
 
 #include "expression_parser/expression_parser.h"
-
-#include "builtin-features.inc"
 
 #include <utility>
 #include <any>
@@ -1087,9 +1084,6 @@ TEST_F(ConditionalBlockTests, ModifiedShuffles) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {
-	cparse_startup();
-	InkCparseStartup ink_startup;
-	InkCparseStartupParser ink_startup_parser;
 	testing::InitGoogleTest();
 	return RUN_ALL_TESTS();
 }

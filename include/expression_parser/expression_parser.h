@@ -60,21 +60,6 @@ std::string as_string(const Variant& variant);
 
 std::string to_printable_string(const Variant& variant);
 
-/*class WrappedVariant {
-private:
-	Variant value;
-
-public:
-	WrappedVariant(const Variant& from) : value{from} {}
-	WrappedVariant(Variant&& from) : value{from} {}
-
-	bool as_bool() const { return std::get<bool>(value); }
-	std::int64_t as_int() const { return std::get<std::int64_t>(value); }
-	double as_float() const { return std::get<double>(value); }
-	const std::string& as_string() const { return std::get<std::string>(value); }
-	const TokenFunction* const as_function() const { return std::get<const TokenFunction* const>(value); }
-};*/
-
 using TokenStack = Stack<Token*>;
 
 typedef std::unordered_map<std::string, Variant> VariableMap;
@@ -134,8 +119,6 @@ struct Token {
 	
 	virtual Token* operator_substring(const Token* other) const;
 };
-
-//typedef Token* (*PtrTokenFunc)(std::stack<Token*>&);
 
 struct TokenKeyword : public Token {
 	enum class Type {

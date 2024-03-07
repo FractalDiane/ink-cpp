@@ -9,7 +9,6 @@
 
 #include "runtime/ink_story_structs.h"
 #include "runtime/ink_story_tracking.h"
-#include "shunting-yard.h"
 
 #include "expression_parser/expression_parser.h"
 
