@@ -24,6 +24,12 @@ InkObjectChoice::~InkObjectChoice() {
 		for (InkObject* object : choice.result.objects) {
 			delete object;
 		}
+		
+		for (std::vector<ExpressionParser::Token*>& condition : choice.conditions) {
+			for (ExpressionParser::Token* token : condition) {
+				delete token;
+			}
+		}
 	}
 }
 
