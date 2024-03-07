@@ -7,7 +7,7 @@
 
 #include "runtime/ink_story_structs.h"
 
-#include "shunting-yard.h"
+#include "expression_parser/expression_parser.h"
 
 struct InkStoryTracking {
 	struct SubKnotStats {
@@ -34,6 +34,6 @@ struct InkStoryTracking {
 
 	void increment_visit_count(Knot* knot, Stitch* stitch = nullptr, GatherPoint* gather_point = nullptr);
 	void increment_turns_since();
-	cparse::TokenMap add_visit_count_variables(const cparse::TokenMap& variables, Knot* current_knot, Stitch* current_stitch);
+	ExpressionParser::VariableMap get_visit_count_variables(Knot* current_knot, Stitch* current_stitch);
 	bool get_content_stats(InkWeaveContent* content, InkStoryTracking::SubKnotStats& result);
 };

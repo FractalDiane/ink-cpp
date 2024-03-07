@@ -4,17 +4,8 @@ cmake_policy(SET CMP0135 NEW)
 project(ink_cpp)
 set(CMAKE_CXX_STANDARD 23)
 
-set(SRC_CPARSE
-	cparse/shunting-yard.cpp
-	cparse/packToken.cpp
-	cparse/functions.cpp
-	cparse/containers.cpp
-)
-
 set(SRC_UTIL
 	src/ink_utils.cpp
-	src/ink_cparse_ext.cpp
-	
 	src/expression_parser/expression_parser.cpp
 )
 
@@ -59,12 +50,7 @@ endif()
 FetchContent_MakeAvailable(googletest)
 ################ GOOGLE TEST
 
-add_library(cparse STATIC ${SRC_CPARSE})
-include_directories(SYSTEM cparse cparse/builtin-features)
-
 add_library(ink_backend STATIC ${SRC_OBJECTS} ${SRC_RUNTIME} ${SRC_UTIL})
-add_dependencies(ink_backend cparse)
-target_link_libraries(ink_backend PUBLIC cparse)
 
 add_executable(inkc main_compiler.cpp ${SRC_COMPILER} ${SRC_UTIL})
 add_dependencies(inkc ink_backend)

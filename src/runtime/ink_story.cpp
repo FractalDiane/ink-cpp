@@ -15,8 +15,6 @@
 
 #include "ink_utils.h"
 
-#include "shunting-yard.h"
-
 #include <fstream>
 #include <filesystem>
 #include <algorithm>
@@ -149,39 +147,47 @@ void InkStory::init_story() {
 }
 
 void InkStory::bind_ink_functions() {
-	#define CP_FUNC(name, body, ...) {\
-		auto func_##name = [this](cparse::TokenMap scope) -> cparse::packToken body;\
-		story_state.variables[#name] = cparse::CppFunction(func_##name, {__VA_ARGS__}, #name);\
-	}
+	using namespace ExpressionParser;
 
-	CP_FUNC(CHOICE_COUNT, { return story_state.current_choices.size(); });
-	CP_FUNC(TURNS, { return story_state.total_choices_taken; });
-	CP_FUNC(TURNS_SINCE, {
-		if (GetContentResult content = story_data->get_content(scope["__knot"].asString(), story_state.current_knot().knot, story_state.current_stitch); content.found_any) {
+	#define EXP_FUNC(name, body) story_state.functions.insert({name, [this](TokenStack& stack, VariableMap& variables, const VariableMap& constants) body});
+
+	EXP_FUNC("CHOICE_COUNT", { return new TokenNumberInt(story_state.current_choices.size()); });
+	EXP_FUNC("TURNS", { return new TokenNumberInt(story_state.total_choices_taken); });
+
+	EXP_FUNC("TURNS_SINCE", {
+		std::string knot = as_string(stack.top()->get_variant_value(variables, constants).value());
+		
+		if (GetContentResult content = story_data->get_content(knot, story_state.current_knot().knot, story_state.current_stitch); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
 			if (story_state.story_tracking.get_content_stats(content.get_target(), stats)) {
-				return stats.turns_since_visited;
+				stack.pop();
+				return new TokenNumberInt(stats.turns_since_visited);
 			}
 		}
 		
-		return -1;
-	}, "__knot");
+		stack.pop();
+		return new TokenNumberInt(-1);
+	});
 
-	CP_FUNC(SEED_RANDOM, {
-		story_state.rng.seed(static_cast<unsigned int>(scope["__seed"].asInt()));
-		return cparse::packToken::None();
-	}, "__seed");
+	EXP_FUNC("SEED_RANDOM", {
+		std::int64_t seed = as_int(stack.top()->get_variant_value(variables, constants).value());
+		stack.pop();
 
-	CP_FUNC(RANDOM, {
-		return randi_range(scope["__from"].asInt(), scope["__to"].asInt(), story_state.rng);
-	}, "__from", "__to");
+		story_state.rng.seed(static_cast<unsigned int>(seed));
+		return nullptr;
+	});
 
-	CP_FUNC(INT, { return scope["__what"].asInt(); }, "__what");
-	CP_FUNC(FLOOR, { return std::floor(scope["__what"].asDouble()); }, "__what");
-	CP_FUNC(FLOAT, { return scope["__what"].asDouble(); }, "__what");
-	CP_FUNC(POW, { return std::pow(scope["__base"].asDouble(), scope["__exp"].asDouble()); }, "__base", "__exp");
+	EXP_FUNC("RANDOM", {
+		std::int64_t to = as_int(stack.top()->get_variant_value(variables, constants).value());
+		stack.pop();
+		std::int64_t from = as_int(stack.top()->get_variant_value(variables, constants).value());
+		stack.pop();
 
-	#undef CP_FUNC
+		std::int64_t result = randi_range(from, to, story_state.rng);
+		return new TokenNumberInt(result);
+	});
+
+	#undef EXP_FUNC
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -223,8 +229,8 @@ std::string InkStory::continue_story() {
 		if (!eval_result.target_knot.empty()) {
 			GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 			if (!target.found_any) {
-				if (cparse::packToken* target_var = story_state.variables.find(eval_result.target_knot)) {
-					target = story_data->get_content(target_var->asString(), story_state.current_nonchoice_knot().knot, story_state.current_stitch);
+				if (auto target_var = story_state.variables.find(eval_result.target_knot); target_var != story_state.variables.end()) {
+					target = story_data->get_content(std::get<std::string>(target_var->second), story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 				}
 			}
 
@@ -318,12 +324,6 @@ std::string InkStory::continue_story() {
 			}
 
 			if (found_gather) {
-				/*eval_result.should_continue = story_state.in_glue;
-				if (InkObject* next = story_state.get_current_object(0)) {
-					ObjectId next_type = next->get_id();
-					eval_result.should_continue |= next_type != ObjectId::Text && next_type != ObjectId::LineBreak;
-				}*/
-
 				eval_result.reached_newline = true;
 			} else {
 				++story_state.current_knot().index;
@@ -353,15 +353,26 @@ void InkStory::choose_choice_index(std::size_t index) {
 	}
 }
 
-const cparse::packToken InkStory::get_variable(const std::string& name) const {
-	if (const cparse::packToken* variable = story_state.variables.find(name)) {
+std::optional<ExpressionParser::Variant> InkStory::get_variable(const std::string& name) const {
+	/*if (const cparse::packToken* variable = story_state.variables.find(name)) {
 		return *variable;
+	}*/
+
+	/*if (auto variable = story_state.variables.find(name); variable != story_state.variables.end()) {
+		// HACK: can this be less bad?
+		return ExpressionParser::InternalPackedToken::from_other(const_cast<ExpressionParser::InternalPackedToken&>(variable->second), false);
 	}
-	
+
 	// TODO: maybe make this crash instead
-	return cparse::packToken::None();
+	return ExpressionParser::InternalPackedToken();*/
+
+	if (auto variable = story_state.variables.find(name); variable != story_state.variables.end()) {
+		return variable->second;
+	}
+
+	return {};
 }
 
-void InkStory::set_variable(const std::string& name, const cparse::packToken& value) {
+void InkStory::set_variable(const std::string& name, ExpressionParser::Variant&& value) {
 	story_state.variables[name] = value;
 }

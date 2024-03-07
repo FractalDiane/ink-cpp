@@ -9,7 +9,8 @@
 
 #include "runtime/ink_story_structs.h"
 #include "runtime/ink_story_tracking.h"
-#include "shunting-yard.h"
+
+#include "expression_parser/expression_parser.h"
 
 struct InkStoryState {
 	enum class ChoiceMixPosition {
@@ -53,7 +54,8 @@ struct InkStoryState {
 	bool at_choice = false;
 	bool just_diverted_to_non_knot = false;
 
-	cparse::TokenMap variables;
+	ExpressionParser::VariableMap variables;
+	ExpressionParser::FunctionMap functions;
 
 	class InkObject* get_current_object(std::int64_t index_offset);
 	bool has_choice_been_taken(class InkObject* choice_object, std::size_t index);
@@ -63,7 +65,7 @@ struct InkStoryState {
 	inline std::size_t current_knot_size() const { return current_knots_stack.back().knot->objects.size(); }
 	KnotStatus& current_nonchoice_knot();
 
-	cparse::TokenMap get_variables_with_locals();
+	ExpressionParser::VariableMap get_variables_with_locals();
 };
 
 struct InkStoryEvalResult {

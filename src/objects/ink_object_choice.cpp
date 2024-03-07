@@ -2,8 +2,7 @@
 
 #include "ink_utils.h"
 
-#include "shunting-yard.h"
-#include "builtin-features.inc"
+#include "expression_parser/expression_parser.h"
 
 /*std::vector<std::uint8_t> InkObjectChoice::to_bytes() const {
 	return {}
@@ -21,6 +20,12 @@ InkObjectChoice::~InkObjectChoice() {
 
 		for (InkObject* object : choice.result.objects) {
 			delete object;
+		}
+		
+		for (std::vector<ExpressionParser::Token*>& condition : choice.conditions) {
+			for (ExpressionParser::Token* token : condition) {
+				delete token;
+			}
 		}
 	}
 }
@@ -62,12 +67,12 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			if (this_choice.sticky || !story_state.has_choice_been_taken(this, i)) {
 				if (!this_choice.fallback) {
 					bool include_choice = true;
-					const std::vector<std::string>& conditions = this_choice.conditions;
+					const std::vector<std::vector<ExpressionParser::Token*>>& conditions = this_choice.conditions;
 					if (!conditions.empty()) {
-						for (const std::string& condition : conditions) {
-							cparse::TokenMap vars = story_state.story_tracking.add_visit_count_variables(story_state.variables, story_state.current_knot().knot, story_state.current_stitch);
-							cparse::packToken result = cparse::calculator::calculate(deinkify_expression(condition).c_str(), vars);
-							if (!result.asBool()) {
+						for (const std::vector<ExpressionParser::Token*>& condition : conditions) {
+							ExpressionParser::VariableMap knot_vars = story_state.story_tracking.get_visit_count_variables(story_state.current_knot().knot, story_state.current_stitch);
+							ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(condition, story_state.variables, knot_vars, story_state.functions).value();
+							if (!ExpressionParser::as_bool(result)) {
 								include_choice = false;
 								break;
 							}

@@ -7,10 +7,13 @@
 class InkObjectGlobalVariable : public InkObject {
 private:
 	std::string name;
-	std::string value;
+	//std::string value;
+	std::vector<struct ExpressionParser::Token*> value_shunted_tokens;
 
 public:
-	InkObjectGlobalVariable(const std::string& name, const std::string& value) : name{name}, value{value} {}
+	InkObjectGlobalVariable(const std::string& name, const std::vector<struct ExpressionParser::Token*>& value_shunted_tokens) : name{name}, value_shunted_tokens{value_shunted_tokens} {}
+
+	virtual ~InkObjectGlobalVariable() override;
 
 	virtual ObjectId get_id() const override { return ObjectId::GlobalVariable; }
 

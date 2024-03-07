@@ -4,8 +4,6 @@
 #include "serialization.h"
 #include "runtime/ink_story_structs.h"
 
-#include "shunting-yard.h"
-
 #include <string>
 #include <vector>
 #include <unordered_map>
