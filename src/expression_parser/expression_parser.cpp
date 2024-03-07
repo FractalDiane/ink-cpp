@@ -1255,6 +1255,10 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 
 						stack.pop();
 						stack.push(result);
+
+						if (op->data.unary_type == TokenOperator::UnaryType::Postfix) {
+							tokens_to_dealloc.insert(result);
+						}
 					} break;
 
 					case Type::Assign: {
