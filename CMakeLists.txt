@@ -4,14 +4,10 @@ cmake_policy(SET CMP0135 NEW)
 project(ink_cpp)
 set(CMAKE_CXX_STANDARD 23)
 
-set(SRC_CPARSE
-	cparse/shunting-yard.cpp
-	cparse/packToken.cpp
-	cparse/functions.cpp
-	cparse/containers.cpp
+set(SRC_UTIL
+	src/ink_utils.cpp
+	src/expression_parser/expression_parser.cpp
 )
-
-set(SRC_UTIL src/ink_utils.cpp src/ink_cparse_ext.cpp)
 
 set(SRC_COMPILER src/ink_compiler.cpp)
 
@@ -54,12 +50,7 @@ endif()
 FetchContent_MakeAvailable(googletest)
 ################ GOOGLE TEST
 
-add_library(cparse STATIC ${SRC_CPARSE})
-include_directories(SYSTEM cparse cparse/builtin-features)
-
 add_library(ink_backend STATIC ${SRC_OBJECTS} ${SRC_RUNTIME} ${SRC_UTIL})
-add_dependencies(ink_backend cparse)
-target_link_libraries(ink_backend PUBLIC cparse)
 
 add_executable(inkc main_compiler.cpp ${SRC_COMPILER} ${SRC_UTIL})
 add_dependencies(inkc ink_backend)
@@ -88,7 +79,7 @@ if(MSVC)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	set(INK_COMPILE_OPTIONS -Wall -Wpedantic -Werror -Wno-unused-lambda-capture -Wno-unused-parameter -Wno-error=unused-private-field -Wno-reorder)
 else()
-	set(INK_COMPILE_OPTIONS -Wall -Wpedantic -Werror -Wno-unused-parameter -Wno-reorder)
+	set(INK_COMPILE_OPTIONS -Wall -Wpedantic -Werror -Wno-unused-parameter -Wno-reorder -lm)
 endif()
 
 target_compile_options(ink_backend PUBLIC ${INK_COMPILE_OPTIONS})

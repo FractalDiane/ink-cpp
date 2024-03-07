@@ -3,6 +3,8 @@
 #include "runtime/ink_story_data.h"
 #include "runtime/ink_story_state.h"
 
+#include "expression_parser/expression_parser.h"
+
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -34,6 +36,6 @@ public:
 
 	void choose_choice_index(std::size_t index);
 
-	const class cparse::packToken get_variable(const std::string& name) const;
-	void set_variable(const std::string& name, const class cparse::packToken& value);
+	std::optional<ExpressionParser::Variant> get_variable(const std::string& name) const;
+	void set_variable(const std::string& name, ExpressionParser::Variant&& value);
 };

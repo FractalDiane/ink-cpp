@@ -1,16 +1,15 @@
 #include "runtime/ink_story.h"
 #include "ink_compiler.h"
 
-#include "builtin-features.inc"
-
 #if __has_include(<print>)
 #include <print>
 using std::print;
 #else
-#include <iostream>
 #include <format>
 #define print(fmt, ...) std::cout << std::format(fmt __VA_OPT__(,) __VA_ARGS__)
 #endif
+
+#include <iostream>
 
 int main(int argc, char* argv[]) {
 	if (argc != 2) {
@@ -19,8 +18,6 @@ int main(int argc, char* argv[]) {
 	}
 
 	std::string infile = argv[1];
-
-	cparse_startup();
 
 	InkCompiler compiler;
 	InkStory story = compiler.compile_file(infile);

@@ -9,16 +9,16 @@ private:
 	//std::unordered_map<std::string, std::vector<InkObject*>> branches;
 	
 	bool is_switch;
-	std::vector<std::pair<std::string, Knot>> branches;
+	std::vector<std::pair<std::vector<struct ExpressionParser::Token*>, Knot>> branches;
 	Knot branch_else;
 
-	std::string switch_expression;
+	std::vector<struct ExpressionParser::Token*> switch_expression;
 
 public:
-	InkObjectConditional(const std::vector<std::pair<std::string, Knot>>& branches, const Knot& objects_else)
+	InkObjectConditional(const std::vector<std::pair<std::vector<struct ExpressionParser::Token*>, Knot>>& branches, const Knot& objects_else)
 		: branches{branches}, branch_else{objects_else}, is_switch{false} {}
 
-	InkObjectConditional(const std::string& switch_expression, const std::vector<std::pair<std::string, Knot>>& branches, const Knot& objects_else)
+	InkObjectConditional(const std::vector<struct ExpressionParser::Token*>& switch_expression, const std::vector<std::pair<std::vector<struct ExpressionParser::Token*>, Knot>>& branches, const Knot& objects_else)
 		: switch_expression{switch_expression}, branches{branches}, branch_else{objects_else}, is_switch{true} {}
  
 	virtual ~InkObjectConditional() override;

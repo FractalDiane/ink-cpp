@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_set>
 #include <format>
 
 class InkLexer {
@@ -78,6 +79,11 @@ private:
 	std::size_t current_sequence_index = 0;
 
 	std::uint32_t current_uuid = 0;
+
+	std::unordered_set<std::string> declared_variables;
+	std::unordered_set<std::string> declared_functions = {
+		"RANDOM", "SEED_RANDOM", "CHOICE_COUNT", "TURNS", "TURNS_SINCE",
+	};
 	
 public:
 	InkStory compile_script(const std::string& script);

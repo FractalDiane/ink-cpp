@@ -2,10 +2,6 @@
 #include "runtime/ink_story.h"
 
 #include "ink_utils.h"
-//#include "exprtk/exprtk.hpp"
-#include "shunting-yard.h"
-#include "builtin-features.inc"
-#include "ink_cparse_ext.h"
 
 #include <iostream>
 #include <format>
@@ -28,13 +24,8 @@ void print_vector(const std::vector<T>& vector) {
 }
 
 int main() {
-	cparse_startup();
-	InkCparseStartup ink_startup;
-	InkCparseStartupParser ink_startup_parser;
-	//std::cout << INKCPP_WORKING_DIR << std::endl;
-
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("15_conditional_blocks/15j_modified_shuffles.ink"));
+	InkStory story = compiler.compile_file(TEST_PATH("8_variable_text/8k_conditional_text.ink"));
 	//InkStory story = compiler.compile_file(TEST_PATH("8_variable_text/8k_conditional_text.ink"));
 	//story.set_variable("met_blofeld", true);
 	//story.set_variable("learned_his_name", true);
@@ -46,7 +37,7 @@ int main() {
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
-	print_vector(story.get_current_choices());
+	//print_vector(story.get_current_choices());
 	//std::cout << story.continue_story() << std::endl;
 	//std::cout << story.continue_story() << std::endl;
 	//std::cout << story.continue_story() << std::endl;

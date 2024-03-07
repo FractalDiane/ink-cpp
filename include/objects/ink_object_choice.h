@@ -2,13 +2,15 @@
 
 #include "objects/ink_object.h"
 
+#include "expression_parser/expression_parser.h"
+
 #include <string>
 
 struct InkChoiceEntry {
 	std::vector<InkObject*> text;
 	Knot result;
 	bool sticky = false;
-	std::vector<std::string> conditions;
+	std::vector<std::vector<ExpressionParser::Token*>> conditions;
 	bool fallback = false;
 	bool immediately_continue_to_result = false;
 

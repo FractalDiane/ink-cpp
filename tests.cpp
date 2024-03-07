@@ -2,12 +2,13 @@
 
 #include "ink_compiler.h"
 #include "runtime/ink_story.h"
-#include "ink_cparse_ext.h"
 #include "ink_utils.h"
 
-#include "builtin-features.inc"
+#include "expression_parser/expression_parser.h"
 
 #include <utility>
+#include <any>
+#include <cstdlib>
 
 #define FIXTURE(name) class name : public testing::Test {\
 protected:\
@@ -28,8 +29,26 @@ protected:\
 		EXPECT_EQ(story.get_current_choices(), expected_choices);\
 	}
 
+template <typename TT, typename DT>
+bool token_matches(ExpressionParser::Token* token, DT data) {
+	if (auto* token_cast = dynamic_cast<TT*>(token)) {
+		return token_cast->data == data;
+	}
+
+	return false;
+}
+
+#define EXPECT_TOKENS(tokens, ...) {\
+	std::vector<ExpressionParser::TokenType> types = {__VA_ARGS__};\
+	EXPECT_EQ(types.size(), tokens.size());\
+	for (unsigned int i = 0; i < tokens.size(); ++i) {\
+		EXPECT_EQ(tokens[i]->get_type(), types[i]);\
+	}\
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-FIXTURE(NonStoryTests);
+FIXTURE(NonStoryFunctionTests);
+FIXTURE(ExpressionParserTests);
 
 FIXTURE(ContentTests);
 FIXTURE(ChoiceTests);
@@ -47,8 +66,8 @@ FIXTURE(GlobalVariableTests);
 FIXTURE(LogicTests);
 FIXTURE(ConditionalBlockTests);
 
-#pragma region NonStoryTests
-TEST_F(NonStoryTests, DeinkifyExpression) {
+#pragma region NonStoryFunctionTests
+TEST_F(NonStoryFunctionTests, DeinkifyExpression) {
 	EXPECT_EQ(deinkify_expression("true and true"), "true && true");
 	EXPECT_EQ(deinkify_expression("true or false"), "true || false");
 	EXPECT_EQ(deinkify_expression("not true"), "! true");
@@ -59,6 +78,106 @@ TEST_F(NonStoryTests, DeinkifyExpression) {
 	EXPECT_EQ(deinkify_expression("++var"), "var = var + 1");
 	EXPECT_EQ(deinkify_expression("var--"), "var = var - 1");
 	EXPECT_EQ(deinkify_expression("--var"), "var = var - 1");
+}
+#pragma endregion
+
+#pragma region ExpressionParserTests
+TEST_F(ExpressionParserTests, BasicTokenization) {
+	using ExpressionParser::Token;
+	using ExpressionParser::TokenType;
+	std::string exp = "test = 5 + 7";
+
+	std::vector<ExpressionParser::Token*> result = ExpressionParser::tokenize_expression(exp, {}, {});
+
+	EXPECT_TOKENS(result,
+		ExpressionParser::TokenType::Variable,
+		ExpressionParser::TokenType::Operator,
+		ExpressionParser::TokenType::NumberInt,
+		ExpressionParser::TokenType::Operator,
+		ExpressionParser::TokenType::NumberInt,
+	);
+
+	std::unordered_set<ExpressionParser::Token*> dummy;
+	std::vector<ExpressionParser::Token*> result_postfix = ExpressionParser::shunt(result, dummy);
+	EXPECT_EQ(result.size(), result_postfix.size());
+
+	ExpressionParser::VariableMap variables;
+	ExpressionParser::VariableMap constants;
+	std::optional<ExpressionParser::Variant> result_token = ExpressionParser::execute_expression_tokens(result_postfix, variables, constants, {});
+	EXPECT_FALSE(result_token.has_value());
+	EXPECT_EQ(std::get<std::int64_t>(variables["test"]), 12);
+
+	for (ExpressionParser::Token* token : result) {
+		delete token;
+	}
+}
+
+TEST_F(ExpressionParserTests, ExpressionEvaluation) {
+	using ExpressionParser::Variant;
+	using ExpressionParser::execute_expression;
+
+	Variant t1 = execute_expression("5 + 7").value();
+	EXPECT_EQ(std::get<std::int64_t>(t1), 12);
+
+	Variant t2 = execute_expression("5 + 7 * 52 - 8").value();
+	EXPECT_EQ(std::get<std::int64_t>(t2), 361);
+
+	Variant t3 = execute_expression("5.0 * 4.2").value();
+	EXPECT_EQ(std::get<double>(t3), 21.0);
+
+	Variant t4 = execute_expression("5.0 - 4.2 - 3.7 / 2.5").value();
+	EXPECT_TRUE(std::abs(std::get<double>(t4) - -0.68) < 0.0001);
+
+	Variant t5 = execute_expression("5 == 2").value();
+	EXPECT_EQ(std::get<bool>(t5), false);
+
+	Variant t6 = execute_expression("3 != 6").value();
+	EXPECT_EQ(std::get<bool>(t6), true);
+
+	Variant t7 = execute_expression("7 < 12").value();
+	EXPECT_EQ(std::get<bool>(t7), true);
+
+	Variant t8 = execute_expression(R"("hello" + " " + "there")").value();
+	EXPECT_EQ(std::get<std::string>(t8), "hello there");
+
+	Variant t9 = execute_expression("++5").value();
+	EXPECT_EQ(std::get<std::int64_t>(t9), 6);
+
+	Variant t10 = execute_expression("5++").value();
+	EXPECT_EQ(std::get<std::int64_t>(t10), 5);
+
+	Variant t11 = execute_expression(R"("hello" ? "llo")").value();
+	EXPECT_EQ(std::get<bool>(t11), true);
+
+	Variant t12 = execute_expression(R"("hello" ? "blah")").value();
+	EXPECT_EQ(std::get<bool>(t12), false);
+
+	Variant t13 = execute_expression("5 * (3 + 4)").value();
+	EXPECT_EQ(std::get<std::int64_t>(t13), 35);
+
+	Variant t14 = execute_expression("POW(3, 2)").value();
+	EXPECT_EQ(std::get<double>(t14), 9);
+
+	Variant t15 = execute_expression("-> my_knot").value();
+	EXPECT_EQ(std::get<std::string>(t15), "my_knot");
+
+	Variant t16 = execute_expression("POW(FLOOR(3.5), FLOOR(2.9)").value();
+	EXPECT_EQ(std::get<double>(t16), 9);
+
+	Variant t17 = execute_expression("(5 * 5) - (3 * 3) + 3").value();
+	EXPECT_EQ(std::get<std::int64_t>(t17), 19);
+
+	ExpressionParser::VariableMap vars = {{"x", 5}, {"y", 3}, {"c", 3}};
+	execute_expression("x = (x * x) - (y * y) + c", vars, {});
+	EXPECT_EQ(std::get<std::int64_t>(vars["x"]), 19);
+
+	ExpressionParser::VariableMap vars2 = {{"test", 6}};
+	Variant t19 = execute_expression("POW(test, 2)", vars2, {}).value();
+	EXPECT_EQ(std::get<double>(t19), 36);
+
+	ExpressionParser::VariableMap vars3 = {{"visited_snakes", true}, {"dream_about_snakes", false}};
+	Variant t20 = execute_expression("visited_snakes && not dream_about_snakes", vars3, {}).value();
+	EXPECT_EQ(std::get<bool>(t20), true);
 }
 #pragma endregion
 
@@ -882,10 +1001,10 @@ TEST_F(ConditionalBlockTests, ReadCountCondition) {
 		STORY("15_conditional_blocks/15f_read_count_condition.ink");
 		story.set_variable("fear", std::get<0>(inputs[i]));
 		story.set_variable("visited_snakes", std::get<1>(inputs[i]));
-		story.set_variable("visited_poland", std::get<2>(inputs[i]));
+		story.set_variable("visited_poland",std::get<2>(inputs[i]));
 
 		EXPECT_TEXT(expected_result[i]);
-		EXPECT_EQ(story.get_variable("fear"), expected_fear[i]);
+		EXPECT_EQ(std::get<std::int64_t>(story.get_variable("fear").value()), expected_fear[i]);
 	}
 }
 
@@ -965,9 +1084,6 @@ TEST_F(ConditionalBlockTests, ModifiedShuffles) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {
-	cparse_startup();
-	InkCparseStartup ink_startup;
-	InkCparseStartupParser ink_startup_parser;
 	testing::InitGoogleTest();
 	return RUN_ALL_TESTS();
 }
