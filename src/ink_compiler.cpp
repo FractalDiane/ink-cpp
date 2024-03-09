@@ -376,8 +376,19 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 							std::string all_params;
 							all_params.reserve(50);
+							bool found_arrow = false;
 							while (all_tokens[token_index].token != InkToken::RightParen) {
-								all_params += all_tokens[token_index].text_contents;
+								if (all_tokens[token_index].token != InkToken::Arrow) {
+									if (found_arrow) {
+										all_params += strip_string_edges(all_tokens[token_index].text_contents, true, false, true);
+										found_arrow = false;
+									} else {
+										all_params += all_tokens[token_index].text_contents;
+									}
+								} else {
+									found_arrow = true;
+								}
+								
 								++token_index;
 							}
 
@@ -809,7 +820,13 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 		case InkToken::Arrow: {
 			if (next_token_is(all_tokens, token_index, InkToken::Text)) {
-				const std::string& target = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
+				std::string target = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
+				std::vector<ExpressionParser::Token*> target_tokens;
+				try {
+					target_tokens = ExpressionParser::tokenize_and_shunt_expression(target, {}, declared_functions);
+				} catch (...) {
+					throw std::runtime_error("Illegal value in divert target");
+				}
 	
 				std::vector<std::vector<ExpressionParser::Token*>> arguments;
 				if (next_token_is(all_tokens, token_index + 1, InkToken::LeftParen)) {
@@ -851,7 +868,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				}
 				
 				if (!in_parens) {
-					result_object = new InkObjectDivert(target, arguments);
+					result_object = new InkObjectDivert(target_tokens, arguments);
 					++token_index;
 				} else {
 					result_object = new InkObjectText("->");

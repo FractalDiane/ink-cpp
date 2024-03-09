@@ -1104,6 +1104,16 @@ TEST_F(TemporaryVariableTests, KnotParameters) {
 		EXPECT_TEXT(std::format("\"I accuse {}!\" Poirot declared. \"{}!\"", accused[i], remarks[i]), std::format("\"Really?\" Japp replied. \"{}?\"", i == 2 ? "You did it" : accused[i]), "\"And why not?\" Poirot shot back.");
 	}
 }
+
+TEST_F(TemporaryVariableTests, KnotRecursion) {
+	STORY("16_temporary_variables/16c_knot_recursion.ink");
+	EXPECT_TEXT("\"The result is 5050!\" you announce.", "Gauss stares at you in horror.");
+}
+
+TEST_F(TemporaryVariableTests, DivertsAsArguments) {
+	STORY("16_temporary_variables/16d_diverts_as_arguments.ink");
+	EXPECT_TEXT("You lie down and close your eyes.", "You sleep perchance to dream etc. etc.", "You get back to your feet, ready to continue your journey.");
+}
 #pragma endregion
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

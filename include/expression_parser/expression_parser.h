@@ -385,6 +385,8 @@ struct TokenVariable : public Token {
 
 	virtual ValueResult get_value(const VariableMap& variables, const VariableMap& constants) override;
 	virtual std::optional<Variant> get_variant_value(const VariableMap& variables, const VariableMap& constants) const override;
+
+	virtual std::string to_printable_string() const override;
 };
 
 std::vector<Token*> tokenize_expression(const std::string& expression, const FunctionMap& all_functions, const std::unordered_set<std::string>& deferred_functions);

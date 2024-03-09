@@ -750,6 +750,10 @@ std::optional<Variant> TokenVariable::get_variant_value(const VariableMap& varia
 	}
 }
 
+std::string TokenVariable::to_printable_string() const {
+	return data;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 Token* TokenFunction::call(TokenStack& stack, const FunctionMap& all_functions, VariableMap& variables, const VariableMap& constants) {
