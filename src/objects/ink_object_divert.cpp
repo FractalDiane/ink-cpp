@@ -1,5 +1,13 @@
 #include "objects/ink_object_divert.h"
 
+InkObjectDivert::~InkObjectDivert() {
+	for (const std::vector<ExpressionParser::Token*>& argument : arguments) {
+		for (ExpressionParser::Token* token : argument) {
+			delete token;
+		}
+	}
+}
+
 std::vector<std::uint8_t> InkObjectDivert::to_bytes() const {
 	Serializer<std::string> s;
 	return s(target_knot);
