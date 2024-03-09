@@ -2,16 +2,19 @@
 
 #include "objects/ink_object.h"
 
+#include "expression_parser/expression_parser.h"
+
 #include <string>
 #include <format>
 
 class InkObjectDivert : public InkObject {
 private:
 	std::string target_knot;
+	std::vector<std::vector<ExpressionParser::Token*>> arguments;
 
 public:
-	InkObjectDivert() : target_knot{std::string()} {}
-	InkObjectDivert(const std::string& target) : target_knot{target} {}
+	InkObjectDivert() : target_knot{std::string()}, arguments{} {}
+	InkObjectDivert(const std::string& target, const std::vector<std::vector<ExpressionParser::Token*>>& arguments) : target_knot{target}, arguments{arguments} {}
 
 	virtual ObjectId get_id() const override { return ObjectId::Divert; }
 	virtual std::vector<std::uint8_t> to_bytes() const override;

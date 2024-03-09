@@ -20,17 +20,17 @@ struct InkStoryTracking {
 	};
 
 	struct KnotStats : public SubKnotStats {
-		std::vector<std::uint32_t> stitches;
-		std::vector<std::uint32_t> gather_points;
+		std::vector<Uuid> stitches;
+		std::vector<Uuid> gather_points;
 	};
 
 	struct StitchStats : public SubKnotStats {
-		std::vector<std::uint32_t> gather_points;
+		std::vector<Uuid> gather_points;
 	};
 
-	std::unordered_map<std::uint32_t, KnotStats> knot_stats;
-	std::unordered_map<std::uint32_t, StitchStats> stitch_stats;
-	std::unordered_map<std::uint32_t, SubKnotStats> gather_point_stats;
+	std::unordered_map<Uuid, KnotStats> knot_stats;
+	std::unordered_map<Uuid, StitchStats> stitch_stats;
+	std::unordered_map<Uuid, SubKnotStats> gather_point_stats;
 
 	void increment_visit_count(Knot* knot, Stitch* stitch = nullptr, GatherPoint* gather_point = nullptr);
 	void increment_turns_since();

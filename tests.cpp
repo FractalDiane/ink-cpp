@@ -65,6 +65,7 @@ FIXTURE(TrackingWeaveTests);
 FIXTURE(GlobalVariableTests);
 FIXTURE(LogicTests);
 FIXTURE(ConditionalBlockTests);
+FIXTURE(TemporaryVariableTests);
 
 #pragma region NonStoryFunctionTests
 TEST_F(NonStoryFunctionTests, DeinkifyExpression) {
@@ -1078,6 +1079,30 @@ TEST_F(ConditionalBlockTests, ModifiedShuffles) {
 	EXPECT_TEXT("There are like, cars, here.");
 	story.choose_choice_index(0);
 	EXPECT_TEXT("There are like, cars, here.");
+}
+#pragma endregion
+
+#pragma region TemporaryVariableTests
+TEST_F(TemporaryVariableTests, TemporaryVariables) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("16_temporary_variables/16a_temporary_variables.ink");
+		story.set_variable("blanket", true);
+		story.set_variable("ear_muffs", i == 1);
+		story.set_variable("gloves", i == 1);
+		EXPECT_TEXT(i == 0 ? "That night I was colder than I have ever been." : "Despite the snow, I felt incorrigibly snug.");
+	}
+}
+
+TEST_F(TemporaryVariableTests, KnotParameters) {
+	std::vector<std::string> accused = {"Hastings", "Claudia", "myself"};
+	std::vector<std::string> remarks = {"Sewing machines", "Supercalifragilisticexpialidocious", "Cow"};
+
+	for (int i = 0; i < 3; ++i) {
+		STORY("16_temporary_variables/16b_knot_parameters.ink");
+		EXPECT_TEXT("");
+		story.choose_choice_index(i);
+		EXPECT_TEXT(std::format("\"I accuse {}!\" Poirot declared. \"{}!\"", accused[i], remarks[i]), std::format("\"Really?\" Japp replied. \"{}?\"", i == 2 ? "You did it" : accused[i]), "\"And why not?\" Poirot shot back.");
+	}
 }
 #pragma endregion
 

@@ -76,11 +76,11 @@ InkStory::InkStory(const std::string& inkb_file) {
 				} break;
 
 				case ObjectId::Tag: {
-					this_object = (new InkObjectTag(""))->populate_from_bytes(bytes, index);
+					//this_object = (new InkObjectTag(""))->populate_from_bytes(bytes, index);
 				} break;
 
 				case ObjectId::Divert: {
-					this_object = (new InkObjectDivert(""))->populate_from_bytes(bytes, index);
+					//this_object = (new InkObjectDivert(""))->populate_from_bytes(bytes, index);
 				} break;
 
 				default: break;
@@ -243,6 +243,11 @@ std::string InkStory::continue_story() {
 
 						story_state.current_knots_stack.back() = {target.knot, 0};
 						story_state.story_tracking.increment_visit_count(target.knot);
+
+						for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
+							story_state.variables[target.knot->parameters[i]] = eval_result.arguments[i];
+						}
+
 						story_state.current_stitch = nullptr;
 						changed_knot = true;
 					} break;
@@ -259,6 +264,10 @@ std::string InkStory::continue_story() {
 						story_state.story_tracking.increment_visit_count(target.knot ? target.knot : story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 						if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
 							changed_knot = true;
+						}
+
+						for (std::size_t i = 0; i < target.stitch->parameters.size(); ++i) {
+							story_state.variables[target.stitch->parameters[i]] = eval_result.arguments[i];
 						}
 
 						story_state.just_diverted_to_non_knot = true;
@@ -285,6 +294,7 @@ std::string InkStory::continue_story() {
 			}
 
 			eval_result.target_knot.clear();
+			eval_result.arguments.clear();
 		}
 
 		std::vector<GatherPoint> no_current_stitch;
@@ -302,7 +312,13 @@ std::string InkStory::continue_story() {
 
 		if (!changed_knot) {
 			++story_state.current_knot().index;
-		}
+		}/* else if (story_state.current_knot().knot == story_state.current_nonchoice_knot().knot) {
+			for (const std::string& var : knot_before_object->local_variables) {
+				story_state.variables.erase(var);
+			}
+
+			knot_before_object->local_variables.clear();
+		}*/
 
 		if (story_state.index_in_knot() >= story_state.current_knot_size() && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
 			story_state.current_knots_stack.pop_back();
@@ -354,18 +370,6 @@ void InkStory::choose_choice_index(std::size_t index) {
 }
 
 std::optional<ExpressionParser::Variant> InkStory::get_variable(const std::string& name) const {
-	/*if (const cparse::packToken* variable = story_state.variables.find(name)) {
-		return *variable;
-	}*/
-
-	/*if (auto variable = story_state.variables.find(name); variable != story_state.variables.end()) {
-		// HACK: can this be less bad?
-		return ExpressionParser::InternalPackedToken::from_other(const_cast<ExpressionParser::InternalPackedToken&>(variable->second), false);
-	}
-
-	// TODO: maybe make this crash instead
-	return ExpressionParser::InternalPackedToken();*/
-
 	if (auto variable = story_state.variables.find(name); variable != story_state.variables.end()) {
 		return variable->second;
 	}

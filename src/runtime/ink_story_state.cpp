@@ -40,30 +40,6 @@ InkStoryState::KnotStatus& InkStoryState::current_nonchoice_knot() {
 	return current_knots_stack.front();
 }
 
-ExpressionParser::VariableMap InkStoryState::get_variables_with_locals() {
-	ExpressionParser::VariableMap result = variables;
-
-	/*Knot* knot = current_knot().knot;
-	for (const Stitch& stitch : knot->stitches) {
-		std::string stitch_name_full = std::format("{}.{}", knot->name, stitch.name);
-		result[stitch.name] = result[stitch_name_full];
-		if (stitch.name == current_stitch) {
-			for (const GatherPoint& gather_point : stitch.gather_points) {
-				std::string gather_point_full = std::format("{}.{}.{}", knot->name, stitch.name, gather_point.name);
-				std::string gather_point_short = std::format("{}.{}", stitch.name, gather_point.name);
-				result[gather_point_short] = result[gather_point_full];
-			}
-		}
-	}
-
-	for (const GatherPoint& gather_point : knot->gather_points) {
-		std::string gather_point_full = std::format("{}.{}", knot->name, gather_point.name);
-		result[gather_point.name] = result[gather_point_full];
-	}*/
-
-	return result;
-}
-
 bool InkStoryEvalResult::has_any_contents(bool strip) {
 	return strip ? !strip_string_edges(result, true, true, true).empty() : !result.empty();
 }

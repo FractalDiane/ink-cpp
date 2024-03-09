@@ -53,6 +53,7 @@ namespace {
 		{'|', InkToken::Pipe},
 		{'&', InkToken::Ampersand},
 		{'~', InkToken::Tilde},
+		//{',', InkToken::Comma},
 	};
 
 	char next_char(const std::string& script_text, size_t index) {
@@ -369,6 +370,23 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						new_knot.name = new_knot_name;
 						new_knot.uuid = current_uuid++;
 						new_knot.type = WeaveContentType::Knot;
+
+						if (next_token_is(all_tokens, token_index + 3, InkToken::LeftParen)) {
+							token_index += 5;
+
+							std::string all_params;
+							all_params.reserve(50);
+							while (all_tokens[token_index].token != InkToken::RightParen) {
+								all_params += all_tokens[token_index].text_contents;
+								++token_index;
+							}
+
+							--token_index;
+
+							std::vector<std::string> split = split_string(all_params, ',', true);
+							new_knot.parameters = split;
+						}
+
 						story_knots.push_back(new_knot);
 
 						while (all_tokens[token_index].token != InkToken::NewLine) {
@@ -388,6 +406,24 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					new_stitch.uuid = current_uuid++;
 					new_stitch.type = WeaveContentType::Stitch;
 					new_stitch.index = static_cast<std::uint16_t>(story_knots.back().objects.size());
+
+					// TODO: dry it
+					if (next_token_is(all_tokens, token_index + 1, InkToken::LeftParen)) {
+						token_index += 3;
+
+						std::string all_params;
+						all_params.reserve(50);
+						while (all_tokens[token_index].token != InkToken::RightParen) {
+							all_params += all_tokens[token_index].text_contents;
+							++token_index;
+						}
+
+						--token_index;
+
+						std::vector<std::string> split = split_string(all_params, ',', true);
+						new_stitch.parameters = split;
+					}
+
 					stitches.push_back(new_stitch);
 					//std::sort(stitches.begin(), stitches.end(), [](const Stitch& a, const Stitch& b) { return a.index < b.index; });
 
@@ -774,8 +810,48 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		case InkToken::Arrow: {
 			if (next_token_is(all_tokens, token_index, InkToken::Text)) {
 				const std::string& target = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
+	
+				std::vector<std::vector<ExpressionParser::Token*>> arguments;
+				if (next_token_is(all_tokens, token_index + 1, InkToken::LeftParen)) {
+					token_index += 3;
+
+					std::string all_args;
+					all_args.reserve(50);
+					while (all_tokens[token_index].token != InkToken::RightParen) {
+						all_args += all_tokens[token_index].text_contents;
+						++token_index;
+					}
+
+					--token_index;
+
+					std::vector<std::string> split = split_string(all_args, ',', true);
+					/*std::string current_arg;
+					current_arg.reserve(50);
+					for (char chr : all_args) {
+						if (chr != ',') {
+							current_arg.push_back(chr);
+						} else {
+							split.push_back(current_arg);
+							current_arg.clear();
+						}
+					}
+
+					if (!current_arg.empty()) {
+						split.push_back(current_arg);
+					}*/
+
+					for (const std::string& arg : split) {
+						try {
+							std::vector<ExpressionParser::Token*> tokenized = ExpressionParser::tokenize_and_shunt_expression(arg, {}, declared_functions);
+							arguments.push_back(tokenized);
+						} catch (...) {
+							throw std::runtime_error("Malformed knot argument");
+						}
+					}
+				}
+				
 				if (!in_parens) {
-					result_object = new InkObjectDivert(target);
+					result_object = new InkObjectDivert(target, arguments);
 					++token_index;
 				} else {
 					result_object = new InkObjectText("->");

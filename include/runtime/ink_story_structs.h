@@ -12,10 +12,14 @@ enum class WeaveContentType {
 	GatherPoint,
 };
 
+typedef std::uint32_t Uuid;
+
 struct InkWeaveContent {
 	std::string name;
-	std::uint32_t uuid;
+	Uuid uuid;
 	WeaveContentType type;
+
+	std::vector<std::string> parameters;
 };
 
 struct GatherPoint : public InkWeaveContent {
@@ -34,8 +38,6 @@ struct Knot : public InkWeaveContent {
 	std::vector<class InkObject*> objects;
 	std::vector<Stitch> stitches;
 	std::vector<GatherPoint> gather_points;
-
-	//cparse::TokenMap local_variables;
 
 	Knot() : objects{}, stitches{}, gather_points{} {}
 	Knot(const std::vector<class InkObject*> objects) : objects{objects}, stitches{{}}, gather_points{{}} {}

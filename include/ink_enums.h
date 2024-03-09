@@ -32,6 +32,7 @@ enum class InkToken : char {
 
 	LeftParen,
 	RightParen,
+	//Comma,
 
 	KeywordVar,
 	KeywordInclude,

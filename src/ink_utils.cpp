@@ -53,6 +53,37 @@ std::string join_string_vector(const std::vector<std::string>& vector, std::stri
 	}
 }
 
+std::vector<std::string> split_string(const std::string& string, char delimiter, bool ignore_delim_spaces) noexcept {
+	if (!string.empty()) {
+		std::vector<std::string> result;
+		std::string current_string;
+		current_string.reserve(50);
+		for (auto chr = string.begin(); chr != string.end(); ++chr) {
+			if (*chr != delimiter) {
+				current_string.push_back(*chr);
+			} else {
+				result.push_back(current_string);
+				current_string.clear();
+				if (ignore_delim_spaces) {
+					do {
+						++chr;
+					} while (*chr <= 32);
+
+					--chr;
+				}
+			}
+		}
+
+		if (!current_string.empty()) {
+			result.push_back(current_string);
+		}
+
+		return result;
+	} else {
+		return {};
+	}
+}
+
 std::int64_t randi_range(std::int64_t from, std::int64_t to, std::mt19937& generator) noexcept {
 	std::uniform_int_distribution<std::int64_t> distribution{from, to};
 	return distribution(generator);

@@ -56,6 +56,7 @@ struct InkStoryState {
 
 	ExpressionParser::VariableMap variables;
 	ExpressionParser::FunctionMap functions;
+	std::unordered_map<Uuid, ExpressionParser::VariableMap> local_variables;
 
 	class InkObject* get_current_object(std::int64_t index_offset);
 	bool has_choice_been_taken(class InkObject* choice_object, std::size_t index);
@@ -64,8 +65,6 @@ struct InkStoryState {
 	inline KnotStatus& current_knot() { return current_knots_stack.back(); }
 	inline std::size_t current_knot_size() const { return current_knots_stack.back().knot->objects.size(); }
 	KnotStatus& current_nonchoice_knot();
-
-	ExpressionParser::VariableMap get_variables_with_locals();
 };
 
 struct InkStoryEvalResult {
@@ -73,6 +72,8 @@ struct InkStoryEvalResult {
 	bool should_continue = true;
 	bool reached_newline = false;
 	std::string target_knot;
+
+	std::vector<ExpressionParser::Variant> arguments;
 
 	bool has_any_contents(bool strip);
 };

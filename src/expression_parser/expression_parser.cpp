@@ -784,6 +784,9 @@ void try_add_word(std::vector<Token*>& result, std::string& word, const Function
 		} else if (deferred_functions.contains(word)) {
 			result.push_back(new TokenFunction(word, nullptr, true));
 			found_result = true;
+		} else if (word == "temp") {
+			result.push_back(new TokenKeyword(TokenKeyword::Type::Temp));
+			found_result = true;
 		} else {
 			if (word.contains(".")) {
 				try {
@@ -1113,6 +1116,11 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 
 			case TokenType::Function: {
 				stack.push(this_token);
+			} break;
+			
+			case TokenType::Keyword: {
+				postfix.push_back(this_token);
+				tokens_shunted.insert(this_token);
 			} break;
 
 			default: {

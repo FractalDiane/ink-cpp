@@ -38,7 +38,7 @@ ExpressionParser::VariableMap InkStoryTracking::get_visit_count_variables(Knot* 
 
 	for (auto& knot : knot_stats) {
 		result[knot.second.name] = TK(knot.second.times_visited);
-		for (std::uint32_t stitch_id : knot.second.stitches) {
+		for (Uuid stitch_id : knot.second.stitches) {
 			StitchStats& stitch = stitch_stats[stitch_id];
 			std::string stitch_name = std::format("{}.{}", knot.second.name, stitch.name);
 			result[stitch_name] = TK(stitch.times_visited);
@@ -47,7 +47,7 @@ ExpressionParser::VariableMap InkStoryTracking::get_visit_count_variables(Knot* 
 				result[stitch.name] = TK(stitch.times_visited);
 			}
 
-			for (std::uint32_t gather_id : stitch.gather_points) {
+			for (Uuid gather_id : stitch.gather_points) {
 				SubKnotStats& gather_point = gather_point_stats[gather_id];
 				std::string gather_point_name = std::format("{}.{}.{}", knot.second.name, stitch.name, gather_point.name);
 				result[gather_point_name] = TK(gather_point.times_visited);
@@ -63,7 +63,7 @@ ExpressionParser::VariableMap InkStoryTracking::get_visit_count_variables(Knot* 
 			}
 		}
 
-		for (std::uint32_t gather_id : knot.second.gather_points) {
+		for (Uuid gather_id : knot.second.gather_points) {
 			SubKnotStats& gather_point = gather_point_stats[gather_id];
 			std::string gather_point_name = std::format("{}.{}", knot.second.name, gather_point.name);
 			result[gather_point_name] = TK(gather_point.times_visited);
