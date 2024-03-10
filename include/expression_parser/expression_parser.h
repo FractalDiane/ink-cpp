@@ -60,6 +60,8 @@ std::string as_string(const Variant& variant);
 
 std::string to_printable_string(const Variant& variant);
 
+Token* variant_to_token(const Variant& variant);
+
 using TokenStack = Stack<Token*>;
 
 typedef std::unordered_map<std::string, Variant> VariableMap;
@@ -123,6 +125,7 @@ struct Token {
 struct TokenKeyword : public Token {
 	enum class Type {
 		Temp,
+		Return,
 
 		True,
 		False,

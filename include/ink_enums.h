@@ -35,6 +35,9 @@ enum class InkToken : char {
 	//Comma,
 
 	KeywordVar,
+	KeywordConst,
+	KeywordList,
+	KeywordFunction,
 	KeywordInclude,
 };
 

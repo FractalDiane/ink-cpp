@@ -56,6 +56,13 @@ namespace {
 		//{',', InkToken::Comma},
 	};
 
+	static const std::unordered_map<std::string, InkToken> TokenKeywords = {
+		{"VAR", InkToken::KeywordVar},
+		{"CONST", InkToken::KeywordConst},
+		{"LIST", InkToken::KeywordList},
+		{"function", InkToken::KeywordFunction},
+	};
+
 	char next_char(const std::string& script_text, size_t index) {
 		if (index + 1 < script_text.length()) {
 			return script_text[index + 1];
@@ -186,8 +193,8 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 			} break;
 		}
 
-		if (strip_string_edges(current_text, true, true, true) == "VAR") {
-			this_token.token = InkToken::KeywordVar;
+		if (auto keyword_token = TokenKeywords.find(strip_string_edges(current_text, true, true, true)); keyword_token != TokenKeywords.end()) {
+			this_token.token = keyword_token->second;
 			current_text.clear();
 		}
 
@@ -364,9 +371,18 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		case InkToken::Equal: {
 			if (at_line_start) {
 				if (next_token_is_sequence(all_tokens, token_index, {InkToken::Equal, InkToken::Equal})) {
-					if (next_token_is(all_tokens, token_index + 2, InkToken::Text)) {
-						std::string new_knot_name = strip_string_edges(all_tokens[token_index + 3].text_contents, true, true, true);
+					if (next_token_is(all_tokens, token_index + 2, InkToken::Text) || next_token_is(all_tokens, token_index + 2, InkToken::KeywordFunction)) {
 						Knot new_knot;
+						if (all_tokens[token_index + 3].token == InkToken::KeywordFunction) {
+							new_knot.is_function = true;
+							++token_index;
+						}
+
+						std::string new_knot_name = strip_string_edges(all_tokens[token_index + 3].text_contents, true, true, true);
+						if (new_knot.is_function) {
+							declared_functions.insert(new_knot_name);
+						}
+
 						new_knot.name = new_knot_name;
 						new_knot.uuid = current_uuid++;
 						new_knot.type = WeaveContentType::Knot;

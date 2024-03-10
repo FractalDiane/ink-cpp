@@ -188,6 +188,44 @@ void InkStory::bind_ink_functions() {
 	});
 
 	#undef EXP_FUNC
+
+	for (auto& knot : story_data->knots) {
+		if (knot.second.is_function) {
+			story_state.functions.insert({knot.first,
+			[knot, this](TokenStack& stack, VariableMap& variables, const VariableMap& constants) -> ExpressionParser::Token* {
+				for (auto parameter = knot.second.parameters.rbegin(); parameter != knot.second.parameters.rend(); ++parameter) {
+					Token* param = stack.top();
+					story_state.variables[*parameter] = param->get_variant_value(variables, constants).value();
+					stack.pop();
+				}
+
+				std::optional<ExpressionParser::Variant> result = divert_to_function_knot(knot.first);
+				if (result.has_value()) {
+					return ExpressionParser::variant_to_token(*result);
+				} else {
+					return nullptr;
+				}
+			}});
+		}
+	}
+}
+
+std::optional<ExpressionParser::Variant> InkStory::divert_to_function_knot(const std::string& knot) {
+	Knot* knot_ptr = &story_data->knots[knot];
+	story_state.current_knots_stack.push_back({knot_ptr, 0});
+	story_state.story_tracking.increment_visit_count(knot_ptr);
+
+	InkStoryEvalResult eval_result;
+	eval_result.result.reserve(512);
+	while (!eval_result.reached_function_return && story_state.index_in_knot() < story_state.current_knot_size()) {
+		InkObject* current_object = story_state.current_knot().knot->objects[story_state.index_in_knot()];
+		current_object->execute(story_state, eval_result);
+
+		++story_state.current_knot().index;
+	}
+
+	story_state.current_knots_stack.pop_back();
+	return eval_result.return_value;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

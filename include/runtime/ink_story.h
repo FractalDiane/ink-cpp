@@ -19,6 +19,8 @@ private:
 	void init_story();
 	void bind_ink_functions();
 
+	std::optional<ExpressionParser::Variant> divert_to_function_knot(const std::string& knot);
+
 public:
 	explicit InkStory(InkStoryData* data) : story_data{data} { init_story(); }
 	explicit InkStory(const std::string& inkb_file);

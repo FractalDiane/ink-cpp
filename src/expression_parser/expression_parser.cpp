@@ -224,6 +224,32 @@ std::string ExpressionParser::to_printable_string(const Variant& variant) {
 	}
 }
 
+Token* ExpressionParser::variant_to_token(const Variant& variant) {
+	switch (variant.index()) {
+		case Variant_Bool: {
+			return new TokenBoolean(std::get<bool>(variant));
+		} break;
+
+		case Variant_Int: {
+			return new TokenNumberInt(std::get<std::int64_t>(variant));
+		} break;
+
+		case Variant_Float: {
+			return new TokenNumberFloat(std::get<double>(variant));
+		} break;
+
+		case Variant_String: {
+			return new TokenStringLiteral(std::get<std::string>(variant));
+		} break;
+
+		default: {
+			throw;
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 bool Token::as_bool() const { throw; }
 std::int64_t Token::as_int() const { throw; }
 double Token::as_float() const { throw; }
@@ -790,6 +816,9 @@ void try_add_word(std::vector<Token*>& result, std::string& word, const Function
 			found_result = true;
 		} else if (word == "temp") {
 			result.push_back(new TokenKeyword(TokenKeyword::Type::Temp));
+			found_result = true;
+		} else if (word == "return") {
+			result.push_back(new TokenKeyword(TokenKeyword::Type::Return));
 			found_result = true;
 		} else {
 			if (word.contains(".")) {

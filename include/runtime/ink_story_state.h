@@ -72,6 +72,9 @@ struct InkStoryEvalResult {
 	bool should_continue = true;
 	bool reached_newline = false;
 	std::string target_knot;
+	
+	bool reached_function_return = false;
+	std::optional<ExpressionParser::Variant> return_value;
 
 	std::vector<ExpressionParser::Variant> arguments;
 

@@ -66,6 +66,7 @@ FIXTURE(GlobalVariableTests);
 FIXTURE(LogicTests);
 FIXTURE(ConditionalBlockTests);
 FIXTURE(TemporaryVariableTests);
+FIXTURE(FunctionTests);
 
 #pragma region NonStoryFunctionTests
 TEST_F(NonStoryFunctionTests, DeinkifyExpression) {
@@ -1113,6 +1114,22 @@ TEST_F(TemporaryVariableTests, KnotRecursion) {
 TEST_F(TemporaryVariableTests, DivertsAsArguments) {
 	STORY("16_temporary_variables/16d_diverts_as_arguments.ink");
 	EXPECT_TEXT("You lie down and close your eyes.", "You sleep perchance to dream etc. etc.", "You get back to your feet, ready to continue your journey.");
+}
+#pragma endregion
+
+#pragma region FunctionTests
+TEST_F(FunctionTests, FunctionsInLogic) {
+	STORY("17_functions/17a_functions_in_logic.ink");
+	std::string text = story.continue_story();
+	EXPECT_TRUE(text.starts_with("x = 3."));
+}
+
+TEST_F(FunctionTests, FunctionsInInterpolation) {
+	STORY("17_functions/17b_functions_in_interpolation.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("Yes.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("Yes.");
 }
 #pragma endregion
 
