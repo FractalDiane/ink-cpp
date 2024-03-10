@@ -1141,6 +1141,12 @@ TEST_F(FunctionTests, FunctionSideEffects) {
 		"You now have 8 HP.",
 	);
 }
+
+TEST_F(FunctionTests, InlineFunctionCall) {
+	STORY("17_functions/17d_inline_function_call.ink");
+	story.set_variable("health", 50);
+	EXPECT_TEXT("Monsieur Fogg was looking somewhat flagging.");
+}
 #pragma endregion
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

@@ -230,7 +230,15 @@ std::optional<ExpressionParser::Variant> InkStory::divert_to_function_knot(const
 		}
 	}
 
-	--story_state.current_knot().index;
+	bool not_at_start = false;
+	while (story_state.current_knots_stack.size() > initial_knot_count) {
+		story_state.current_knots_stack.pop_back();
+		not_at_start = true;
+	}
+
+	if (!not_at_start) {
+		--story_state.current_knot().index;
+	}
 
 	//story_state.current_knots_stack.pop_back();
 	return eval_result.return_value;
