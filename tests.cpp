@@ -1131,6 +1131,16 @@ TEST_F(FunctionTests, FunctionsInInterpolation) {
 	story.choose_choice_index(0);
 	EXPECT_TEXT("Yes.");
 }
+
+TEST_F(FunctionTests, FunctionSideEffects) {
+	STORY("17_functions/17c_function_side_effects.ink");
+	EXPECT_TEXT(
+		"You have 10 HP.",
+		"A stray pebble flies in and hits you on the head. It deals no damage, but you are so startled that you fall over and land on your face.",
+		"You took 2 damage.",
+		"You now have 8 HP.",
+	);
+}
 #pragma endregion
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

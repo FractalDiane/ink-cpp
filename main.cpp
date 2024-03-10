@@ -25,41 +25,10 @@ void print_vector(const std::vector<T>& vector) {
 
 int main() {
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("8_variable_text/8k_conditional_text.ink"));
-	//InkStory story = compiler.compile_file(TEST_PATH("8_variable_text/8k_conditional_text.ink"));
-	//story.set_variable("met_blofeld", true);
-	//story.set_variable("learned_his_name", true);
-	//story.set_variable("know_about_wager", true);
-	//story.set_variable("x", 7);
-	//story.set_variable("y", 0);
+	InkStory story = compiler.compile_file(TEST_PATH("17_functions/17c_function_side_effects.ink"));
 
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
-	//print_vector(story.get_current_choices());
-	//std::cout << story.continue_story() << std::endl;
-	//std::cout << story.continue_story() << std::endl;
-	//std::cout << story.continue_story() << std::endl;
-	//std::cout << story.continue_story() << std::endl;
-	//std::cout << story.continue_story() << std::endl;
-	//story.choose_choice_index(1);
-	//std::cout << story.continue_story() << std::endl;
-	//std::cout << story.continue_story() << std::endl;
-	//std::cout << story.continue_story() << std::endl;
-	//std::cout << story.continue_story() << std::endl;
-	//story.choose_choice_index(0);
-	//std::cout << story.continue_story() << std::endl;
-	//std::cout << story.continue_story() << std::endl;
-	//story.choose_choice_index(0);
-	//std::cout << story.continue_story() << std::endl;
-	//story.choose_choice_index(0);
-	//std::cout << story.continue_story() << std::endl;
-	/*story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;*/
 }

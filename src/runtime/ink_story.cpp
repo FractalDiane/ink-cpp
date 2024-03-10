@@ -212,19 +212,27 @@ void InkStory::bind_ink_functions() {
 
 std::optional<ExpressionParser::Variant> InkStory::divert_to_function_knot(const std::string& knot) {
 	Knot* knot_ptr = &story_data->knots[knot];
+
+	std::size_t initial_knot_count = story_state.current_knots_stack.size();
 	story_state.current_knots_stack.push_back({knot_ptr, 0});
 	story_state.story_tracking.increment_visit_count(knot_ptr);
 
 	InkStoryEvalResult eval_result;
 	eval_result.result.reserve(512);
-	while (!eval_result.reached_function_return && story_state.index_in_knot() < story_state.current_knot_size()) {
+	while (!eval_result.reached_function_return && story_state.current_knots_stack.size() > initial_knot_count) {
 		InkObject* current_object = story_state.current_knot().knot->objects[story_state.index_in_knot()];
 		current_object->execute(story_state, eval_result);
 
 		++story_state.current_knot().index;
+		if (story_state.index_in_knot() >= story_state.current_knot_size()) {
+			story_state.current_knots_stack.pop_back();
+			++story_state.current_knot().index;
+		}
 	}
 
-	story_state.current_knots_stack.pop_back();
+	--story_state.current_knot().index;
+
+	//story_state.current_knots_stack.pop_back();
 	return eval_result.return_value;
 }
 
