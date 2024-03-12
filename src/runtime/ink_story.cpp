@@ -220,10 +220,14 @@ std::optional<ExpressionParser::Variant> InkStory::divert_to_function_knot(const
 	InkStoryEvalResult eval_result;
 	eval_result.result.reserve(512);
 	while (!eval_result.reached_function_return && story_state.current_knots_stack.size() > initial_knot_count) {
+		Knot* knot_before_object = story_state.current_knot().knot;
 		InkObject* current_object = story_state.current_knot().knot->objects[story_state.index_in_knot()];
 		current_object->execute(story_state, eval_result);
 
-		++story_state.current_knot().index;
+		if (story_state.current_knot().knot == knot_before_object) {
+			++story_state.current_knot().index;
+		}
+		
 		if (story_state.index_in_knot() >= story_state.current_knot_size()) {
 			story_state.current_knots_stack.pop_back();
 			++story_state.current_knot().index;
@@ -240,8 +244,7 @@ std::optional<ExpressionParser::Variant> InkStory::divert_to_function_knot(const
 		--story_state.current_knot().index;
 	}
 
-	//story_state.current_knots_stack.pop_back();
-	return eval_result.return_value;
+	return eval_result.return_value.has_value() || eval_result.result.empty() ? eval_result.return_value : eval_result.result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
