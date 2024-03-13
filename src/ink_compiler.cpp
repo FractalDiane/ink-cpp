@@ -994,7 +994,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			}
 		} break;
 		
-		case InkToken::KeywordVar: {
+		case InkToken::KeywordVar:
+		case InkToken::KeywordConst: {
 			if (at_line_start) {
 				if (next_token_is_sequence(all_tokens, token_index, {InkToken::Text, InkToken::Equal})) {
 					const std::string& identifier = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
@@ -1011,15 +1012,15 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 					try {
 						std::vector<ExpressionParser::Token*> expression_shunted = ExpressionParser::tokenize_and_shunt_expression(expression, {}, declared_functions);
-						result_object = new InkObjectGlobalVariable(identifier, expression_shunted);
+						result_object = new InkObjectGlobalVariable(identifier, token.token == InkToken::KeywordConst, expression_shunted);
 					} catch (...) {
-						throw std::runtime_error("Malformed value of VAR statement");
+						throw std::runtime_error("Malformed value of VAR/CONST statement");
 					}
 				} else {
-					throw std::runtime_error("Malformed VAR statement");
+					throw std::runtime_error("Malformed VAR/CONST statement");
 				}
 			} else {
-				result_object = new InkObjectText("VAR");
+				result_object = new InkObjectText(token.token == InkToken::KeywordConst ? "CONST" : "VAR");
 			}
 		} break;
 

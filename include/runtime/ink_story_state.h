@@ -55,6 +55,7 @@ struct InkStoryState {
 	bool just_diverted_to_non_knot = false;
 
 	ExpressionParser::VariableMap variables;
+	ExpressionParser::VariableMap constants;
 	ExpressionParser::FunctionMap functions;
 	std::unordered_map<Uuid, ExpressionParser::VariableMap> local_variables;
 
@@ -65,6 +66,8 @@ struct InkStoryState {
 	inline KnotStatus& current_knot() { return current_knots_stack.back(); }
 	inline std::size_t current_knot_size() const { return current_knots_stack.back().knot->objects.size(); }
 	KnotStatus& current_nonchoice_knot();
+
+	ExpressionParser::VariableMap get_story_constants();
 };
 
 struct InkStoryEvalResult {

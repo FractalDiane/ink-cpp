@@ -70,8 +70,8 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 					const std::vector<std::vector<ExpressionParser::Token*>>& conditions = this_choice.conditions;
 					if (!conditions.empty()) {
 						for (const std::vector<ExpressionParser::Token*>& condition : conditions) {
-							ExpressionParser::VariableMap knot_vars = story_state.story_tracking.get_visit_count_variables(story_state.current_knot().knot, story_state.current_stitch);
-							ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(condition, story_state.variables, knot_vars, story_state.functions).value();
+							ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
+							ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(condition, story_state.variables, story_constants, story_state.functions).value();
 							if (!ExpressionParser::as_bool(result)) {
 								include_choice = false;
 								break;

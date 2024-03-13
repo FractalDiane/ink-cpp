@@ -900,7 +900,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 						in_knot_name = true;
 						++index;
 					} else {
-						if (next_char(expression, index) > 32 && !result.empty() && result.back()->get_type() == TokenType::Operator) {
+						if (next_char(expression, index) > 32 && (result.empty() || result.back()->get_type() == TokenType::Operator)) {
 							result.push_back(new TokenOperator(TokenOperator::Type::Negative, UnaryType::Prefix));
 						} else {
 							result.push_back(new TokenOperator(TokenOperator::Type::Minus, UnaryType::NotUnary));

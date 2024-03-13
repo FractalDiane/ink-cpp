@@ -40,6 +40,12 @@ InkStoryState::KnotStatus& InkStoryState::current_nonchoice_knot() {
 	return current_knots_stack.front();
 }
 
+ExpressionParser::VariableMap InkStoryState::get_story_constants() {
+	ExpressionParser::VariableMap result = story_tracking.get_visit_count_variables(current_knot().knot, current_stitch);
+	result.insert(constants.begin(), constants.end());
+	return result;
+}
+
 bool InkStoryEvalResult::has_any_contents(bool strip) {
 	return strip ? !strip_string_edges(result, true, true, true).empty() : !result.empty();
 }

@@ -11,8 +11,8 @@ InkObjectInterpolation::~InkObjectInterpolation() {
 }
 
 void InkObjectInterpolation::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	ExpressionParser::VariableMap knot_vars = story_state.story_tracking.get_visit_count_variables(story_state.current_knot().knot, story_state.current_stitch);
-	std::optional<ExpressionParser::Variant> result = ExpressionParser::execute_expression_tokens(what_to_interpolate, story_state.variables, knot_vars, story_state.functions);
+	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
+	std::optional<ExpressionParser::Variant> result = ExpressionParser::execute_expression_tokens(what_to_interpolate, story_state.variables, story_constants, story_state.functions);
 	if (result.has_value()) {
 		eval_result.result += ExpressionParser::to_printable_string(*result);
 	}

@@ -67,6 +67,9 @@ FIXTURE(LogicTests);
 FIXTURE(ConditionalBlockTests);
 FIXTURE(TemporaryVariableTests);
 FIXTURE(FunctionTests);
+FIXTURE(ConstantTests);
+
+FIXTURE(MiscellaneousTests);
 
 #pragma region NonStoryFunctionTests
 TEST_F(NonStoryFunctionTests, DeinkifyExpression) {
@@ -1159,6 +1162,42 @@ TEST_F(FunctionTests, PrintNumFunction) {
 		"I pulled out fifteen coins from my pocket and slowly counted them.",
 		R"("Oh, never mind," the trader replied. "I'll take half." And she took seven and pushed the rest back over to me.)",
 	);
+}
+#pragma endregion
+
+#pragma region ConstantTests
+TEST_F(ConstantTests, StringConstants) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("18_constants/18a_string_constants.ink");
+		story.set_variable("found_japps_bloodied_glove", i == 1);
+		EXPECT_TEXT(std::format("Current Suspect: {}", i == 0 ? "Hastings" : "Poirot"));
+	}
+}
+
+TEST_F(ConstantTests, NumberConstants) {
+	STORY("18_constants/18b_number_constants.ink");
+	EXPECT_TEXT(
+		"The circumference of my pie divided by its diameter is approximately 3.140000",
+		"I paid 10 pounds for said pie, by the way.",
+	);
+}
+
+TEST_F(ConstantTests, LogicWithConstants) {
+	STORY("18_constants/18c_constants_logic.ink");
+	EXPECT_TEXT(
+		"The secret agent moves forward.",
+		"The secret agent moves forward.",
+		"The secret agent grabs the suitcase!",
+	);
+
+	EXPECT_EQ(std::get<std::int64_t>(story.get_variable("suitcase_location").value()), -1);
+}
+#pragma endregion
+
+#pragma region Miscellaneous Tests
+TEST_F(MiscellaneousTests, UnicodeSupport) {
+	STORY("miscellaneous/unicode_support.ink");
+	EXPECT_TEXT("Well, it's £1 for a five-minute argument, but it'll be £8 for a course of ten.");
 }
 #pragma endregion
 

@@ -7,11 +7,11 @@
 class InkObjectGlobalVariable : public InkObject {
 private:
 	std::string name;
-	//std::string value;
+	bool is_constant = false;
 	std::vector<struct ExpressionParser::Token*> value_shunted_tokens;
 
 public:
-	InkObjectGlobalVariable(const std::string& name, const std::vector<struct ExpressionParser::Token*>& value_shunted_tokens) : name{name}, value_shunted_tokens{value_shunted_tokens} {}
+	InkObjectGlobalVariable(const std::string& name, bool is_constant, const std::vector<struct ExpressionParser::Token*>& value_shunted_tokens) : name{name}, is_constant{is_constant}, value_shunted_tokens{value_shunted_tokens} {}
 
 	virtual ~InkObjectGlobalVariable() override;
 

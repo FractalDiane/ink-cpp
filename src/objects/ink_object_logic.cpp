@@ -37,9 +37,9 @@ void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eva
 		}
 	}
 
-	ExpressionParser::VariableMap knot_vars = story_state.story_tracking.get_visit_count_variables(story_state.current_knot().knot, story_state.current_stitch);
+	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
 	
-	std::optional<ExpressionParser::Variant> result = ExpressionParser::execute_expression_tokens(contents_shunted_tokens, story_state.variables, knot_vars, story_state.functions);
+	std::optional<ExpressionParser::Variant> result = ExpressionParser::execute_expression_tokens(contents_shunted_tokens, story_state.variables, story_constants, story_state.functions);
 	if (is_return) {
 		if (result.has_value()) {
 			eval_result.result += ExpressionParser::to_printable_string(*result);
