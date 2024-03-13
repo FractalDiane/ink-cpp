@@ -25,7 +25,7 @@ void print_vector(const std::vector<T>& vector) {
 
 int main() {
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("17_functions/17d_inline_function_call.ink"));
-	story.set_variable("health", 50);
+	InkStory story = compiler.compile_file(TEST_PATH("17_functions/17f_print_num.ink"));
+	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 }

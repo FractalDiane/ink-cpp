@@ -660,6 +660,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			std::vector<ExpressionParser::Token*> switch_expression;
 
 			bool is_conditional = false;
+			bool will_be_conditional = false;
 			bool is_switch = false;
 			bool in_else = false;
 			bool found_pipe = false;
@@ -667,7 +668,15 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			bool found_dash = false;
 
 			++token_index;
-			while (all_tokens[token_index].token != InkToken::RightBrace) {
+
+			for (std::size_t i = token_index; i < all_tokens.size() && all_tokens[i].token != InkToken::RightBrace; ++i) {
+				if (all_tokens[i].token == InkToken::Colon) {
+					will_be_conditional = true;
+					break;
+				}
+			}
+
+			while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::RightBrace) {
 				if (!all_tokens[token_index].get_text_contents().empty()) {
 					text_items.push_back(all_tokens[token_index].get_text_contents());
 				}
@@ -698,13 +707,17 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						} break;
 
 						case InkToken::Pipe: {
-							found_pipe = true;
-							if (is_conditional) {
-								in_else = true;
+							if (will_be_conditional) {
+								if (found_colon) {
+									in_else = true;
+									break;
+								}
 							} else {
+								found_pipe = true;
 								items.push_back({});
+								break;
 							}
-						} break;
+						}
 
 						case InkToken::Dash: {
 							if (at_line_start) {
@@ -965,6 +978,22 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			}
 		} break;
 
+		case InkToken::Ampersand: {
+			if (false) {
+
+			} else {
+				result_object = new InkObjectText("&");
+			}
+		}
+
+		case InkToken::Pipe: {
+			if (false) {
+
+			} else {
+				result_object = new InkObjectText("|");
+			}
+		} break;
+		
 		case InkToken::KeywordVar: {
 			if (at_line_start) {
 				if (next_token_is_sequence(all_tokens, token_index, {InkToken::Text, InkToken::Equal})) {
