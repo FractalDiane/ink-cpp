@@ -19,7 +19,12 @@ struct InkWeaveContent {
 	Uuid uuid;
 	WeaveContentType type;
 
-	std::vector<std::string> parameters;
+	struct Parameter {
+		std::string name;
+		bool by_ref;
+	};
+
+	std::vector<Parameter> parameters;
 };
 
 struct GatherPoint : public InkWeaveContent {

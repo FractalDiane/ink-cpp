@@ -2,6 +2,8 @@
 
 #include "ink_utils.h"
 
+#include "objects/ink_object_choicetextmix.h"
+
 #include "expression_parser/expression_parser.h"
 
 /*std::vector<std::uint8_t> InkObjectChoice::to_bytes() const {
@@ -71,7 +73,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 					if (!conditions.empty()) {
 						for (const std::vector<ExpressionParser::Token*>& condition : conditions) {
 							ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
-							ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(condition, story_state.variables, story_constants, story_state.functions).value();
+							ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(condition, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
 							if (!ExpressionParser::as_bool(result)) {
 								include_choice = false;
 								break;
@@ -85,6 +87,10 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 						InkStoryEvalResult choice_eval_result;
 						choice_eval_result.result.reserve(50);
 						for (InkObject* object : this_choice.text) {
+							if (object->get_id() == ObjectId::ChoiceTextMix && static_cast<InkObjectChoiceTextMix*>(object)->is_end()) {
+								break;
+							}
+							
 							object->execute(story_state, choice_eval_result);
 						}
 

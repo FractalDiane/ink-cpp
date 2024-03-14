@@ -60,9 +60,9 @@ namespace {
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
-	Token* builtin_pow(TokenStack& stack, VariableMap& variables, const VariableMap& constants) {
-		Variant expo = stack.top(0)->get_variant_value(variables, constants).value();
-		Variant base = stack.top(1)->get_variant_value(variables, constants).value();
+	Token* builtin_pow(TokenStack& stack, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) {
+		Variant expo = stack.top(0)->get_variant_value(variables, constants, variable_redirects).value();
+		Variant base = stack.top(1)->get_variant_value(variables, constants, variable_redirects).value();
 
 		Token* result = new TokenNumberFloat(std::pow(as_float(base), as_float(expo)));
 
@@ -71,24 +71,24 @@ namespace {
 		return result;
 	}
 
-	Token* builtin_int(TokenStack& stack, VariableMap& variables, const VariableMap& constants) {
-		Variant what = stack.top()->get_variant_value(variables, constants).value();
+	Token* builtin_int(TokenStack& stack, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) {
+		Variant what = stack.top()->get_variant_value(variables, constants, variable_redirects).value();
 		Token* result = new TokenNumberInt(as_int(what));
 
 		stack.pop();
 		return result;
 	}
 
-	Token* builtin_float(TokenStack& stack, VariableMap& variables, const VariableMap& constants) {
-		Variant what = stack.top()->get_variant_value(variables, constants).value();
+	Token* builtin_float(TokenStack& stack, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) {
+		Variant what = stack.top()->get_variant_value(variables, constants, variable_redirects).value();
 		Token* result = new TokenNumberFloat(as_float(what));
 
 		stack.pop();
 		return result;
 	}
 
-	Token* builtin_floor(TokenStack& stack, VariableMap& variables, const VariableMap& constants) {
-		Variant what = stack.top()->get_variant_value(variables, constants).value();
+	Token* builtin_floor(TokenStack& stack, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) {
+		Variant what = stack.top()->get_variant_value(variables, constants, variable_redirects).value();
 		Token* result = new TokenNumberInt(static_cast<std::int64_t>(std::floor(as_float(what))));
 		
 		stack.pop();
@@ -733,8 +733,9 @@ std::string TokenKnotName::to_printable_string() const {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-Token::ValueResult TokenVariable::get_value(const VariableMap& variables, const VariableMap& constants) {
+Token::ValueResult TokenVariable::get_value(const VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) {
 	const Variant* value = nullptr;
+
 	if (auto var_value = variables.find(data); var_value != variables.end()) {
 		value = &var_value->second;
 	} else if (auto const_value = constants.find(data); const_value != constants.end()) {
@@ -766,7 +767,7 @@ Token::ValueResult TokenVariable::get_value(const VariableMap& variables, const 
 	}
 }
 
-std::optional<Variant> TokenVariable::get_variant_value(const VariableMap& variables, const VariableMap& constants) const {
+std::optional<Variant> TokenVariable::get_variant_value(const VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) const {
 	if (auto var_value = variables.find(data); var_value != variables.end()) {
 		return var_value->second;
 	} else if (auto const_value = constants.find(data); const_value != constants.end()) {
@@ -782,12 +783,12 @@ std::string TokenVariable::to_printable_string() const {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-Token* TokenFunction::call(TokenStack& stack, const FunctionMap& all_functions, VariableMap& variables, const VariableMap& constants) {
+Token* TokenFunction::call(TokenStack& stack, const FunctionMap& all_functions, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) {
 	if (!data.defer_fetch) {
-		return (data.function)(stack, variables, constants);
+		return (data.function)(stack, variables, constants, variable_redirects);
 	} else {
 		if (auto function = all_functions.find(data.name); function != all_functions.end()) {
-			return (function->second)(stack, variables, constants);
+			return (function->second)(stack, variables, constants, variable_redirects);
 		} else {
 			throw;
 		}
@@ -1174,7 +1175,7 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 }
 
 #define OP_UN_PRE(type, func) case Type::type: {\
-		Token::ValueResult operand = stack.top()->get_value(variables, constants);\
+		Token::ValueResult operand = stack.top()->get_value(variables, constants, variable_redirects);\
 		stack.pop();\
 \
 		Token* result = operand.token->operator_##func();\
@@ -1188,9 +1189,9 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 	} break;
 
 #define OP_BIN(type, func) case Type::type: {\
-		Token::ValueResult right = stack.top()->get_value(variables, constants);\
+		Token::ValueResult right = stack.top()->get_value(variables, constants, variable_redirects);\
 		stack.pop();\
-		Token::ValueResult left = stack.top()->get_value(variables, constants);\
+		Token::ValueResult left = stack.top()->get_value(variables, constants, variable_redirects);\
 		stack.pop();\
 \
 		Token* result = left.token->operator_##func(right.token);\
@@ -1207,7 +1208,7 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 		stack.push(result);\
 	} break;
 
-std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::vector<Token*>& expression_tokens, VariableMap& variables, const VariableMap& constants, const FunctionMap& all_functions) {
+std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::vector<Token*>& expression_tokens, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& all_functions) {
 	TokenStack stack;
 	std::unordered_set<Token*> tokens_to_dealloc;
 
@@ -1259,7 +1260,7 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 
 					case Type::Increment:
 					case Type::Decrement: {
-						Token::ValueResult operand = stack.top()->get_value(variables, constants);
+						Token::ValueResult operand = stack.top()->get_value(variables, constants, variable_redirects);
 
 						Token* result = nullptr;
 						if (op->data.unary_type == TokenOperator::UnaryType::Prefix) {
@@ -1271,7 +1272,7 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 						if (operand.from_variable && op->data.unary_type == TokenOperator::UnaryType::Postfix) {
 							TokenNumberInt add{op->data.type == Type::Increment ? 1 : -1};
 							Token* new_result = result->operator_plus(&add);
-							variables[static_cast<TokenVariable*>(stack.top())->data] = new_result->get_variant_value(variables, constants).value();
+							variables[static_cast<TokenVariable*>(stack.top())->data] = new_result->get_variant_value(variables, constants, variable_redirects).value();
 							delete operand.token;
 							delete new_result;
 						}
@@ -1294,7 +1295,23 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 						}
 
 						std::string var_name = static_cast<TokenVariable*>(var)->data;
-						if (std::optional<Variant> var_value = value->get_variant_value(variables, constants); var_value.has_value()) {
+
+						// HACK: do this a way better way
+						while (true) {
+							bool found_any = false;
+							for (auto& entry : variable_redirects) {
+								while (entry.second.contains(var_name)) {
+									var_name = entry.second.at(var_name);
+									found_any = true;
+								}
+							}
+
+							if (!found_any) {
+								break;
+							}
+						}
+
+						if (std::optional<Variant> var_value = value->get_variant_value(variables, constants, variable_redirects); var_value.has_value()) {
 							variables[var_name] = var_value.value();
 						} else {
 							throw;
@@ -1308,7 +1325,7 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 			} break;
 
 			case TokenType::Function: {
-				if (Token* result = static_cast<TokenFunction*>(this_token)->call(stack, all_functions, variables, constants)) {
+				if (Token* result = static_cast<TokenFunction*>(this_token)->call(stack, all_functions, variables, constants, variable_redirects)) {
 					stack.push(result);
 					tokens_to_dealloc.insert(result);
 				}
@@ -1324,7 +1341,7 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 
 	std::optional<Variant> result{};
 	if (!stack.empty()) {
-		result = stack.top()->get_variant_value(variables, constants);
+		result = stack.top()->get_variant_value(variables, constants, variable_redirects);
 	}
 
 	for (Token* token : tokens_to_dealloc) {
@@ -1348,7 +1365,8 @@ std::optional<Variant> ExpressionParser::execute_expression(const std::string& e
 
 	VariableMap no_vars;
 	VariableMap no_consts;
-	std::optional<Variant> result = execute_expression_tokens(shunted, no_vars, no_consts, all_functions);
+	RedirectMap no_redirects;
+	std::optional<Variant> result = execute_expression_tokens(shunted, no_vars, no_consts, no_redirects, all_functions);
 
 	for (Token* token : tokenized) {
 		delete token;
@@ -1357,7 +1375,7 @@ std::optional<Variant> ExpressionParser::execute_expression(const std::string& e
 	return result;
 }
 
-std::optional<Variant> ExpressionParser::execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
+std::optional<Variant> ExpressionParser::execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
 	FunctionMap all_functions = BuiltinFunctions;
 	if (!functions.empty()) {
 		all_functions.insert(functions.begin(), functions.end());
@@ -1367,7 +1385,7 @@ std::optional<Variant> ExpressionParser::execute_expression(const std::string& e
 	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions, deferred_functions);
 	std::vector<Token*> shunted = shunt(tokenized, dummy);
 
-	std::optional<Variant> result = execute_expression_tokens(shunted, variables, constants, all_functions);
+	std::optional<Variant> result = execute_expression_tokens(shunted, variables, constants, variable_redirects, all_functions);
 
 	for (Token* token : tokenized) {
 		delete token;

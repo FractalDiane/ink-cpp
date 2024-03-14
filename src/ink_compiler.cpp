@@ -411,7 +411,17 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 							--token_index;
 
 							std::vector<std::string> split = split_string(all_params, ',', true);
-							new_knot.parameters = split;
+							std::vector<InkWeaveContent::Parameter> params;
+							for (const std::string& param : split) {
+								// TODO: handle multiple spaces
+								if (param.starts_with("ref ")) {
+									params.push_back({param.substr(4), true});
+								} else {
+									params.push_back({param, false});
+								}
+							}
+
+							new_knot.parameters = params;
 						}
 
 						story_knots.push_back(new_knot);
@@ -448,7 +458,17 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						--token_index;
 
 						std::vector<std::string> split = split_string(all_params, ',', true);
-						new_stitch.parameters = split;
+						std::vector<InkWeaveContent::Parameter> params;
+						for (const std::string& param : split) {
+							// TODO: handle multiple spaces
+							if (param.starts_with("ref ")) {
+								params.push_back({param.substr(4), true});
+							} else {
+								params.push_back({param, false});
+							}
+						}
+							
+						new_stitch.parameters = params;
 					}
 
 					stitches.push_back(new_stitch);

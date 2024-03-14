@@ -58,6 +58,7 @@ struct InkStoryState {
 	ExpressionParser::VariableMap constants;
 	ExpressionParser::FunctionMap functions;
 	std::unordered_map<Uuid, ExpressionParser::VariableMap> local_variables;
+	std::unordered_map<Uuid, std::unordered_map<std::string, std::string>> variable_redirects;
 
 	class InkObject* get_current_object(std::int64_t index_offset);
 	bool has_choice_been_taken(class InkObject* choice_object, std::size_t index);

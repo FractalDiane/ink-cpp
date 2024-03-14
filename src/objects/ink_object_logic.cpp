@@ -39,7 +39,7 @@ void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eva
 
 	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
 	
-	std::optional<ExpressionParser::Variant> result = ExpressionParser::execute_expression_tokens(contents_shunted_tokens, story_state.variables, story_constants, story_state.functions);
+	std::optional<ExpressionParser::Variant> result = ExpressionParser::execute_expression_tokens(contents_shunted_tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
 	if (is_return) {
 		if (result.has_value()) {
 			eval_result.result += ExpressionParser::to_printable_string(*result);

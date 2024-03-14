@@ -27,7 +27,7 @@ void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
 
 	std::string target;	
-	std::optional<ExpressionParser::Variant> target_var = ExpressionParser::execute_expression_tokens(target_knot, story_state.variables, story_constants, story_state.functions);
+	std::optional<ExpressionParser::Variant> target_var = ExpressionParser::execute_expression_tokens(target_knot, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
 	if (target_var.has_value() && target_var->index() == ExpressionParser::Variant_String) {
 		target = ExpressionParser::as_string(*target_var);
 	} else {
@@ -39,7 +39,7 @@ void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 	} else {
 		eval_result.target_knot = target;
 		for (const std::vector<ExpressionParser::Token*>& argument : arguments) {
-			ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(argument, story_state.variables, story_constants, story_state.functions).value();
+			ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(argument, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
 			eval_result.arguments.push_back(result);
 		}
 	}

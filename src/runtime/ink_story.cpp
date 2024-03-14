@@ -149,13 +149,13 @@ void InkStory::init_story() {
 void InkStory::bind_ink_functions() {
 	using namespace ExpressionParser;
 
-	#define EXP_FUNC(name, body) story_state.functions.insert({name, [this](TokenStack& stack, VariableMap& variables, const VariableMap& constants) body});
+	#define EXP_FUNC(name, body) story_state.functions.insert({name, [this](TokenStack& stack, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) body});
 
 	EXP_FUNC("CHOICE_COUNT", { return new TokenNumberInt(story_state.current_choices.size()); });
 	EXP_FUNC("TURNS", { return new TokenNumberInt(story_state.total_choices_taken); });
 
 	EXP_FUNC("TURNS_SINCE", {
-		std::string knot = as_string(stack.top()->get_variant_value(variables, constants).value());
+		std::string knot = as_string(stack.top()->get_variant_value(variables, constants, variable_redirects).value());
 		
 		if (GetContentResult content = story_data->get_content(knot, story_state.current_knot().knot, story_state.current_stitch); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
@@ -170,7 +170,7 @@ void InkStory::bind_ink_functions() {
 	});
 
 	EXP_FUNC("SEED_RANDOM", {
-		std::int64_t seed = as_int(stack.top()->get_variant_value(variables, constants).value());
+		std::int64_t seed = as_int(stack.top()->get_variant_value(variables, constants, variable_redirects).value());
 		stack.pop();
 
 		story_state.rng.seed(static_cast<unsigned int>(seed));
@@ -178,9 +178,9 @@ void InkStory::bind_ink_functions() {
 	});
 
 	EXP_FUNC("RANDOM", {
-		std::int64_t to = as_int(stack.top()->get_variant_value(variables, constants).value());
+		std::int64_t to = as_int(stack.top()->get_variant_value(variables, constants, variable_redirects).value());
 		stack.pop();
-		std::int64_t from = as_int(stack.top()->get_variant_value(variables, constants).value());
+		std::int64_t from = as_int(stack.top()->get_variant_value(variables, constants, variable_redirects).value());
 		stack.pop();
 
 		std::int64_t result = randi_range(from, to, story_state.rng);
@@ -192,14 +192,24 @@ void InkStory::bind_ink_functions() {
 	for (auto& knot : story_data->knots) {
 		if (knot.second.is_function) {
 			story_state.functions.insert({knot.first,
-			[knot, this](TokenStack& stack, VariableMap& variables, const VariableMap& constants) -> ExpressionParser::Token* {
+			[knot, this](TokenStack& stack, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) -> ExpressionParser::Token* {
+				story_state.variable_redirects.insert({knot.second.uuid, {}});
 				for (auto parameter = knot.second.parameters.rbegin(); parameter != knot.second.parameters.rend(); ++parameter) {
 					Token* param = stack.top();
-					story_state.variables[*parameter] = param->get_variant_value(variables, constants).value();
+					story_state.variables[parameter->name] = param->get_variant_value(variables, constants, variable_redirects).value();
+					
+					if (parameter->by_ref && param->get_type() == ExpressionParser::TokenType::Variable) {
+						variable_redirects[knot.second.uuid].insert({
+							parameter->name,
+							static_cast<ExpressionParser::TokenVariable*>(param)->data,
+						});
+					}
+
 					stack.pop();
 				}
 
 				std::optional<ExpressionParser::Variant> result = divert_to_function_knot(knot.first);
+				variable_redirects.erase(knot.second.uuid);
 				if (result.has_value()) {
 					return ExpressionParser::variant_to_token(*result);
 				} else {
@@ -302,7 +312,7 @@ std::string InkStory::continue_story() {
 						story_state.story_tracking.increment_visit_count(target.knot);
 
 						for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
-							story_state.variables[target.knot->parameters[i]] = eval_result.arguments[i];
+							story_state.variables[target.knot->parameters[i].name] = eval_result.arguments[i];
 						}
 
 						story_state.current_stitch = nullptr;
@@ -324,7 +334,7 @@ std::string InkStory::continue_story() {
 						}
 
 						for (std::size_t i = 0; i < target.stitch->parameters.size(); ++i) {
-							story_state.variables[target.stitch->parameters[i]] = eval_result.arguments[i];
+							story_state.variables[target.stitch->parameters[i].name] = eval_result.arguments[i];
 						}
 
 						story_state.just_diverted_to_non_knot = true;

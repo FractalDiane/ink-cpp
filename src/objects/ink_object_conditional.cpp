@@ -27,7 +27,7 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 	
 	if (!is_switch) {
 		for (auto& entry : branches) {
-			ExpressionParser::Variant condition_result = ExpressionParser::execute_expression_tokens(entry.first, story_state.variables, story_constants, story_state.functions).value();
+			ExpressionParser::Variant condition_result = ExpressionParser::execute_expression_tokens(entry.first, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
 			if (ExpressionParser::as_bool(condition_result)) {
 				story_state.current_knots_stack.push_back({&(entry.second), 0});
 				return;
@@ -35,9 +35,9 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 		}
 	} else {
 		// TODO: this might be redundant and strictly worse performance than the above version
-		ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(switch_expression, story_state.variables, story_constants, story_state.functions).value();
+		ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(switch_expression, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
 		for (auto& entry : branches) {
-			ExpressionParser::Variant condition_result = ExpressionParser::execute_expression_tokens(entry.first, story_state.variables, story_constants, story_state.functions).value();
+			ExpressionParser::Variant condition_result = ExpressionParser::execute_expression_tokens(entry.first, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
 			if (condition_result == result) {
 				story_state.current_knots_stack.push_back({&(entry.second), 0});
 				return;

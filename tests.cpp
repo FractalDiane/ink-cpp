@@ -108,7 +108,8 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 
 	ExpressionParser::VariableMap variables;
 	ExpressionParser::VariableMap constants;
-	std::optional<ExpressionParser::Variant> result_token = ExpressionParser::execute_expression_tokens(result_postfix, variables, constants, {});
+	ExpressionParser::RedirectMap redirects;
+	std::optional<ExpressionParser::Variant> result_token = ExpressionParser::execute_expression_tokens(result_postfix, variables, constants, redirects, {});
 	EXPECT_FALSE(result_token.has_value());
 	EXPECT_EQ(std::get<std::int64_t>(variables["test"]), 12);
 
@@ -172,16 +173,17 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	Variant t17 = execute_expression("(5 * 5) - (3 * 3) + 3").value();
 	EXPECT_EQ(std::get<std::int64_t>(t17), 19);
 
+	ExpressionParser::RedirectMap redirects;
 	ExpressionParser::VariableMap vars = {{"x", 5}, {"y", 3}, {"c", 3}};
-	execute_expression("x = (x * x) - (y * y) + c", vars, {});
+	execute_expression("x = (x * x) - (y * y) + c", vars, {}, redirects, {});
 	EXPECT_EQ(std::get<std::int64_t>(vars["x"]), 19);
 
 	ExpressionParser::VariableMap vars2 = {{"test", 6}};
-	Variant t19 = execute_expression("POW(test, 2)", vars2, {}).value();
+	Variant t19 = execute_expression("POW(test, 2)", vars2, {}, redirects, {}).value();
 	EXPECT_EQ(std::get<double>(t19), 36);
 
 	ExpressionParser::VariableMap vars3 = {{"visited_snakes", true}, {"dream_about_snakes", false}};
-	Variant t20 = execute_expression("visited_snakes && not dream_about_snakes", vars3, {}).value();
+	Variant t20 = execute_expression("visited_snakes && not dream_about_snakes", vars3, {}, redirects, {}).value();
 	EXPECT_EQ(std::get<bool>(t20), true);
 }
 #pragma endregion
@@ -1162,6 +1164,24 @@ TEST_F(FunctionTests, PrintNumFunction) {
 		"I pulled out fifteen coins from my pocket and slowly counted them.",
 		R"("Oh, never mind," the trader replied. "I'll take half." And she took seven and pushed the rest back over to me.)",
 	);
+}
+
+TEST_F(FunctionTests, FunctionParamsByRef) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("17_functions/17g_function_params_by_ref.ink");
+		EXPECT_TEXT("You have 10 HP.", "Monsieur Fogg has 14 HP.");
+		EXPECT_CHOICES("I ate a biscuit", "I gave a biscuit to Monsieur Fogg");
+		story.choose_choice_index(i);
+		EXPECT_TEXT(std::format("{} Then we continued on our way.",
+									i == 0
+									? "I ate a biscuit and felt refreshed."
+									: "I gave a biscuit to Monsieur Fogg and he wolfed it down most undecorously."));
+
+		EXPECT_TEXT(
+			std::format("You have {} HP.", i == 0 ? 12 : 10),
+			std::format("Monsieur Fogg has {} HP.", i == 0 ? 14 : 15),
+		);
+	}
 }
 #pragma endregion
 
