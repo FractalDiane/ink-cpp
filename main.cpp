@@ -24,8 +24,13 @@ void print_vector(const std::vector<T>& vector) {
 }
 
 int main() {
-	InkCompiler compiler;
-	InkStory story = compiler.compile_file(TEST_PATH("17_functions/17f_print_num.ink"));
+	/*InkCompiler compiler;
+	compiler.compile_file_to_file(TEST_PATH("1_content/1b_multiline_text.ink"), INKCPP_WORKING_DIR "/" "test3.inkb");*/
+
+	std::string infile = INKCPP_WORKING_DIR "/" "test3.inkb";
+	InkStory story{infile};
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 }

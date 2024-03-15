@@ -6,7 +6,7 @@
 #include <stdexcept>
 
 #ifndef INKB_VERSION
-#define INKB_VERSION 255
+#define INKB_VERSION 0
 #endif
 
 InkStoryData::InkStoryData(const std::vector<Knot>& story_knots) {
@@ -27,7 +27,7 @@ InkStoryData::~InkStoryData() {
 }
 
 std::vector<std::uint8_t> InkStoryData::get_serialized_bytes() const {
-	std::vector<std::uint8_t> result = {'I', 'N', 'K', 'B', INKB_VERSION};
+	ByteVec result = {'I', 'N', 'K', 'B', INKB_VERSION};
 	result.reserve(2048);
 
 	Serializer<std::uint16_t> ssize;
@@ -37,13 +37,13 @@ std::vector<std::uint8_t> InkStoryData::get_serialized_bytes() const {
 	for (const auto& entry : knots) {
 		const Knot& knot = entry.second;
 		Serializer<Knot> s;
-		std::vector<std::uint8_t> bytes = s(knot);
+		ByteVec bytes = s(knot);
 		result.insert(result.end(), bytes.begin(), bytes.end());
 	}
 
-	/*Serializer<std::vector<std::string>> sorder;
-	std::vector<std::uint8_t> bytes = sorder(knot_order);
-	result.insert(result.end(), bytes.begin(), bytes.end());*/
+	VectorSerializer<std::string> sorder;
+	ByteVec knot_order_bytes = sorder(knot_order);
+	result.insert(result.end(), knot_order_bytes.begin(), knot_order_bytes.end());
 
 	return result;
 }

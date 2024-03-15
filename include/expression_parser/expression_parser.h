@@ -10,6 +10,8 @@
 #include <variant>
 #include <optional>
 
+#include "serialization.h"
+
 namespace ExpressionParser {
 
 enum class TokenType {
@@ -82,6 +84,8 @@ struct Token {
 
 	virtual std::string to_printable_string() const;
 
+	virtual ByteVec to_serialized_bytes() const;
+
 	struct ValueResult {
 		Token* token;
 		bool from_variable;
@@ -123,6 +127,16 @@ struct Token {
 	virtual Token* operator_substring(const Token* other) const;
 };
 
+template <>
+struct Serializer<Token*> {
+	ByteVec operator()(const Token* token);
+};
+
+template <>
+struct Deserializer<Token*> {
+	Token* operator()(const ByteVec& bytes, std::size_t& index);
+};
+
 struct TokenKeyword : public Token {
 	enum class Type {
 		Temp,
@@ -159,6 +173,7 @@ struct TokenBoolean : public Token {
 	virtual double as_float() const override;
 
 	virtual std::string to_printable_string() const override;
+	virtual ByteVec to_serialized_bytes() const override;
 
 	virtual Token* operator_not() const override;
 	virtual Token* operator_equal(const Token* other) const override;
@@ -186,6 +201,7 @@ struct TokenNumberInt : public Token {
 	virtual double as_float() const override;
 
 	virtual std::string to_printable_string() const override;
+	virtual ByteVec to_serialized_bytes() const override;
 
 	virtual Token* operator_plus(const Token* other) const override;
 	virtual Token* operator_minus(const Token* other) const override;
@@ -229,6 +245,7 @@ struct TokenNumberFloat : public Token {
 	virtual double as_float() const override;
 
 	virtual std::string to_printable_string() const override;
+	virtual ByteVec to_serialized_bytes() const override;
 
 	virtual Token* operator_plus(const Token* other) const override;
 	virtual Token* operator_minus(const Token* other) const override;
@@ -265,6 +282,7 @@ struct TokenStringLiteral : public Token {
 	virtual const std::string& as_string() const override;
 
 	virtual std::string to_printable_string() const override;
+	virtual ByteVec to_serialized_bytes() const override;
 
 	virtual TokenType get_type() const override { return TokenType::StringLiteral; }
 	virtual std::optional<Variant> get_variant_value(const VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) const override { return data; }
@@ -346,6 +364,8 @@ struct TokenOperator : public Token {
 	virtual Token* copy() const override { return new TokenOperator(data.type, data.unary_type); }
 
 	virtual TokenType get_type() const override { return TokenType::Operator; }
+
+	virtual ByteVec to_serialized_bytes() const override;
 };
 
 struct TokenParenComma : public Token {
@@ -360,6 +380,8 @@ struct TokenParenComma : public Token {
 	virtual Token* copy() const override { return new TokenParenComma(data); }
 
 	virtual TokenType get_type() const override { return TokenType::ParenComma; }
+
+	virtual ByteVec to_serialized_bytes() const override;
 };
 
 struct TokenFunction : public Token {
@@ -374,6 +396,8 @@ struct TokenFunction : public Token {
 	virtual Token* copy() const override { return new TokenFunction(data.name, data.function, data.defer_fetch); }
 
 	virtual TokenType get_type() const override { return TokenType::Function; }
+
+	virtual ByteVec to_serialized_bytes() const override;
 
 	Token* call(TokenStack& stack, const FunctionMap& all_functions, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects);
 };
@@ -391,6 +415,7 @@ struct TokenVariable : public Token {
 	virtual std::optional<Variant> get_variant_value(const VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) const override;
 
 	virtual std::string to_printable_string() const override;
+	virtual ByteVec to_serialized_bytes() const override;
 };
 
 std::vector<Token*> tokenize_expression(const std::string& expression, const FunctionMap& all_functions, const std::unordered_set<std::string>& deferred_functions);

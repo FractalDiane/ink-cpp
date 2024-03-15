@@ -25,93 +25,130 @@
 #include <stdexcept>
 #include <iostream>
 
+#ifndef INKB_VERSION
+#define INKB_VERSION 0
+#endif
+
 InkStory::InkStory(const std::string& inkb_file) {
 	std::ifstream infile{inkb_file, std::ios::binary};
 
 	std::size_t infile_size = static_cast<std::size_t>(std::filesystem::file_size(inkb_file));
-	std::vector<std::uint8_t> bytes(infile_size);
+	ByteVec bytes(infile_size);
 
 	infile.read(reinterpret_cast<char*>(bytes.data()), infile_size);
 	infile.close();
 
-	// HACK: make this less bad and more fail safe
-	std::size_t index = 0;
 	constexpr const char* expected_header = "INKB";
-	std::string header;
 	for (std::size_t i = 0; i < 4; ++i) {
-		header += static_cast<signed char>(bytes[index++]);
+		if (static_cast<signed char>(bytes[i]) != expected_header[i]) {
+			throw std::runtime_error("Not a valid inkb file (incorrect header)");
+		}
 	}
 
-	if (header != expected_header) {
-		throw std::runtime_error("Not a valid inkb file (incorrect header)");
+	std::size_t index = 4;
+
+	std::uint8_t version = bytes[index++];
+	if (version != INKB_VERSION) {
+		throw std::runtime_error(std::format("The version of this .inkb file ({}) does not match the version of your ink-cpp runtime ({}); please recompile your ink file", version, INKB_VERSION));
 	}
 
-	//std::uint8_t version = bytes[index++];
-	++index;
-
-	Serializer<std::uint16_t> dssize;
+	Deserializer<std::uint16_t> dssize;
 	std::uint16_t knots_count = dssize(bytes, index);
 
+	Uuid uuid = 0;
+
 	std::vector<Knot> knots;
+	Deserializer<Knot> dsknot;
 	for (std::size_t i = 0; i < knots_count; ++i) {
-		Serializer<std::string> dsname;
-		std::string this_knot_name = dsname(bytes, index);
+		Knot this_knot = dsknot(bytes, index);
 
 		std::uint16_t this_knot_size = dssize(bytes, index);
-
 		std::vector<InkObject*> this_knot_contents;
 		this_knot_contents.reserve(this_knot_size);
 
 		for (std::size_t j = 0; j < this_knot_size; ++j) {
 			InkObject* this_object = nullptr;
 			ObjectId this_id = static_cast<ObjectId>(bytes[index++]);
+
 			// TODO: find out if there's a better way to do this
 			switch (this_id) {
 				case ObjectId::Text: {
 					this_object = (new InkObjectText())->populate_from_bytes(bytes, index);
 				} break;
 
+				case ObjectId::Choice: {
+
+				} break;
+
 				case ObjectId::LineBreak: {
 					this_object = new InkObjectLineBreak();
 				} break;
 
-				case ObjectId::Tag: {
-					//this_object = (new InkObjectTag(""))->populate_from_bytes(bytes, index);
+				case ObjectId::Glue: {
+					this_object = new InkObjectGlue();
 				} break;
 
 				case ObjectId::Divert: {
-					//this_object = (new InkObjectDivert(""))->populate_from_bytes(bytes, index);
+					this_object = (new InkObjectDivert({}, {}))->populate_from_bytes(bytes, index);
 				} break;
 
-				default: break;
+				case ObjectId::Interpolation: {
+
+				} break;
+
+				case ObjectId::Conditional: {
+
+				} break;
+
+				case ObjectId::Switch: {
+
+				} break;
+
+				case ObjectId::Sequence: {
+
+				} break;
+
+				case ObjectId::ChoiceTextMix: {
+
+				} break;
+
+				case ObjectId::Tag: {
+					this_object = (new InkObjectTag(""))->populate_from_bytes(bytes, index);
+				} break;
+
+				case ObjectId::GlobalVariable: {
+					this_object = (new InkObjectGlobalVariable("", false, {}))->populate_from_bytes(bytes, index);
+				} break;
+
+				case ObjectId::Logic: {
+
+				} break;
+
+				default: {
+					throw std::runtime_error(std::format("Found an inkb object with an unknown object ID ({})", static_cast<std::uint8_t>(this_id)));
+				} break;
 			}
 
 			if (this_object) {
 				this_knot_contents.push_back(this_object);
 			}
 		}
+	
+		this_knot.objects = this_knot_contents;
 
-		std::uint16_t this_knot_stitches_size = dssize(bytes, index);
-		std::vector<Stitch> this_knot_stitches;
-		this_knot_stitches.reserve(this_knot_stitches_size);
-
-		Serializer<Stitch> dsstitch;
-		for (std::size_t j = 0; j < this_knot_stitches_size; ++j) {
-			Stitch this_stitch = dsstitch(bytes, index);
-			this_knot_stitches.push_back(this_stitch);
+		this_knot.uuid = uuid++;
+		for (Stitch& stitch : this_knot.stitches) {
+			stitch.uuid = uuid++;
+			for (GatherPoint& gather_point : stitch.gather_points) {
+				gather_point.uuid = uuid++;
+			}
 		}
 
-		// TODO: figure out why this doesn't work
-		//Serializer<Stitch> dsstitch;
-		//dsstitch(bytes, index);
-		//Serializer<std::vector<Stitch>> dsstitches;
-		//dsstitches(bytes, index);
-	
-		Knot knot;
-		knot.name = this_knot_name;
-		knot.objects = this_knot_contents;
-		knot.stitches = this_knot_stitches;
-		knots.push_back(knot);
+		for (GatherPoint& gather_point : this_knot.gather_points) {
+			gather_point.uuid = uuid++;
+		}
+
+		knots.push_back(this_knot);
 	}
 
 	story_data = new InkStoryData(knots);
@@ -257,7 +294,7 @@ std::optional<ExpressionParser::Variant> InkStory::divert_to_function_knot(const
 	return eval_result.return_value.has_value() || eval_result.result.empty() ? eval_result.return_value : eval_result.result;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool InkStory::can_continue() {
 	InkStoryState::KnotStatus& current_knot_status = story_state.current_knot();

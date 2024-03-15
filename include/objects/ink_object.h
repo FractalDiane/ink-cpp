@@ -37,15 +37,18 @@ public:
 	virtual bool will_choice_take_fallback(InkStoryState& story_state) { return false; }
 	virtual bool stop_before_this() const { return false; }
 	
-	std::vector<std::uint8_t> get_serialized_bytes() const;
+	ByteVec get_serialized_bytes() const;
 	//InkObject* populate_from_bytes() const;
 };
 
 template <>
 struct Serializer<InkObject*> {
-	std::vector<std::uint8_t> operator()(const InkObject* object) noexcept {
-		return object->get_serialized_bytes();
-	}
+	ByteVec operator()(const InkObject* value);
 };
+
+/*template <>
+struct Deserializer<InkObject*> {
+	InkObject* operator()(const ByteVec& bytes, std::size_t& index);
+};*/
 
 #include "runtime/ink_story_data.h"

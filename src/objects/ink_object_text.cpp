@@ -10,7 +10,7 @@ std::vector<std::uint8_t> InkObjectText::to_bytes() const {
 }
 
 InkObject* InkObjectText::populate_from_bytes(const std::vector<std::uint8_t>& bytes, std::size_t& index) {
-	Serializer<std::string> ds;
+	Deserializer<std::string> ds;
 	text_contents = ds(bytes, index);
 	return this;
 }

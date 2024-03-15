@@ -26,6 +26,11 @@ public:
 	explicit InkStory(const std::string& inkb_file);
 	~InkStory() { delete story_data; }
 
+	InkStory(const InkStory& from) = delete;
+	InkStory(InkStory&& from) = delete;
+	InkStory& operator=(const InkStory& from) = delete;
+	InkStory& operator=(InkStory&& from) = delete;
+
 	InkStoryData* get_story_data() const { return story_data; }
 	void print_info() const;
 
