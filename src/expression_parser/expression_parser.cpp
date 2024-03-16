@@ -181,6 +181,12 @@ Token* Deserializer<Token*>::operator()(const ByteVec& bytes, std::size_t& index
 			result = result_parencomma;
 		} break;
 
+		case TokenType::Keyword: {
+			TokenKeyword::Type my_type = static_cast<TokenKeyword::Type>(ds8(bytes, index));
+			TokenKeyword* result_keyword = new TokenKeyword(my_type);
+			result = result_keyword;
+		} break;
+
 		default: {
 			throw;
 		} break;
@@ -453,6 +459,13 @@ Token* Token::operator_substring(const Token* other) const { throw; }
 
 ByteVec Token::to_serialized_bytes() const {
 	return {};
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ByteVec TokenKeyword::to_serialized_bytes() const {
+	Serializer<std::uint8_t> s8;
+	return s8(static_cast<std::uint8_t>(data));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

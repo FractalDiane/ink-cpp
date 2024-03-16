@@ -14,10 +14,14 @@ InkObjectDivert::~InkObjectDivert() {
 
 std::vector<std::uint8_t> InkObjectDivert::to_bytes() const {
 	VectorSerializer<ExpressionParser::Token*> starget;
+	Serializer<std::uint16_t> s16;
 	
 	ByteVec result = starget(target_knot);
+	ByteVec result2 = s16(static_cast<std::uint16_t>(arguments.size()));
+	result.insert(result.end(), result2.begin(), result2.end());
 	for (const auto& arg : arguments) {
-		result.insert(result.end(), starget(arg).begin(), starget(arg).end());
+		ByteVec result_arg = starget(arg);
+		result.insert(result.end(), result_arg.begin(), result_arg.end());
 	}
 
 	return result;

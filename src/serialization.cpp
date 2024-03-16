@@ -96,6 +96,7 @@ std::int64_t Deserializer<std::int64_t>::operator()(const ByteVec& bytes, std::s
 	result |= static_cast<std::int64_t>(bytes[index++]) << 32;
 	result |= static_cast<std::int64_t>(bytes[index++]) << 40;
 	result |= static_cast<std::int64_t>(bytes[index++]) << 48;
+	result |= static_cast<std::int64_t>(bytes[index++]) << 56;
 	return result;
 }
 

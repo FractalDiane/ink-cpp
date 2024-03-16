@@ -160,6 +160,8 @@ struct TokenKeyword : public Token {
 	virtual TokenType get_type() const override { return TokenType::Keyword; }
 
 	virtual Token* copy() const override { return new TokenKeyword(data); }
+
+	virtual ByteVec to_serialized_bytes() const override;
 };
 
 struct TokenBoolean : public Token {

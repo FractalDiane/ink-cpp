@@ -9,6 +9,13 @@ using std::print;
 #endif
 
 int main(int argc, char* argv[]) {
-	
-	
+	if (argc < 2 || argc > 3) {
+		print("Error: No ink file specified\n");
+		return 1;
+	}
+
+	std::string infile = argv[1];
+	std::string noext = infile.substr(infile.find('.'));
+	InkCompiler compiler;
+	compiler.compile_file_to_file(infile, argc == 3 ? argv[2] : noext + ".inkb");
 }
