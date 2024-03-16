@@ -5,6 +5,7 @@
 using std::print;
 #else
 #include <format>
+#include <iostream>
 #define print(fmt, ...) std::cout << std::format(fmt __VA_OPT__(,) __VA_ARGS__)
 #endif
 

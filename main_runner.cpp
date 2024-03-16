@@ -1,6 +1,8 @@
 #include "runtime/ink_story.h"
 #include "ink_compiler.h"
 
+#include <iostream>
+
 #if __has_include(<print>)
 #include <print>
 using std::print;
@@ -8,8 +10,6 @@ using std::print;
 #include <format>
 #define print(fmt, ...) std::cout << std::format(fmt __VA_OPT__(,) __VA_ARGS__)
 #endif
-
-#include <iostream>
 
 int main(int argc, char* argv[]) {
 	if (argc != 2) {
