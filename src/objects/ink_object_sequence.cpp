@@ -13,11 +13,12 @@ ByteVec InkObjectSequence::to_bytes() const {
 	std::uint16_t objects_size = static_cast<std::uint16_t>(items.size());
 	ByteVec result3 = s16(objects_size);
 
-	result.append_range(result2);
-	result.append_range(result3);
+	result.insert(result.end(), result2.begin(), result2.end());
+	result.insert(result.end(), result3.begin(), result3.end());
 
 	for (const auto& vec : items) {
-		result.append_range(sobjects(vec));
+		ByteVec result_objects = sobjects(vec);
+		result.insert(result.end(), result_objects.begin(), result_objects.end());
 	}
 
 	return result;

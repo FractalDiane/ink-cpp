@@ -17,7 +17,7 @@ std::vector<std::uint8_t> InkObjectDivert::to_bytes() const {
 	
 	ByteVec result = starget(target_knot);
 	for (const auto& arg : arguments) {
-		result.append_range(starget(arg));
+		result.insert(result.end(), starget(arg).begin(), starget(arg).end());
 	}
 
 	return result;

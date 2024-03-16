@@ -13,8 +13,8 @@ ByteVec InkObjectGlobalVariable::to_bytes() const {
 	ByteVec result2 = s8(static_cast<std::uint8_t>(is_constant));
 	ByteVec result3 = vstoken(value_shunted_tokens);
 
-	result.append_range(result2);
-	result.append_range(result3);
+	result.insert(result.end(), result2.begin(), result2.end());
+	result.insert(result.end(), result3.begin(), result3.end());
 
 	return result;
 }

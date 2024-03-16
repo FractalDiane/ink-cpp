@@ -8,7 +8,7 @@ ByteVec Serializer<InkWeaveContent::Parameter>::operator()(const InkWeaveContent
 
 	ByteVec result = sstring(parameter.name);
 	ByteVec result2 = s8(static_cast<std::uint8_t>(parameter.by_ref));
-	result.append_range(result2);
+	result.insert(result.end(), result2.begin(), result2.end());
 
 	return result;
 }
@@ -35,10 +35,10 @@ ByteVec Serializer<GatherPoint>::operator()(const GatherPoint& gather_point) {
 	ByteVec result5 = s8(static_cast<std::uint8_t>(gather_point.in_choice));
 	ByteVec result6 = s16(gather_point.choice_index);
 
-	result.append_range(result3);
-	result.append_range(result4);
-	result.append_range(result5);
-	result.append_range(result6);
+	result.insert(result.end(), result3.begin(), result3.end());
+	result.insert(result.end(), result4.begin(), result4.end());
+	result.insert(result.end(), result5.begin(), result5.end());
+	result.insert(result.end(), result6.begin(), result6.end());
 
 	return result;
 }
@@ -75,9 +75,9 @@ ByteVec Serializer<Stitch>::operator()(const Stitch& stitch) {
 	ByteVec result3 = s16(stitch.index);
 	ByteVec result4 = vsgatherpoint(stitch.gather_points);
 
-	result.append_range(result2);
-	result.append_range(result3);
-	result.append_range(result4);
+	result.insert(result.end(), result2.begin(), result2.end());
+	result.insert(result.end(), result3.begin(), result3.end());
+	result.insert(result.end(), result4.begin(), result4.end());
 	
 	return result;
 }
@@ -119,11 +119,11 @@ ByteVec Serializer<Knot>::operator()(const Knot& knot) {
 	ByteVec result5 = s8(static_cast<std::uint8_t>(knot.is_function));
 	ByteVec result6 = vsobject(knot.objects);
 
-	result.append_range(result2);
-	result.append_range(result3);
-	result.append_range(result4);
-	result.append_range(result5);
-	result.append_range(result6);
+	result.insert(result.end(), result2.begin(), result2.end());
+	result.insert(result.end(), result3.begin(), result3.end());
+	result.insert(result.end(), result4.begin(), result4.end());
+	result.insert(result.end(), result5.begin(), result5.end());
+	result.insert(result.end(), result6.begin(), result6.end());
 
 	return result;
 }

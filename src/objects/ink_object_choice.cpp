@@ -21,17 +21,18 @@ ByteVec Serializer<InkChoiceEntry>::operator()(const InkChoiceEntry& entry) {
 	ByteVec result5 = s8(static_cast<std::uint8_t>(entry.immediately_continue_to_result));
 	ByteVec result6 = sgatherpoint(entry.label);
 
-	result.append_range(result2);
-	result.append_range(result3);
-	result.append_range(result4);
-	result.append_range(result5);
-	result.append_range(result6);
+	result.insert(result.end(), result2.begin(), result2.end());
+	result.insert(result.end(), result3.begin(), result3.end());
+	result.insert(result.end(), result4.begin(), result4.end());
+	result.insert(result.end(), result5.begin(), result5.end());
+	result.insert(result.end(), result6.begin(), result6.end());
 
 	ByteVec result7 = s16(static_cast<std::uint16_t>(entry.conditions.size()));
-	result.append_range(result7);
+	result.insert(result.end(), result7.begin(), result7.end());
 
 	for (const auto& vec : entry.conditions) {
-		result.append_range(stokens(vec));
+		ByteVec result_tokens = stokens(vec);
+		result.insert(result.end(), result_tokens.begin(), result_tokens.end());
 	}
 
 	return result;

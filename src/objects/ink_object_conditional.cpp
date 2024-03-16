@@ -8,7 +8,7 @@ ByteVec Serializer<InkObjectConditional::Entry>::operator()(const InkObjectCondi
 
 	ByteVec result = stokens(entry.first);
 	ByteVec result2 = sknot(entry.second);
-	result.append_range(result2);
+	result.insert(result.end(), result2.begin(), result2.end());
 
 	return result;
 }
@@ -33,14 +33,14 @@ ByteVec InkObjectConditional::to_bytes() const {
 	ByteVec result = s8(static_cast<std::uint8_t>(is_switch));
 	if (is_switch) {
 		ByteVec result2 = stokens(switch_expression);
-		result.append_range(result2);
+		result.insert(result.end(), result2.begin(), result2.end());
 	}
 
 	ByteVec result3 = sentries(branches);
 	ByteVec result4 = sknot(branch_else);
 
-	result.append_range(result3);
-	result.append_range(result4);
+	result.insert(result.end(), result3.begin(), result3.end());
+	result.insert(result.end(), result4.begin(), result4.end());
 
 	return result;
 }

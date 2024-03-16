@@ -118,7 +118,7 @@ namespace {
 ByteVec Serializer<Token*>::operator()(const Token* token) {
 	ByteVec result = {static_cast<std::uint8_t>(token->get_type())};
 	ByteVec result2 = token->to_serialized_bytes();
-	result.append_range(result2);
+	result.insert(result.end(), result2.begin(), result2.end());
 
 	return result;
 }
@@ -911,7 +911,7 @@ ByteVec TokenOperator::to_serialized_bytes() const {
 	Serializer<std::uint8_t> s;
 	ByteVec result = s(static_cast<std::uint8_t>(data.type));
 	ByteVec result2 = s(static_cast<std::uint8_t>(data.unary_type));
-	result.append_range(result2);
+	result.insert(result.end(), result2.begin(), result2.end());
 
 	return result;
 }
