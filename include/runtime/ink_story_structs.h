@@ -88,21 +88,3 @@ template <>
 struct Deserializer<Knot> {
 	Knot operator()(const ByteVec& bytes, std::size_t& index);
 };
-
-/*template <>
-struct Deserializer<Knot> {
-	std::vector<std::uint8_t> operator()(const Knot& knot) noexcept {
-		Serializer<std::string> sstring;
-		std::vector<std::uint8_t> result = sstring(knot.name);
-
-		VectorDeserializer<InkObject*> sobjects;
-		std::vector<std::uint8_t> result2 = sobjects(knot.objects);
-		result.insert(result.end(), result2.begin(), result2.end());
-
-		VectorDeserializer<Stitch> sstitches;
-		std::vector<std::uint8_t> result3 = sstitches(knot.stitches);
-		result.insert(result.end(), result3.begin(), result3.end());
-
-		return result;
-	}
-};*/

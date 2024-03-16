@@ -5,6 +5,17 @@
 
 #include "expression_parser/expression_parser.h"
 
+ByteVec InkObjectLogic::to_bytes() const {
+	VectorSerializer<ExpressionParser::Token*> s;
+	return s(contents_shunted_tokens);
+}
+
+InkObject* InkObjectLogic::populate_from_bytes(const ByteVec& bytes, std::size_t& index) {
+	VectorDeserializer<ExpressionParser::Token*> ds;
+	contents_shunted_tokens = ds(bytes, index);
+	return this;
+}
+
 InkObjectLogic::~InkObjectLogic() {
 	for (ExpressionParser::Token* token : contents_shunted_tokens) {
 		delete token;
@@ -13,20 +24,6 @@ InkObjectLogic::~InkObjectLogic() {
 
 void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	using namespace ExpressionParser;
-
-	/*bool is_temp_declaration = false;
-	std::string temp_var_name;
-	if (contents_shunted_tokens.size() > 2) {
-		Token* first = contents_shunted_tokens[0];
-		if (first->get_type() == TokenType::Keyword && static_cast<TokenKeyword*>(first)->data == TokenKeyword::Type::Temp) {
-			Token* second = contents_shunted_tokens[1];
-			if (second->get_type() == ExpressionParser::TokenType::Variable) {
-				temp_var_name = static_cast<TokenVariable*>(second)->data;
-				story_state.variables[temp_var_name] = false;
-				is_temp_declaration = true;
-			}
-		}
-	}*/
 
 	bool is_return = false;
 	if (!contents_shunted_tokens.empty()) {
@@ -45,15 +42,6 @@ void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eva
 			eval_result.result += ExpressionParser::to_printable_string(*result);
 		}
 
-		//story_state.current_knots_stack.pop_back();
 		eval_result.return_value = result;
 	}
-
-	/*if (is_temp_declaration) {
-		InkWeaveContent* var_owner = story_state.current_stitch
-									? static_cast<InkWeaveContent*>(story_state.current_stitch)
-									: static_cast<InkWeaveContent*>(story_state.current_knot().knot);
-
-		var_owner->local_variables.push_back(temp_var_name);
-	}*/
 }

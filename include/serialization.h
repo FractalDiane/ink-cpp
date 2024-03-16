@@ -143,7 +143,7 @@ struct VectorDeserializer {
 			result.push_back(ds(bytes, index));
 		}
 
-		index += size;
+		//index += size;
 		return result;
 	}
 };

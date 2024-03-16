@@ -133,7 +133,7 @@ Knot Deserializer<Knot>::operator()(const ByteVec& bytes, std::size_t& index) {
 	//Deserializer<std::uint16_t> ds16;
 	Deserializer<std::string> dsstring;
 	VectorDeserializer<InkWeaveContent::Parameter> vdsparam;
-	//VectorDeserializer<InkObject*> vdsobject;
+	VectorDeserializer<InkObject*> vdsobject;
 	VectorDeserializer<Stitch> vdsstitch;
 	VectorDeserializer<GatherPoint> vdsgatherpoint;
 
@@ -144,7 +144,7 @@ Knot Deserializer<Knot>::operator()(const ByteVec& bytes, std::size_t& index) {
 	result.stitches = vdsstitch(bytes, index);
 	result.gather_points = vdsgatherpoint(bytes, index);
 	result.is_function = static_cast<bool>(ds8(bytes, index));
-	//result.objects = vdsobject(bytes, index);
+	result.objects = vdsobject(bytes, index);
 
 	result.uuid = 0;
 	result.type = WeaveContentType::Knot;

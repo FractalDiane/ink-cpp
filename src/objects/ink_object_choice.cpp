@@ -6,13 +6,71 @@
 
 #include "expression_parser/expression_parser.h"
 
-/*std::vector<std::uint8_t> InkObjectChoice::to_bytes() const {
-	return {}
+ByteVec Serializer<InkChoiceEntry>::operator()(const InkChoiceEntry& entry) {
+	Serializer<std::uint8_t> s8;
+	Serializer<std::uint16_t> s16;
+	Serializer<Knot> sknot;
+	Serializer<GatherPoint> sgatherpoint;
+	VectorSerializer<InkObject*> sobjects;
+	VectorSerializer<ExpressionParser::Token*> stokens;
+
+	ByteVec result = sobjects(entry.text);
+	ByteVec result2 = sknot(entry.result);
+	ByteVec result3 = s8(static_cast<std::uint8_t>(entry.sticky));
+	ByteVec result4 = s8(static_cast<std::uint8_t>(entry.fallback));
+	ByteVec result5 = s8(static_cast<std::uint8_t>(entry.immediately_continue_to_result));
+	ByteVec result6 = sgatherpoint(entry.label);
+
+	result.append_range(result2);
+	result.append_range(result3);
+	result.append_range(result4);
+	result.append_range(result5);
+	result.append_range(result6);
+
+	ByteVec result7 = s16(static_cast<std::uint16_t>(entry.conditions.size()));
+	result.append_range(result7);
+
+	for (const auto& vec : entry.conditions) {
+		result.append_range(stokens(vec));
+	}
+
+	return result;
 }
 
-ObjectId InkObjectChoice::get_id() const {
-	return ObjectId::Choice;
-}*/
+InkChoiceEntry Deserializer<InkChoiceEntry>::operator()(const ByteVec& bytes, std::size_t& index) {
+	Deserializer<std::uint8_t> ds8;
+	Deserializer<std::uint16_t> ds16;
+	Deserializer<Knot> dsknot;
+	Deserializer<GatherPoint> dsgatherpoint;
+	VectorDeserializer<InkObject*> dsobjects;
+	VectorDeserializer<ExpressionParser::Token*> dstokens;
+
+	InkChoiceEntry result;
+	result.text = dsobjects(bytes, index);
+	result.result = dsknot(bytes, index);
+	result.sticky = static_cast<bool>(ds8(bytes, index));
+	result.fallback = static_cast<bool>(ds8(bytes, index));
+	result.immediately_continue_to_result = static_cast<bool>(ds8(bytes, index));
+	result.label = dsgatherpoint(bytes, index);
+
+	std::uint16_t conditions_size = ds16(bytes, index);
+	for (std::uint16_t i = 0; i < conditions_size; ++i) {
+		result.conditions.push_back(dstokens(bytes, index));
+	}
+
+	return result;
+}
+
+ByteVec InkObjectChoice::to_bytes() const {
+	VectorSerializer<InkChoiceEntry> sentries;
+	return sentries(choices);
+}
+
+InkObject* InkObjectChoice::populate_from_bytes(const ByteVec& bytes, std::size_t& index) {
+	VectorDeserializer<InkChoiceEntry> dsentries;
+	choices = dsentries(bytes, index);
+	return this;
+}
 
 InkObjectChoice::~InkObjectChoice() {
 	for (InkChoiceEntry& choice : choices) {
@@ -141,20 +199,4 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		++story_state.total_choices_taken;
 		story_state.at_choice = false;
 	}
-}
-
-bool InkObjectChoice::will_choice_take_fallback(InkStoryState& story_state) {
-	std::size_t fallback_index = SIZE_MAX;
-	for (std::size_t i = 0; i < choices.size(); ++i) {
-		InkChoiceEntry& this_choice = choices[i];
-		if (this_choice.sticky || !story_state.has_choice_been_taken(this, i)) {
-			if (!this_choice.fallback) {
-				return false;
-			} else {
-				fallback_index = i;
-			}
-		}
-	}
-
-	return fallback_index != SIZE_MAX;
 }

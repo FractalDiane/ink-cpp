@@ -961,7 +961,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 				try {
 					std::vector<ExpressionParser::Token*> expression_shunted = ExpressionParser::tokenize_and_shunt_expression(expression, {}, declared_functions);
-					result_object = new InkObjectLogic(expression, expression_shunted);
+					result_object = new InkObjectLogic(expression_shunted);
 				} catch (...) {
 					throw std::runtime_error("Malformed logic statement");
 				}

@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <format>
+#include <cstring>
 
 #define TEST_PATH(path) INKCPP_WORKING_DIR "/tests/" path
 
@@ -23,14 +24,23 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-int main() {
-	/*InkCompiler compiler;
-	compiler.compile_file_to_file(TEST_PATH("1_content/1b_multiline_text.ink"), INKCPP_WORKING_DIR "/" "test3.inkb");*/
+#define TEST_FOLDER "2_choices"
+#define TEST_FILE "2d_choice_multiple"
 
-	std::string infile = INKCPP_WORKING_DIR "/" "test3.inkb";
-	InkStory story{infile};
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
+int main(int argc, char* argv[]) {
+	//if (argc > 1) {
+	//	if (!strcmp(argv[1], "build") || !strcmp(argv[1], "compile")) {
+	//		InkCompiler compiler;
+	//		compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink", INKCPP_WORKING_DIR "/" TEST_FILE ".inkb");
+	//	} else if (!strcmp(argv[1], "run")) {
+			std::string infile = INKCPP_WORKING_DIR "/" TEST_FILE ".inkb";
+			InkStory story{infile};
+			while (story.can_continue()) {
+				std::cout << story.continue_story_maximally() << std::endl;
+				if (!story.get_current_choices().empty()) {
+					story.choose_choice_index(0);
+				}
+			}
+		//}
+	//}
 }

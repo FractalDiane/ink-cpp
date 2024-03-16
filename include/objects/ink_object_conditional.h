@@ -5,11 +5,12 @@
 #include <string>
 
 class InkObjectConditional : public InkObject {
-private:
-	//std::unordered_map<std::string, std::vector<InkObject*>> branches;
+public:
+	using Entry = std::pair<std::vector<struct ExpressionParser::Token*>, Knot>;
 	
+private:
 	bool is_switch;
-	std::vector<std::pair<std::vector<struct ExpressionParser::Token*>, Knot>> branches;
+	std::vector<Entry> branches;
 	Knot branch_else;
 
 	std::vector<struct ExpressionParser::Token*> switch_expression;
@@ -26,4 +27,17 @@ public:
 	virtual ObjectId get_id() const override { return ObjectId::Conditional; }
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
+
+	virtual ByteVec to_bytes() const override;
+	InkObject* populate_from_bytes(const ByteVec& bytes, std::size_t& index);
+};
+
+template <>
+struct Serializer<InkObjectConditional::Entry> {
+	ByteVec operator()(const InkObjectConditional::Entry& entry);
+};
+
+template <>
+struct Deserializer<InkObjectConditional::Entry> {
+	InkObjectConditional::Entry operator()(const ByteVec& bytes, std::size_t& index);
 };

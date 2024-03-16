@@ -18,9 +18,14 @@ int main(int argc, char* argv[]) {
 	}
 
 	std::string infile = argv[1];
-
-	InkCompiler compiler;
-	InkStory story = compiler.compile_file(infile);
+	InkStory story;
+	if (infile.ends_with(".inkb")) {
+		story = InkStory(infile);
+	} else {
+		InkCompiler compiler;
+		story = compiler.compile_file(infile);
+	}
+	
 	while (true) {
 		while (story.can_continue()) {
 			std::string result = story.continue_story();

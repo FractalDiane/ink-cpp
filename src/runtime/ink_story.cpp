@@ -1,7 +1,7 @@
 #include "runtime/ink_story.h"
 
 #include "objects/ink_object.h"
-#include "objects/ink_object_choice.h"
+/*#include "objects/ink_object_choice.h"
 #include "objects/ink_object_choicetextmix.h"
 #include "objects/ink_object_conditional.h"
 #include "objects/ink_object_divert.h"
@@ -9,9 +9,10 @@
 #include "objects/ink_object_glue.h"
 #include "objects/ink_object_interpolation.h"
 #include "objects/ink_object_linebreak.h"
+#include "objects/ink_object_logic.h"
 #include "objects/ink_object_sequence.h"
 #include "objects/ink_object_tag.h"
-#include "objects/ink_object_text.h"
+#include "objects/ink_object_text.h"*/
 
 #include "ink_utils.h"
 
@@ -52,14 +53,31 @@ InkStory::InkStory(const std::string& inkb_file) {
 		throw std::runtime_error(std::format("The version of this .inkb file ({}) does not match the version of your ink-cpp runtime ({}); please recompile your ink file", version, INKB_VERSION));
 	}
 
-	Deserializer<std::uint16_t> dssize;
-	std::uint16_t knots_count = dssize(bytes, index);
+	//Deserializer<std::uint16_t> dssize;
+	//std::uint16_t knots_count = dssize(bytes, index);
 
 	Uuid uuid = 0;
 
-	std::vector<Knot> knots;
-	Deserializer<Knot> dsknot;
-	for (std::size_t i = 0; i < knots_count; ++i) {
+	VectorDeserializer<Knot> dsknots;
+	std::vector<Knot> knots = dsknots(bytes, index);
+
+	for (Knot& this_knot : knots) {
+		this_knot.uuid = uuid++;
+		for (Stitch& stitch : this_knot.stitches) {
+			stitch.uuid = uuid++;
+			for (GatherPoint& gather_point : stitch.gather_points) {
+				gather_point.uuid = uuid++;
+			}
+		}
+
+		for (GatherPoint& gather_point : this_knot.gather_points) {
+			gather_point.uuid = uuid++;
+		}
+	}
+
+	//std::vector<Knot> knots;
+	//Deserializer<Knot> dsknot;
+	/*for (std::size_t i = 0; i < knots_count; ++i) {
 		Knot this_knot = dsknot(bytes, index);
 
 		std::uint16_t this_knot_size = dssize(bytes, index);
@@ -70,68 +88,13 @@ InkStory::InkStory(const std::string& inkb_file) {
 			InkObject* this_object = nullptr;
 			ObjectId this_id = static_cast<ObjectId>(bytes[index++]);
 
-			// TODO: find out if there's a better way to do this
-			switch (this_id) {
-				case ObjectId::Text: {
-					this_object = (new InkObjectText())->populate_from_bytes(bytes, index);
-				} break;
-
-				case ObjectId::Choice: {
-
-				} break;
-
-				case ObjectId::LineBreak: {
-					this_object = new InkObjectLineBreak();
-				} break;
-
-				case ObjectId::Glue: {
-					this_object = new InkObjectGlue();
-				} break;
-
-				case ObjectId::Divert: {
-					this_object = (new InkObjectDivert({}, {}))->populate_from_bytes(bytes, index);
-				} break;
-
-				case ObjectId::Interpolation: {
-
-				} break;
-
-				case ObjectId::Conditional: {
-
-				} break;
-
-				case ObjectId::Switch: {
-
-				} break;
-
-				case ObjectId::Sequence: {
-
-				} break;
-
-				case ObjectId::ChoiceTextMix: {
-
-				} break;
-
-				case ObjectId::Tag: {
-					this_object = (new InkObjectTag(""))->populate_from_bytes(bytes, index);
-				} break;
-
-				case ObjectId::GlobalVariable: {
-					this_object = (new InkObjectGlobalVariable("", false, {}))->populate_from_bytes(bytes, index);
-				} break;
-
-				case ObjectId::Logic: {
-
-				} break;
-
-				default: {
-					throw std::runtime_error(std::format("Found an inkb object with an unknown object ID ({})", static_cast<std::uint8_t>(this_id)));
-				} break;
+			this_object = InkObject::create_from_id(this_id);
+			if (!this_object) {
+				throw std::runtime_error(std::format("Found an inkb object with an unknown object ID ({})", static_cast<std::uint8_t>(this_id)));
 			}
 
-			if (this_object) {
-				this_knot_contents.push_back(this_object);
-			}
+			this_object->populate_from_bytes(bytes, index);
+			this_knot_contents.push_back(this_object);
 		}
 	
 		this_knot.objects = this_knot_contents;
@@ -149,9 +112,14 @@ InkStory::InkStory(const std::string& inkb_file) {
 		}
 
 		knots.push_back(this_knot);
-	}
+	}*/
+
+	
 
 	story_data = new InkStoryData(knots);
+	VectorDeserializer<std::string> dsorder;
+	story_data->knot_order = dsorder(bytes, index);
+	
 	init_story();
 }
 
@@ -299,7 +267,7 @@ std::optional<ExpressionParser::Variant> InkStory::divert_to_function_knot(const
 bool InkStory::can_continue() {
 	InkStoryState::KnotStatus& current_knot_status = story_state.current_knot();
 	return !story_state.should_end_story
-	&& (current_knot_status.index < current_knot_status.knot->objects.size() || !story_state.current_knots_stack.empty())
+	&& (current_knot_status.index < current_knot_status.knot->objects.size() || story_state.current_knots_stack.size() > 1)
 	&& (!story_state.at_choice || story_state.selected_choice != SIZE_MAX);
 }
 
@@ -455,7 +423,15 @@ std::string InkStory::continue_story() {
 }
 
 std::string InkStory::continue_story_maximally() {
-	return std::string();
+	std::string result;
+	result.reserve(1024);
+	while (can_continue()) {
+		result += continue_story();
+		result.push_back('\n');
+	}
+
+	result.pop_back();
+	return result;
 }
 
 const std::vector<std::string>& InkStory::get_current_choices() const {
