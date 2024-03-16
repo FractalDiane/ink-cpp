@@ -13,6 +13,20 @@
 #include "serialization.h"
 
 namespace ExpressionParser {
+	struct Token;
+}
+
+template <>
+struct Serializer<ExpressionParser::Token*> {
+	ByteVec operator()(const ExpressionParser::Token* token);
+};
+
+template <>
+struct Deserializer<ExpressionParser::Token*> {
+	ExpressionParser::Token* operator()(const ByteVec& bytes, std::size_t& index);
+};
+
+namespace ExpressionParser {
 
 enum class TokenType {
 	Keyword,
@@ -125,16 +139,6 @@ struct Token {
 	virtual Token* operator_shiftright(const Token* other) const;
 	
 	virtual Token* operator_substring(const Token* other) const;
-};
-
-template <>
-struct Serializer<Token*> {
-	ByteVec operator()(const Token* token);
-};
-
-template <>
-struct Deserializer<Token*> {
-	Token* operator()(const ByteVec& bytes, std::size_t& index);
 };
 
 struct TokenKeyword : public Token {

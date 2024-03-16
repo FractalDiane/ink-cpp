@@ -115,6 +115,82 @@ namespace {
 #undef O
 #undef C
 
+ByteVec Serializer<Token*>::operator()(const Token* token) {
+	ByteVec result = {static_cast<std::uint8_t>(token->get_type())};
+	ByteVec result2 = token->to_serialized_bytes();
+	result.append_range(result2);
+
+	return result;
+}
+
+Token* Deserializer<Token*>::operator()(const ByteVec& bytes, std::size_t& index) {
+	Deserializer<std::uint8_t> ds8;
+	Deserializer<std::int64_t> dsi64;
+	Deserializer<double> dsdb;
+	Deserializer<std::string> dsstring;
+
+	Token* result = nullptr;
+	TokenType type = static_cast<TokenType>(ds8(bytes, index));
+	switch (type) {
+		case TokenType::Boolean: {
+			bool value = static_cast<bool>(ds8(bytes, index));
+			TokenBoolean* result_bool = new TokenBoolean(value);
+			result = result_bool;
+		} break;
+
+		case TokenType::NumberInt: {
+			std::int64_t value = dsi64(bytes, index);
+			TokenNumberInt* result_int = new TokenNumberInt(value);
+			result = result_int;
+		} break;
+
+		case TokenType::NumberFloat: {
+			double value = dsdb(bytes, index);
+			TokenNumberFloat* result_float = new TokenNumberFloat(value);
+			result = result_float;
+		} break;
+
+		case TokenType::StringLiteral: {
+			std::string value = dsstring(bytes, index);
+			TokenStringLiteral* result_string = new TokenStringLiteral(value);
+			result = result_string;
+		} break;
+
+		case TokenType::Variable: {
+			std::string name = dsstring(bytes, index);
+			TokenVariable* result_var = new TokenVariable(name);
+			result = result_var;
+		} break;
+
+		case TokenType::Function: {
+			std::string name = dsstring(bytes, index);
+			TokenFunction* result_func = new TokenFunction(name, nullptr, true);
+			result = result_func;
+		} break;
+
+		case TokenType::Operator: {
+			TokenOperator::Type my_type = static_cast<TokenOperator::Type>(ds8(bytes, index));
+			TokenOperator::UnaryType my_unary_type = static_cast<TokenOperator::UnaryType>(ds8(bytes, index));
+			TokenOperator* result_op = new TokenOperator(my_type, my_unary_type);
+			result = result_op;
+		} break;
+
+		case TokenType::ParenComma: {
+			TokenParenComma::Type my_type = static_cast<TokenParenComma::Type>(ds8(bytes, index));
+			TokenParenComma* result_parencomma = new TokenParenComma(my_type);
+			result = result_parencomma;
+		} break;
+
+		default: {
+			throw;
+		} break;
+	}
+
+	return result;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 bool ExpressionParser::as_bool(const Variant& variant) {
 	switch (variant.index()) {
 		case Variant_Bool: {
@@ -377,80 +453,6 @@ Token* Token::operator_substring(const Token* other) const { throw; }
 
 ByteVec Token::to_serialized_bytes() const {
 	return {};
-}
-
-ByteVec Serializer<Token*>::operator()(const Token* token) {
-	ByteVec result = {static_cast<std::uint8_t>(token->get_type())};
-	ByteVec result2 = token->to_serialized_bytes();
-	result.append_range(result2);
-
-	return result;
-}
-
-Token* Deserializer<Token*>::operator()(const ByteVec& bytes, std::size_t& index) {
-	Deserializer<std::uint8_t> ds8;
-	Deserializer<std::int64_t> dsi64;
-	Deserializer<double> dsdb;
-	Deserializer<std::string> dsstring;
-
-	Token* result = nullptr;
-	TokenType type = static_cast<TokenType>(ds8(bytes, index));
-	switch (type) {
-		case TokenType::Boolean: {
-			bool value = static_cast<bool>(ds8(bytes, index));
-			TokenBoolean* result_bool = new TokenBoolean(value);
-			result = result_bool;
-		} break;
-
-		case TokenType::NumberInt: {
-			std::int64_t value = dsi64(bytes, index);
-			TokenNumberInt* result_int = new TokenNumberInt(value);
-			result = result_int;
-		} break;
-
-		case TokenType::NumberFloat: {
-			double value = dsdb(bytes, index);
-			TokenNumberFloat* result_float = new TokenNumberFloat(value);
-			result = result_float;
-		} break;
-
-		case TokenType::StringLiteral: {
-			std::string value = dsstring(bytes, index);
-			TokenStringLiteral* result_string = new TokenStringLiteral(value);
-			result = result_string;
-		} break;
-
-		case TokenType::Variable: {
-			std::string name = dsstring(bytes, index);
-			TokenVariable* result_var = new TokenVariable(name);
-			result = result_var;
-		} break;
-
-		case TokenType::Function: {
-			std::string name = dsstring(bytes, index);
-			TokenFunction* result_func = new TokenFunction(name, nullptr, true);
-			result = result_func;
-		} break;
-
-		case TokenType::Operator: {
-			TokenOperator::Type my_type = static_cast<TokenOperator::Type>(ds8(bytes, index));
-			TokenOperator::UnaryType my_unary_type = static_cast<TokenOperator::UnaryType>(ds8(bytes, index));
-			TokenOperator* result_op = new TokenOperator(my_type, my_unary_type);
-			result = result_op;
-		} break;
-
-		case TokenType::ParenComma: {
-			TokenParenComma::Type my_type = static_cast<TokenParenComma::Type>(ds8(bytes, index));
-			TokenParenComma* result_parencomma = new TokenParenComma(my_type);
-			result = result_parencomma;
-		} break;
-
-		default: {
-			throw;
-		} break;
-	}
-
-	return result;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
