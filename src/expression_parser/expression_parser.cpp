@@ -187,6 +187,12 @@ Token* Deserializer<Token*>::operator()(const ByteVec& bytes, std::size_t& index
 			result = result_keyword;
 		} break;
 
+		case TokenType::KnotName: {
+			std::string knot = dsstring(bytes, index);
+			TokenKnotName* result_knotname = new TokenKnotName(knot, true);
+			result = result_knotname;
+		} break;
+
 		default: {
 			throw;
 		} break;
@@ -842,6 +848,11 @@ const std::string& TokenKnotName::as_string() const {
 
 std::string TokenKnotName::to_printable_string() const {
 	return data.knot;
+}
+
+ByteVec TokenKnotName::to_serialized_bytes() const {
+	Serializer<std::string> s;
+	return s(data.knot);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

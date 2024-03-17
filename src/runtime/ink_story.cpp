@@ -56,12 +56,12 @@ InkStory::InkStory(const std::string& inkb_file) {
 	//Deserializer<std::uint16_t> dssize;
 	//std::uint16_t knots_count = dssize(bytes, index);
 
-	Uuid uuid = 0;
+	//Uuid uuid = 0;
 
 	VectorDeserializer<Knot> dsknots;
 	std::vector<Knot> knots = dsknots(bytes, index);
 
-	for (Knot& this_knot : knots) {
+	/*for (Knot& this_knot : knots) {
 		this_knot.uuid = uuid++;
 		for (Stitch& stitch : this_knot.stitches) {
 			stitch.uuid = uuid++;
@@ -73,7 +73,7 @@ InkStory::InkStory(const std::string& inkb_file) {
 		for (GatherPoint& gather_point : this_knot.gather_points) {
 			gather_point.uuid = uuid++;
 		}
-	}
+	}*/
 
 	//std::vector<Knot> knots;
 	//Deserializer<Knot> dsknot;

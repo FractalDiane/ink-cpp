@@ -21,13 +21,12 @@ private:
 	std::size_t current_index;
 	std::vector<std::size_t> available_shuffle_indices;
 
+	void fill_shuffle_indices();
+
 public:
 	InkObjectSequence(InkSequenceType type, bool multiline, const std::vector<std::vector<InkObject*>>& items)
 		: sequence_type{type}, multiline{multiline}, items{items}, current_index{0}, available_shuffle_indices{} {
-			std::size_t maximum = type == InkSequenceType::ShuffleStop ? items.size() - 1 : items.size();
-			for (std::size_t i = 0; i < maximum; ++i) {
-				available_shuffle_indices.push_back(i);
-			}
+			fill_shuffle_indices();
 		}
 
 	virtual ~InkObjectSequence() override;

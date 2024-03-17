@@ -11,6 +11,7 @@
 #include <optional>
 
 #include "serialization.h"
+#include "uuid.h"
 
 namespace ExpressionParser {
 	struct Token;
@@ -80,7 +81,7 @@ Token* variant_to_token(const Variant& variant);
 
 using TokenStack = Stack<Token*>;
 
-typedef std::unordered_map<std::uint32_t, std::unordered_map<std::string, std::string>> RedirectMap;
+typedef std::unordered_map<Uuid, std::unordered_map<std::string, std::string>> RedirectMap;
 typedef std::unordered_map<std::string, Variant> VariableMap;
 using PtrTokenFunc = std::function<Token*(TokenStack&, VariableMap&, const VariableMap&, RedirectMap&)>;
 typedef std::unordered_map<std::string, PtrTokenFunc> FunctionMap;
@@ -314,6 +315,7 @@ struct TokenKnotName : public Token {
 	virtual const std::string& as_string() const override;
 
 	virtual std::string to_printable_string() const override;
+	virtual ByteVec to_serialized_bytes() const override;
 
 	virtual TokenType get_type() const override { return TokenType::KnotName; }
 	virtual std::optional<Variant> get_variant_value(const VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) const override { return data.knot; }

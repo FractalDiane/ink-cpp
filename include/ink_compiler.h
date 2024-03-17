@@ -67,7 +67,7 @@ private:
 
 	std::size_t current_sequence_index = 0;
 
-	Uuid current_uuid = 0;
+	UuidValue current_uuid = 0;
 
 	std::unordered_set<std::string> declared_variables;
 	std::unordered_set<std::string> declared_functions = {

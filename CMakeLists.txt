@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(SRC_UTIL
 	src/ink_utils.cpp
 	src/serialization.cpp
+	src/uuid.cpp
 	src/expression_parser/expression_parser.cpp
 )
 

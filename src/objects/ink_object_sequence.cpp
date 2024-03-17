@@ -37,6 +37,8 @@ InkObject* InkObjectSequence::populate_from_bytes(const ByteVec& bytes, std::siz
 		items.push_back(dsobjects(bytes, index));
 	}
 
+	fill_shuffle_indices();
+
 	return this;
 }
 
@@ -45,6 +47,13 @@ InkObjectSequence::~InkObjectSequence() {
 		for (InkObject* object : item) {
 			delete object;
 		}
+	}
+}
+
+void InkObjectSequence::fill_shuffle_indices() {
+	std::size_t maximum = sequence_type == InkSequenceType::ShuffleStop ? items.size() - 1 : items.size();
+	for (std::size_t i = 0; i < maximum; ++i) {
+		available_shuffle_indices.push_back(i);
 	}
 }
 

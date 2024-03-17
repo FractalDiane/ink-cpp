@@ -289,7 +289,7 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 	std::vector<Knot> result_knots;// = {{"_S", {}, {}}};
 	Knot start_knot;
 	start_knot.name = "_S";
-	start_knot.uuid = current_uuid++;
+	start_knot.uuid = Uuid(current_uuid++);
 	result_knots.push_back(start_knot);
 
 	token_index = 0;
@@ -384,7 +384,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						}
 
 						new_knot.name = new_knot_name;
-						new_knot.uuid = current_uuid++;
+						new_knot.uuid = Uuid(current_uuid++);
 						new_knot.type = WeaveContentType::Knot;
 
 						if (next_token_is(all_tokens, token_index + 3, InkToken::LeftParen)) {
@@ -440,7 +440,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					std::vector<Stitch>& stitches = story_knots.back().stitches;
 					Stitch new_stitch;
 					new_stitch.name = new_stitch_name;
-					new_stitch.uuid = current_uuid++;
+					new_stitch.uuid = Uuid(current_uuid++);
 					new_stitch.type = WeaveContentType::Stitch;
 					new_stitch.index = static_cast<std::uint16_t>(story_knots.back().objects.size());
 
@@ -523,7 +523,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					if (next_token_is_sequence(all_tokens, token_index, {InkToken::LeftParen, InkToken::Text, InkToken::RightParen})) {
 						GatherPoint label;
 						label.name = all_tokens[token_index + 2].text_contents;
-						label.uuid = current_uuid++;
+						label.uuid = Uuid(current_uuid++);
 						label.type = WeaveContentType::GatherPoint;
 						label.index = static_cast<std::uint16_t>(story_knots.back().objects.size());
 						label.in_choice = true;
@@ -926,7 +926,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				: story_knots.back().gather_points;
 				
 				GatherPoint new_gather_point;
-				new_gather_point.uuid = current_uuid++;
+				new_gather_point.uuid = Uuid(current_uuid++);
 				new_gather_point.type = WeaveContentType::GatherPoint;
 				new_gather_point.index = static_cast<std::uint16_t>(story_knots.back().objects.size());
 				new_gather_point.level = token.count;

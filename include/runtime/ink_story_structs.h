@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include "serialization.h"
+#include "uuid.h"
 
 enum class WeaveContentType {
 	Knot,
@@ -12,7 +13,7 @@ enum class WeaveContentType {
 	GatherPoint,
 };
 
-typedef std::uint32_t Uuid;
+//typedef std::uint32_t Uuid;
 
 struct InkWeaveContent {
 	std::string name;
