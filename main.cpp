@@ -24,8 +24,8 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "17_functions"
-#define TEST_FILE "17a_functions_in_logic"
+#define TEST_FOLDER "14_logic"
+#define TEST_FILE "14a_basic_logic"
 
 int main(int argc, char* argv[]) {
 	//if (argc > 1) {
