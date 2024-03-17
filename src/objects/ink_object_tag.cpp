@@ -6,7 +6,7 @@ std::vector<std::uint8_t> InkObjectTag::to_bytes() const {
 }
 
 InkObject* InkObjectTag::populate_from_bytes(const std::vector<std::uint8_t>& bytes, std::size_t& index) {
-	Serializer<std::string> ds;
+	Deserializer<std::string> ds;
 	tag = ds(bytes, index);
 	return this;
 }

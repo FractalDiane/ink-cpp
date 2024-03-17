@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 23)
 
 set(SRC_UTIL
 	src/ink_utils.cpp
+	src/serialization.cpp
+	src/uuid.cpp
 	src/expression_parser/expression_parser.cpp
 )
 
@@ -15,6 +17,7 @@ set(SRC_RUNTIME
 	src/runtime/ink_story_data.cpp
 	src/runtime/ink_story.cpp
 	src/runtime/ink_story_state.cpp
+	src/runtime/ink_story_structs.cpp
 	src/runtime/ink_story_tracking.cpp
 )
 

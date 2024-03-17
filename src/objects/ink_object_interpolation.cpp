@@ -4,6 +4,17 @@
 
 #include "expression_parser/expression_parser.h"
 
+ByteVec InkObjectInterpolation::to_bytes() const {
+	VectorSerializer<ExpressionParser::Token*> s;
+	return s(what_to_interpolate);
+}
+
+InkObject* InkObjectInterpolation::populate_from_bytes(const ByteVec& bytes, std::size_t& index) {
+	VectorDeserializer<ExpressionParser::Token*> ds;
+	what_to_interpolate = ds(bytes, index);
+	return this;
+}
+
 InkObjectInterpolation::~InkObjectInterpolation() {
 	for (ExpressionParser::Token* token : what_to_interpolate) {
 		delete token;

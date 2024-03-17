@@ -53,17 +53,6 @@ public:
 
 class InkCompiler {
 private:
-	/*struct Stitch {
-		std::string name;
-		std::size_t index;
-	};
-
-	struct Knot {
-		std::string name;
-		std::vector<InkObject*> objects;
-		std::vector<Stitch> stitches;
-	};*/
-
 	std::size_t token_index = 0;
 	InkObject* last_token_object = nullptr;
 
@@ -78,7 +67,7 @@ private:
 
 	std::size_t current_sequence_index = 0;
 
-	Uuid current_uuid = 0;
+	UuidValue current_uuid = 0;
 
 	std::unordered_set<std::string> declared_variables;
 	std::unordered_set<std::string> declared_functions = {

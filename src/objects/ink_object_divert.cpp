@@ -12,16 +12,33 @@ InkObjectDivert::~InkObjectDivert() {
 	}
 }
 
-/*std::vector<std::uint8_t> InkObjectDivert::to_bytes() const {
-	Serializer<std::string> s;
-	return s(target_knot);
+std::vector<std::uint8_t> InkObjectDivert::to_bytes() const {
+	VectorSerializer<ExpressionParser::Token*> starget;
+	Serializer<std::uint16_t> s16;
+	
+	ByteVec result = starget(target_knot);
+	ByteVec result2 = s16(static_cast<std::uint16_t>(arguments.size()));
+	result.insert(result.end(), result2.begin(), result2.end());
+	for (const auto& arg : arguments) {
+		ByteVec result_arg = starget(arg);
+		result.insert(result.end(), result_arg.begin(), result_arg.end());
+	}
+
+	return result;
 }
 
-InkObject* InkObjectDivert::populate_from_bytes(const std::vector<std::uint8_t>& bytes, std::size_t& index) {
-	Serializer<std::string> ds;
-	target_knot = ds(bytes, index);
+InkObject* InkObjectDivert::populate_from_bytes(const ByteVec& bytes, std::size_t& index) {
+	Deserializer<std::uint16_t> ds16;
+	VectorDeserializer<ExpressionParser::Token*> dstarget;
+
+	target_knot = dstarget(bytes, index);
+	std::size_t arg_count = static_cast<std::size_t>(ds16(bytes, index));
+	for (std::size_t i = 0; i < arg_count; ++i) {
+		arguments.push_back(dstarget(bytes, index));
+	}
+
 	return this;
-}*/
+}
 
 void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();

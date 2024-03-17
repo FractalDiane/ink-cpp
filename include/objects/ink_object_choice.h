@@ -20,10 +20,8 @@ struct InkChoiceEntry {
 class InkObjectChoice : public InkObject {
 private:
 	std::vector<InkChoiceEntry> choices;
-	//bool has_gather = false;
 
 public:
-	//InkObjectChoice(const std::vector<InkChoiceEntry>& choices, bool has_gather) : choices{choices}, has_gather{has_gather} {}
 	InkObjectChoice(const std::vector<InkChoiceEntry>& choices) : choices{choices} {}
 	virtual ~InkObjectChoice() override;
 
@@ -32,6 +30,16 @@ public:
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 
-	virtual bool will_choice_take_fallback(InkStoryState& story_state) override;
-	//virtual bool stop_before_this() const override { return true; }
+	virtual ByteVec to_bytes() const override;
+	virtual InkObject* populate_from_bytes(const ByteVec& bytes, std::size_t& index) override;
+};
+
+template <>
+struct Serializer<InkChoiceEntry> {
+	ByteVec operator()(const InkChoiceEntry& entry);
+};
+
+template <>
+struct Deserializer<InkChoiceEntry> {
+	InkChoiceEntry operator()(const ByteVec& bytes, std::size_t& index);
 };

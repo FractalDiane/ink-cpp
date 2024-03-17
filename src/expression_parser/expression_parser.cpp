@@ -115,6 +115,94 @@ namespace {
 #undef O
 #undef C
 
+ByteVec Serializer<Token*>::operator()(const Token* token) {
+	ByteVec result = {static_cast<std::uint8_t>(token->get_type())};
+	ByteVec result2 = token->to_serialized_bytes();
+	result.insert(result.end(), result2.begin(), result2.end());
+
+	return result;
+}
+
+Token* Deserializer<Token*>::operator()(const ByteVec& bytes, std::size_t& index) {
+	Deserializer<std::uint8_t> ds8;
+	Deserializer<std::int64_t> dsi64;
+	Deserializer<double> dsdb;
+	Deserializer<std::string> dsstring;
+
+	Token* result = nullptr;
+	TokenType type = static_cast<TokenType>(ds8(bytes, index));
+	switch (type) {
+		case TokenType::Boolean: {
+			bool value = static_cast<bool>(ds8(bytes, index));
+			TokenBoolean* result_bool = new TokenBoolean(value);
+			result = result_bool;
+		} break;
+
+		case TokenType::NumberInt: {
+			std::int64_t value = dsi64(bytes, index);
+			TokenNumberInt* result_int = new TokenNumberInt(value);
+			result = result_int;
+		} break;
+
+		case TokenType::NumberFloat: {
+			double value = dsdb(bytes, index);
+			TokenNumberFloat* result_float = new TokenNumberFloat(value);
+			result = result_float;
+		} break;
+
+		case TokenType::StringLiteral: {
+			std::string value = dsstring(bytes, index);
+			TokenStringLiteral* result_string = new TokenStringLiteral(value);
+			result = result_string;
+		} break;
+
+		case TokenType::Variable: {
+			std::string name = dsstring(bytes, index);
+			TokenVariable* result_var = new TokenVariable(name);
+			result = result_var;
+		} break;
+
+		case TokenType::Function: {
+			std::string name = dsstring(bytes, index);
+			TokenFunction* result_func = new TokenFunction(name, nullptr, true);
+			result = result_func;
+		} break;
+
+		case TokenType::Operator: {
+			TokenOperator::Type my_type = static_cast<TokenOperator::Type>(ds8(bytes, index));
+			TokenOperator::UnaryType my_unary_type = static_cast<TokenOperator::UnaryType>(ds8(bytes, index));
+			TokenOperator* result_op = new TokenOperator(my_type, my_unary_type);
+			result = result_op;
+		} break;
+
+		case TokenType::ParenComma: {
+			TokenParenComma::Type my_type = static_cast<TokenParenComma::Type>(ds8(bytes, index));
+			TokenParenComma* result_parencomma = new TokenParenComma(my_type);
+			result = result_parencomma;
+		} break;
+
+		case TokenType::Keyword: {
+			TokenKeyword::Type my_type = static_cast<TokenKeyword::Type>(ds8(bytes, index));
+			TokenKeyword* result_keyword = new TokenKeyword(my_type);
+			result = result_keyword;
+		} break;
+
+		case TokenType::KnotName: {
+			std::string knot = dsstring(bytes, index);
+			TokenKnotName* result_knotname = new TokenKnotName(knot, true);
+			result = result_knotname;
+		} break;
+
+		default: {
+			throw;
+		} break;
+	}
+
+	return result;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 bool ExpressionParser::as_bool(const Variant& variant) {
 	switch (variant.index()) {
 		case Variant_Bool: {
@@ -248,7 +336,7 @@ Token* ExpressionParser::variant_to_token(const Variant& variant) {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool Token::as_bool() const { throw; }
 std::int64_t Token::as_int() const { throw; }
@@ -375,7 +463,18 @@ Token* Token::operator_substring(const Token* other) const { throw; }
 		return temp;\
 	}
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+ByteVec Token::to_serialized_bytes() const {
+	return {};
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ByteVec TokenKeyword::to_serialized_bytes() const {
+	Serializer<std::uint8_t> s8;
+	return s8(static_cast<std::uint8_t>(data));
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool TokenBoolean::as_bool() const {
 	return data;
@@ -473,7 +572,12 @@ Token* TokenBoolean::operator_bitxor(const Token* other) const {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+ByteVec TokenBoolean::to_serialized_bytes() const {
+	Serializer<std::uint8_t> s;
+	return s(static_cast<std::uint8_t>(data));
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool TokenNumberInt::as_bool() const {
 	return data != 0;
@@ -592,7 +696,12 @@ Token* TokenNumberInt::operator_bitxor(const Token* other) const {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+ByteVec TokenNumberInt::to_serialized_bytes() const {
+	Serializer<std::int64_t> s;
+	return s(data);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool TokenNumberFloat::as_bool() const {
 	return data != 0.0;
@@ -675,7 +784,12 @@ Token* TokenNumberFloat::operator_or(const Token* other) const {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+ByteVec TokenNumberFloat::to_serialized_bytes() const {
+	Serializer<double> s;
+	return s(data);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool TokenStringLiteral::as_bool() const {
 	return !data.empty();
@@ -721,7 +835,12 @@ Token* TokenStringLiteral::operator_substring(const Token* other) const {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+ByteVec TokenStringLiteral::to_serialized_bytes() const {
+	Serializer<std::string> s;
+	return s(data);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 const std::string& TokenKnotName::as_string() const {
 	return data.knot;
@@ -731,7 +850,12 @@ std::string TokenKnotName::to_printable_string() const {
 	return data.knot;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+ByteVec TokenKnotName::to_serialized_bytes() const {
+	Serializer<std::string> s;
+	return s(data.knot);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Token::ValueResult TokenVariable::get_value(const VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) {
 	const Variant* value = nullptr;
@@ -781,13 +905,20 @@ std::string TokenVariable::to_printable_string() const {
 	return data;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+ByteVec TokenVariable::to_serialized_bytes() const {
+	Serializer<std::string> s;
+	return s(data);
+}
 
-Token* TokenFunction::call(TokenStack& stack, const FunctionMap& all_functions, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) {
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+Token* TokenFunction::call(TokenStack& stack, const FunctionMap& functions, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) {
 	if (!data.defer_fetch) {
 		return (data.function)(stack, variables, constants, variable_redirects);
 	} else {
-		if (auto function = all_functions.find(data.name); function != all_functions.end()) {
+		if (auto builtin = BuiltinFunctions.find(data.name); builtin != BuiltinFunctions.end()) {
+			return (builtin->second)(stack, variables, constants, variable_redirects);
+		} else if (auto function = functions.find(data.name); function != functions.end()) {
 			return (function->second)(stack, variables, constants, variable_redirects);
 		} else {
 			throw;
@@ -795,9 +926,30 @@ Token* TokenFunction::call(TokenStack& stack, const FunctionMap& all_functions, 
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+ByteVec TokenFunction::to_serialized_bytes() const {
+	Serializer<std::string> s;
+	return s(data.name);
+}
 
-void try_add_word(std::vector<Token*>& result, std::string& word, const FunctionMap& all_functions, bool in_knot_name, const std::unordered_set<std::string>& deferred_functions) {
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ByteVec TokenOperator::to_serialized_bytes() const {
+	Serializer<std::uint8_t> s;
+	ByteVec result = s(static_cast<std::uint8_t>(data.type));
+	ByteVec result2 = s(static_cast<std::uint8_t>(data.unary_type));
+	result.insert(result.end(), result2.begin(), result2.end());
+
+	return result;
+}
+
+ByteVec TokenParenComma::to_serialized_bytes() const {
+	Serializer<std::uint8_t> s;
+	return s(static_cast<std::uint8_t>(data));
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void try_add_word(std::vector<Token*>& result, std::string& word, const FunctionMap& functions, bool in_knot_name, const std::unordered_set<std::string>& deferred_functions) {
 	if (!word.empty()) {
 		bool found_result = false;
 		if (auto keyword = OperatorKeywords.find(word); keyword != OperatorKeywords.end()) {
@@ -809,7 +961,10 @@ void try_add_word(std::vector<Token*>& result, std::string& word, const Function
 		} else if (word == "false") {
 			result.push_back(new TokenBoolean(false));
 			found_result = true;
-		} else if (auto func = all_functions.find(word); func != all_functions.end()) {
+		} else if (auto builtin_func = BuiltinFunctions.find(word); builtin_func != BuiltinFunctions.end()) {
+			result.push_back(new TokenFunction(builtin_func->first, builtin_func->second, false));
+			found_result = true;
+		} else if (auto func = functions.find(word); func != functions.end()) {
 			result.push_back(new TokenFunction(func->first, func->second, false));
 			found_result = true;
 		} else if (deferred_functions.contains(word)) {
@@ -853,7 +1008,7 @@ void try_add_word(std::vector<Token*>& result, std::string& word, const Function
 	}
 }
 
-std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& expression, const FunctionMap& all_functions, const std::unordered_set<std::string>& deferred_functions) {
+std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
 	std::vector<Token*> result;
 	result.reserve(128);
 
@@ -875,7 +1030,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				case '+': {
 					if (next_char(expression, index) == '+') {
 						if (next_char(expression, index + 1) <= 32) {
-							try_add_word(result, current_word, all_functions, in_knot_name, deferred_functions);
+							try_add_word(result, current_word, functions, in_knot_name, deferred_functions);
 							result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Postfix));
 						} else {
 							result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Prefix));
@@ -890,7 +1045,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				case '-': {
 					if (next_char(expression, index) == '-') {
 						if (next_char(expression, index + 1) <= 32) {
-							try_add_word(result, current_word, all_functions, in_knot_name, deferred_functions);
+							try_add_word(result, current_word, functions, in_knot_name, deferred_functions);
 							result.push_back(new TokenOperator(TokenOperator::Type::Decrement, UnaryType::Postfix));
 						} else {
 							result.push_back(new TokenOperator(TokenOperator::Type::Decrement, UnaryType::Prefix));
@@ -994,17 +1149,17 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 
 				case '(': {
-					try_add_word(result, current_word, all_functions, in_knot_name, deferred_functions);
+					try_add_word(result, current_word, functions, in_knot_name, deferred_functions);
 					result.push_back(new TokenParenComma(TokenParenComma::Type::LeftParen));
 				} break;
 
 				case ')': {
-					try_add_word(result, current_word, all_functions, in_knot_name, deferred_functions);
+					try_add_word(result, current_word, functions, in_knot_name, deferred_functions);
 					result.push_back(new TokenParenComma(TokenParenComma::Type::RightParen));
 				} break;
 
 				case ',': {
-					try_add_word(result, current_word, all_functions, in_knot_name, deferred_functions);
+					try_add_word(result, current_word, functions, in_knot_name, deferred_functions);
 					result.push_back(new TokenParenComma(TokenParenComma::Type::Comma));
 				} break;
 
@@ -1018,7 +1173,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 					if (this_char > 32) {
 						current_word.push_back(this_char);
 					} else {
-						try_add_word(result, current_word, all_functions, in_knot_name, deferred_functions);
+						try_add_word(result, current_word, functions, in_knot_name, deferred_functions);
 					}
 				} break;
 			}
@@ -1035,7 +1190,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 		++index;
 	}
 
-	try_add_word(result, current_word, all_functions, in_knot_name, deferred_functions);
+	try_add_word(result, current_word, functions, in_knot_name, deferred_functions);
 
 	return result;
 }
@@ -1208,7 +1363,7 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 		stack.push(result);\
 	} break;
 
-std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::vector<Token*>& expression_tokens, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& all_functions) {
+std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::vector<Token*>& expression_tokens, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions) {
 	TokenStack stack;
 	std::unordered_set<Token*> tokens_to_dealloc;
 
@@ -1325,7 +1480,7 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 			} break;
 
 			case TokenType::Function: {
-				if (Token* result = static_cast<TokenFunction*>(this_token)->call(stack, all_functions, variables, constants, variable_redirects)) {
+				if (Token* result = static_cast<TokenFunction*>(this_token)->call(stack, functions, variables, constants, variable_redirects)) {
 					stack.push(result);
 					tokens_to_dealloc.insert(result);
 				}
@@ -1351,22 +1506,17 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 	return result;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 std::optional<Variant> ExpressionParser::execute_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
-	FunctionMap all_functions = BuiltinFunctions;
-	if (!functions.empty()) {
-		all_functions.insert(functions.begin(), functions.end());
-	}
-	
 	std::unordered_set<Token*> dummy;
-	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions, deferred_functions);
+	std::vector<Token*> tokenized = tokenize_expression(expression, functions, deferred_functions);
 	std::vector<Token*> shunted = shunt(tokenized, dummy);
 
 	VariableMap no_vars;
 	VariableMap no_consts;
 	RedirectMap no_redirects;
-	std::optional<Variant> result = execute_expression_tokens(shunted, no_vars, no_consts, no_redirects, all_functions);
+	std::optional<Variant> result = execute_expression_tokens(shunted, no_vars, no_consts, no_redirects, functions);
 
 	for (Token* token : tokenized) {
 		delete token;
@@ -1376,16 +1526,11 @@ std::optional<Variant> ExpressionParser::execute_expression(const std::string& e
 }
 
 std::optional<Variant> ExpressionParser::execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
-	FunctionMap all_functions = BuiltinFunctions;
-	if (!functions.empty()) {
-		all_functions.insert(functions.begin(), functions.end());
-	}
-
 	std::unordered_set<Token*> dummy;
-	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions, deferred_functions);
+	std::vector<Token*> tokenized = tokenize_expression(expression, functions, deferred_functions);
 	std::vector<Token*> shunted = shunt(tokenized, dummy);
 
-	std::optional<Variant> result = execute_expression_tokens(shunted, variables, constants, variable_redirects, all_functions);
+	std::optional<Variant> result = execute_expression_tokens(shunted, variables, constants, variable_redirects, functions);
 
 	for (Token* token : tokenized) {
 		delete token;
@@ -1395,13 +1540,8 @@ std::optional<Variant> ExpressionParser::execute_expression(const std::string& e
 }
 
 std::vector<Token*> ExpressionParser::tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
-	FunctionMap all_functions = BuiltinFunctions;
-	if (!functions.empty()) {
-		all_functions.insert(functions.begin(), functions.end());
-	}
-
 	std::unordered_set<Token*> tokens_shunted;
-	std::vector<Token*> tokenized = tokenize_expression(expression, all_functions, deferred_functions);
+	std::vector<Token*> tokenized = tokenize_expression(expression, functions, deferred_functions);
 	std::vector<Token*> shunted = shunt(tokenized, tokens_shunted);
 
 	for (Token* token : tokenized) {

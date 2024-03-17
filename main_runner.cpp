@@ -1,6 +1,8 @@
 #include "runtime/ink_story.h"
 #include "ink_compiler.h"
 
+#include <iostream>
+
 #if __has_include(<print>)
 #include <print>
 using std::print;
@@ -9,8 +11,6 @@ using std::print;
 #define print(fmt, ...) std::cout << std::format(fmt __VA_OPT__(,) __VA_ARGS__)
 #endif
 
-#include <iostream>
-
 int main(int argc, char* argv[]) {
 	if (argc != 2) {
 		print("Error: No ink file specified\n");
@@ -18,9 +18,14 @@ int main(int argc, char* argv[]) {
 	}
 
 	std::string infile = argv[1];
-
-	InkCompiler compiler;
-	InkStory story = compiler.compile_file(infile);
+	InkStory story;
+	if (infile.ends_with(".inkb")) {
+		story = InkStory(infile);
+	} else {
+		InkCompiler compiler;
+		story = compiler.compile_file(infile);
+	}
+	
 	while (true) {
 		while (story.can_continue()) {
 			std::string result = story.continue_story();

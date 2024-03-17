@@ -14,7 +14,6 @@ enum class ObjectId {
 	Divert,
 	Interpolation,
 	Conditional,
-	Switch,
 	Sequence,
 	ChoiceTextMix,
 	Tag,
@@ -34,18 +33,21 @@ public:
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) = 0;
 
-	virtual bool will_choice_take_fallback(InkStoryState& story_state) { return false; }
 	virtual bool stop_before_this() const { return false; }
 	
-	std::vector<std::uint8_t> get_serialized_bytes() const;
-	//InkObject* populate_from_bytes() const;
+	ByteVec get_serialized_bytes() const;
+
+	static InkObject* create_from_id(ObjectId id);
 };
 
 template <>
 struct Serializer<InkObject*> {
-	std::vector<std::uint8_t> operator()(const InkObject* object) noexcept {
-		return object->get_serialized_bytes();
-	}
+	ByteVec operator()(const InkObject* value);
+};
+
+template <>
+struct Deserializer<InkObject*> {
+	InkObject* operator()(const ByteVec& bytes, std::size_t& index);
 };
 
 #include "runtime/ink_story_data.h"

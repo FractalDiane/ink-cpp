@@ -22,9 +22,28 @@ private:
 	std::optional<ExpressionParser::Variant> divert_to_function_knot(const std::string& knot);
 
 public:
+	explicit InkStory() : story_data{nullptr} {}
 	explicit InkStory(InkStoryData* data) : story_data{data} { init_story(); }
 	explicit InkStory(const std::string& inkb_file);
 	~InkStory() { delete story_data; }
+
+	InkStory(const InkStory& from) = delete;
+	InkStory& operator=(const InkStory& other) = delete;
+
+	InkStory(InkStory&& from) : story_data{from.story_data} {
+		from.story_data = nullptr;
+		init_story();
+	}
+
+	InkStory& operator=(InkStory&& other) {
+		if (this != &other) {
+			story_data = other.story_data;
+			other.story_data = nullptr;
+			init_story();
+		}
+
+		return *this;
+	}
 
 	InkStoryData* get_story_data() const { return story_data; }
 	void print_info() const;

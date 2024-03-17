@@ -17,5 +17,8 @@ public:
 
 	virtual ObjectId get_id() const override { return ObjectId::GlobalVariable; }
 
+	virtual ByteVec to_bytes() const override;
+	virtual InkObject* populate_from_bytes(const ByteVec& bytes, std::size_t& index) override;
+
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 };
