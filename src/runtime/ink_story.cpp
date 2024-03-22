@@ -329,11 +329,18 @@ std::string InkStory::continue_story() {
 			eval_result.divert_type = DivertType::ToKnot;
 		}
 
+		// FIXME: i don't understand why this suddenly segfaults on gcc
 		std::vector<GatherPoint> no_current_stitch;
+		std::vector<GatherPoint>& other_gathers = story_state.current_stitch ? story_state.current_stitch->gather_points : no_current_stitch;
+#if _MSC_VER
 		auto joint_gather_view = std::vector{
 			std::views::all(story_state.current_knot().knot->gather_points),
-			std::views::all(story_state.current_stitch ? story_state.current_stitch->gather_points : no_current_stitch),
+			std::views::all(other_gathers),
 		} | std::views::join;
+#else
+		std::vector<GatherPoint> joint_gather_view = story_state.current_knot().knot->gather_points;
+		joint_gather_view.insert(joint_gather_view.end(), other_gathers.begin(), other_gathers.end());
+#endif
 
 		for (GatherPoint& gather_point : joint_gather_view) {
 			if (!changed_knot && !gather_point.in_choice && gather_point.index == story_state.index_in_knot() && !gather_point.name.empty()) {
