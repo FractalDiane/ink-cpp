@@ -1,6 +1,7 @@
 #pragma once
 
 #include "objects/ink_object.h"
+#include "ink_utils.h"
 
 #include <string>
 
@@ -21,7 +22,7 @@ public:
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 
-	virtual bool stop_before_this() const override { return true; }
+	virtual bool stop_before_this() const override { return !strip_string_edges(text_contents, true, true, true).empty(); }
 
 	void append_text(const std::string& text);
 	const std::string& get_text_contents() const { return text_contents; }

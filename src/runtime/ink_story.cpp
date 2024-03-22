@@ -323,6 +323,10 @@ std::string InkStory::continue_story() {
 			eval_result.arguments.clear();
 			eval_result.divert_type = DivertType::ToKnot;
 		} else if (eval_result.divert_type == DivertType::FromTunnel) {
+			while (story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+				story_state.current_knots_stack.pop_back();
+			}
+			
 			story_state.current_knots_stack.pop_back();
 			++story_state.current_knot().index;
 			changed_knot = true;

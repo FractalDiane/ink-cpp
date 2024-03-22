@@ -14,9 +14,9 @@ protected:\
 	InkCompiler compiler;\
 }
 
-//#define STORY(path) InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path)
-#define STORY(path) compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" path, std::string(INKCPP_WORKING_DIR "/tests/" path) + "b");\
-	InkStory story{std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"};
+#define STORY(path) InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path)
+//#define STORY(path) compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" path, std::string(INKCPP_WORKING_DIR "/tests/" path) + "b");\
+//	InkStory story{std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"};
 
 #define EXPECT_TEXT(...) {\
 		std::vector<std::string> seq = {__VA_ARGS__};\
@@ -1282,6 +1282,28 @@ TEST_F(TunnelTests, TunnelReturnTargets) {
 			EXPECT_TEXT("Suddenly, there is a white light all around you. Fingers lift an eyepiece from your forehead. 'You lost, buddy. Out of the chair.'");
 		}
 	}
+}
+
+TEST_F(TunnelTests, AdvancedTunnelStructure) {
+	STORY("19_tunnels/19d_advanced_tunnel_structure.ink");
+	EXPECT_TEXT("You approach Jim confidently. He doesn't look like he's in the best mood.", "\"What do you need, cadet?\"");
+	EXPECT_CHOICES("Ask about the warp nacelles", "Ask about the shield generators", "Stop talking");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("\"Don't worry about the warp nacelles. They're fine.\"");
+	EXPECT_CHOICES("Ask about the shield generators", "Stop talking");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT(
+		"\"What's with all these questions?\" Jim demands, suddenly.",
+		"\"Uh...\" you reply. \"Just wanted to make sure everything's good, is all.\"",
+		"\"You're far too anxious, cadet,\" he admonishes you. \"Learn to trust people to do their jobs.\"",
+	);
+
+	EXPECT_CHOICES("Stop talking");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("Jim leaves to tend to more important matters.");
 }
 #pragma endregion
 
