@@ -13,6 +13,12 @@ enum class WeaveContentType {
 	GatherPoint,
 };
 
+enum class DivertType {
+	ToKnot,
+	ToTunnel,
+	FromTunnel,
+};
+
 //typedef std::uint32_t Uuid;
 
 struct InkWeaveContent {

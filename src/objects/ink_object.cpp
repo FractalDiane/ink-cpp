@@ -63,7 +63,7 @@ InkObject* InkObject::create_from_id(ObjectId id) {
 		} break;
 
 		case ObjectId::Divert: {
-			return new InkObjectDivert({}, {});
+			return new InkObjectDivert({}, {}, DivertType::ToKnot);
 		} break;
 
 		case ObjectId::Interpolation: {

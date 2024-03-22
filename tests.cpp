@@ -7,7 +7,6 @@
 #include "expression_parser/expression_parser.h"
 
 #include <utility>
-#include <any>
 #include <cstdlib>
 
 #define FIXTURE(name) class name : public testing::Test {\
@@ -70,6 +69,7 @@ FIXTURE(ConditionalBlockTests);
 FIXTURE(TemporaryVariableTests);
 FIXTURE(FunctionTests);
 FIXTURE(ConstantTests);
+FIXTURE(TunnelTests);
 
 FIXTURE(MiscellaneousTests);
 
@@ -1213,6 +1213,75 @@ TEST_F(ConstantTests, LogicWithConstants) {
 	);
 
 	EXPECT_EQ(std::get<std::int64_t>(story.get_variable("suitcase_location").value()), -1);
+}
+#pragma endregion
+
+#pragma region TunnelTests
+TEST_F(TunnelTests, BasicTunnels) {
+	STORY("19_tunnels/19a_basic_tunnels.ink");
+	EXPECT_TEXT("The train rattled and rolled. When suddenly...");
+	EXPECT_CHOICES("\"Monsieur!\"");
+	story.choose_choice_index(0);
+	EXPECT_TEXT(
+		"\"Monsieur!\" I declared with sudden horror. \"I have just realised. We have crossed the international date line!\"",
+		"Monsieur Fogg barely lifted an eyebrow. \"I have adjusted for it.\"",
+	);
+
+	EXPECT_CHOICES("I mopped the sweat from my brow", "I nodded, becalmed", "I cursed, under my breath");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I mopped the sweat from my brow. A relief!", "Our journey continued. On the return trip, all was well, when suddenly...!");
+
+	EXPECT_CHOICES("\"Monsieur!\"");
+	story.choose_choice_index(0);
+	EXPECT_TEXT(
+		"\"Monsieur!\" I declared with sudden horror. \"I have just realised. We have crossed the international date line!\"",
+		"Monsieur Fogg barely lifted an eyebrow. \"I have adjusted for it.\"",
+	);
+
+	EXPECT_CHOICES("I nodded, becalmed", "I cursed, under my breath");
+	story.choose_choice_index(1);
+	EXPECT_TEXT("I cursed, under my breath. Once again, I had been belittled!", "Our journey continued. Again.");
+}
+
+TEST_F(TunnelTests, NestedTunnels) {
+	STORY("19_tunnels/19b_nested_tunnels.ink");
+	EXPECT_TEXT("The dark grass is soft under your feet.");
+	EXPECT_CHOICES("Sleep");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT(
+		"You lie down and try to close your eyes.",
+		"A goblin attacks you!",
+		"Irritated, you yell \"GO AWAY!\" at the top of your lungs.",
+		"The goblin dejectedly slinks away, defeated.",
+		"Then it is time to sleep.",
+	);
+
+	EXPECT_TEXT("You have a dream about snakes. Is this a shameless callback to test case 15F? Absolutely.");
+	EXPECT_TEXT("You wake as the sun rises.");
+	EXPECT_CHOICES("Eat something", "Make a move");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT(
+		"You pull out a submarine sandwich from your coat pocket and take a bite.",
+		"How exactly did it fit in there? You don't know nor care.",
+		"It is time to move on.",
+	);
+}
+
+TEST_F(TunnelTests, TunnelReturnTargets) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("19_tunnels/19c_tunnel_return_targets.ink");
+		story.set_variable("stamina", 5 + (1 - i));
+
+		EXPECT_TEXT("You're walking down the street, but then the street turns into a cliff and you fall off it.");
+		EXPECT_TEXT("YOU TOOK 5 DAMAGE");
+		if (i == 0) {
+			EXPECT_TEXT("You're still alive! You pick yourself up and walk on.");
+		} else {
+			EXPECT_TEXT("Suddenly, there is a white light all around you. Fingers lift an eyepiece from your forehead. 'You lost, buddy. Out of the chair.'");
+		}
+	}
 }
 #pragma endregion
 

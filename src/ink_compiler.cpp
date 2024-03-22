@@ -602,10 +602,12 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						}
 					}
 
+					in_choice_line = false;
 					choice_options.push_back(choice_stack.back());
 					choice_stack.pop_back();
 				}
 
+				in_choice_line = false;
 				result_object = new InkObjectChoice(choice_options);
 				--choice_level;
 			} else {
@@ -901,14 +903,45 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 							}
 						}
 					}
+
+					bool to_tunnel = false;
+
+					// HACK: do this a way better way
+					std::size_t index = token_index + 2;
+					while (index < all_tokens.size() && all_tokens[index].token == InkToken::Text
+						&& strip_string_edges(all_tokens[index].text_contents, true, true, true).empty()) {
+						++index;
+					}
+
+					--index;
+
+					if (next_token_is(all_tokens, index, InkToken::Arrow)) {
+						to_tunnel = true;
+						just_added_divert_to_tunnel = true;
+					}
 					
-					result_object = new InkObjectDivert(target_tokens, arguments);
+					result_object = new InkObjectDivert(target_tokens, arguments, to_tunnel ? DivertType::ToTunnel : DivertType::ToKnot);
 					++token_index;
 				} else {
 					result_object = new InkObjectText("->");
 				}
+			} else if (next_token_is(all_tokens, token_index, InkToken::Arrow)) {
+				std::vector<ExpressionParser::Token*> target_tokens;
+				if (next_token_is(all_tokens, token_index + 1, InkToken::Text)) {
+					std::string target = strip_string_edges(all_tokens[token_index + 2].text_contents, true, true, true);
+					try {
+						target_tokens = ExpressionParser::tokenize_and_shunt_expression(target, {}, declared_functions);
+					} catch (...) {
+						throw std::runtime_error("Illegal value in tunnel divert target");
+					}
+				}
+
+				result_object = new InkObjectDivert(target_tokens, {}, DivertType::FromTunnel);
+				++token_index;
 			} else if (in_choice_line) {
 				result_object = new InkObjectDivert();
+			} else if (just_added_divert_to_tunnel) {
+				just_added_divert_to_tunnel = false;
 			} else {
 				throw std::runtime_error("Expected divert target");
 			}

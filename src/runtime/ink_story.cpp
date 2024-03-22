@@ -53,68 +53,8 @@ InkStory::InkStory(const std::string& inkb_file) {
 		throw std::runtime_error(std::format("The version of this .inkb file ({}) does not match the version of your ink-cpp runtime ({}); please recompile your ink file", version, INKB_VERSION));
 	}
 
-	//Deserializer<std::uint16_t> dssize;
-	//std::uint16_t knots_count = dssize(bytes, index);
-
-	//Uuid uuid = 0;
-
 	VectorDeserializer<Knot> dsknots;
 	std::vector<Knot> knots = dsknots(bytes, index);
-
-	/*for (Knot& this_knot : knots) {
-		this_knot.uuid = uuid++;
-		for (Stitch& stitch : this_knot.stitches) {
-			stitch.uuid = uuid++;
-			for (GatherPoint& gather_point : stitch.gather_points) {
-				gather_point.uuid = uuid++;
-			}
-		}
-
-		for (GatherPoint& gather_point : this_knot.gather_points) {
-			gather_point.uuid = uuid++;
-		}
-	}*/
-
-	//std::vector<Knot> knots;
-	//Deserializer<Knot> dsknot;
-	/*for (std::size_t i = 0; i < knots_count; ++i) {
-		Knot this_knot = dsknot(bytes, index);
-
-		std::uint16_t this_knot_size = dssize(bytes, index);
-		std::vector<InkObject*> this_knot_contents;
-		this_knot_contents.reserve(this_knot_size);
-
-		for (std::size_t j = 0; j < this_knot_size; ++j) {
-			InkObject* this_object = nullptr;
-			ObjectId this_id = static_cast<ObjectId>(bytes[index++]);
-
-			this_object = InkObject::create_from_id(this_id);
-			if (!this_object) {
-				throw std::runtime_error(std::format("Found an inkb object with an unknown object ID ({})", static_cast<std::uint8_t>(this_id)));
-			}
-
-			this_object->populate_from_bytes(bytes, index);
-			this_knot_contents.push_back(this_object);
-		}
-	
-		this_knot.objects = this_knot_contents;
-
-		this_knot.uuid = uuid++;
-		for (Stitch& stitch : this_knot.stitches) {
-			stitch.uuid = uuid++;
-			for (GatherPoint& gather_point : stitch.gather_points) {
-				gather_point.uuid = uuid++;
-			}
-		}
-
-		for (GatherPoint& gather_point : this_knot.gather_points) {
-			gather_point.uuid = uuid++;
-		}
-
-		knots.push_back(this_knot);
-	}*/
-
-	
 
 	story_data = new InkStoryData(knots);
 	VectorDeserializer<std::string> dsorder;
@@ -309,11 +249,16 @@ std::string InkStory::continue_story() {
 			if (target.found_any) {
 				switch (target.result_type) {
 					case WeaveContentType::Knot: {
-						while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
-							story_state.current_knots_stack.pop_back();
-						}
+						if (eval_result.divert_type == DivertType::ToTunnel) {
+							story_state.current_knots_stack.push_back({target.knot, 0});
+						} else {
+							while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+								story_state.current_knots_stack.pop_back();
+							}
 
-						story_state.current_knots_stack.back() = {target.knot, 0};
+							story_state.current_knots_stack.back() = {target.knot, 0};
+						}
+						
 						story_state.story_tracking.increment_visit_count(target.knot);
 
 						for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
@@ -327,11 +272,15 @@ std::string InkStory::continue_story() {
 					case WeaveContentType::Stitch: {
 						story_state.current_stitch = target.stitch;
 
-						while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
-							story_state.current_knots_stack.pop_back();
-						}
+						if (eval_result.divert_type == DivertType::ToTunnel) {
+							story_state.current_knots_stack.push_back({target.knot, target.stitch->index});
+						} else {
+							while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+								story_state.current_knots_stack.pop_back();
+							}
 
-						story_state.current_knots_stack.back() = {target.knot, target.stitch->index};
+							story_state.current_knots_stack.back() = {target.knot, target.stitch->index};
+						}
 						
 						story_state.story_tracking.increment_visit_count(target.knot ? target.knot : story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 						if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
@@ -347,11 +296,16 @@ std::string InkStory::continue_story() {
 
 					case WeaveContentType::GatherPoint:
 					default: {
-						while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
-							story_state.current_knots_stack.pop_back();
-						}
+						if (eval_result.divert_type == DivertType::ToTunnel) {
+							story_state.current_knots_stack.push_back({target.knot, target.gather_point->index});
+						} else {
+							while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+								story_state.current_knots_stack.pop_back();
+							}
 
-						story_state.current_knots_stack.back() = {target.knot, target.gather_point->index};
+							story_state.current_knots_stack.back() = {target.knot, target.gather_point->index};
+						}
+						
 						if (target.stitch) {
 							story_state.current_stitch = target.stitch;
 						}
@@ -367,6 +321,12 @@ std::string InkStory::continue_story() {
 
 			eval_result.target_knot.clear();
 			eval_result.arguments.clear();
+			eval_result.divert_type = DivertType::ToKnot;
+		} else if (eval_result.divert_type == DivertType::FromTunnel) {
+			story_state.current_knots_stack.pop_back();
+			++story_state.current_knot().index;
+			changed_knot = true;
+			eval_result.divert_type = DivertType::ToKnot;
 		}
 
 		std::vector<GatherPoint> no_current_stitch;
@@ -384,13 +344,7 @@ std::string InkStory::continue_story() {
 
 		if (!changed_knot) {
 			++story_state.current_knot().index;
-		}/* else if (story_state.current_knot().knot == story_state.current_nonchoice_knot().knot) {
-			for (const std::string& var : knot_before_object->local_variables) {
-				story_state.variables.erase(var);
-			}
-
-			knot_before_object->local_variables.clear();
-		}*/
+		}
 
 		if (story_state.index_in_knot() >= story_state.current_knot_size() && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
 			story_state.current_knots_stack.pop_back();

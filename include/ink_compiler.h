@@ -61,6 +61,7 @@ private:
 	bool at_line_start = true;
 	bool past_choice_initial_braces = false;
 	bool in_parens = false;
+	bool just_added_divert_to_tunnel = false;
 
 	std::size_t choice_level = 0;
 	std::vector<InkChoiceEntry> choice_stack;
