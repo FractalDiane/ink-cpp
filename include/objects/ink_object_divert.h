@@ -13,7 +13,7 @@ private:
 	DivertType type;
 
 public:
-	InkObjectDivert() : target_knot{}, arguments{} {}
+	InkObjectDivert() : target_knot{}, arguments{}, type{DivertType::ToKnot} {}
 	InkObjectDivert(const std::vector<ExpressionParser::Token*>& target, const std::vector<std::vector<ExpressionParser::Token*>>& arguments, DivertType type) : target_knot{target}, arguments{arguments}, type{type} {}
 	
 	virtual ~InkObjectDivert() override;
