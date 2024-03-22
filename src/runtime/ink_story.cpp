@@ -332,7 +332,7 @@ std::string InkStory::continue_story() {
 		// FIXME: i don't understand why this suddenly segfaults on gcc
 		std::vector<GatherPoint> no_current_stitch;
 		std::vector<GatherPoint>& other_gathers = story_state.current_stitch ? story_state.current_stitch->gather_points : no_current_stitch;
-#if _MSC_VER
+#ifdef _MSC_VER
 		auto joint_gather_view = std::vector{
 			std::views::all(story_state.current_knot().knot->gather_points),
 			std::views::all(other_gathers),
