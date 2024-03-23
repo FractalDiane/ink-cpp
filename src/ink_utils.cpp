@@ -36,10 +36,8 @@ std::string strip_string_edges(const std::string& string, bool left, bool right,
 }
 
 std::string remove_duplicate_spaces(const std::string& string) noexcept {
-	std::string result = string;
-	auto end = std::unique(result.begin(), result.end(), [](char lhs, char rhs) { return lhs <= 32 && rhs <= 32; });
-	result.erase(end, result.end());
-	return result;
+	static std::regex spaces_regex{R"(\s{2,})"};
+	return std::regex_replace(string, spaces_regex, " ");
 }
 
 std::string join_string_vector(const std::vector<std::string>& vector, std::string&& delimiter) noexcept {

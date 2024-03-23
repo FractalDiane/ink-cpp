@@ -1305,6 +1305,11 @@ TEST_F(TunnelTests, AdvancedTunnelStructure) {
 
 	EXPECT_TEXT("Jim leaves to tend to more important matters.");
 }
+
+TEST_F(TunnelTests, InlineTunnels) {
+	STORY("19_tunnels/19e_inline_tunnels.ink");
+	EXPECT_TEXT("C++ uses manual memory management, so there is no automatic freeing of allocated memory. Cow. Many people understandably find this annoying.");
+}
 #pragma endregion
 
 #pragma region Miscellaneous Tests
