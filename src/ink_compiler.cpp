@@ -880,7 +880,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		} break;
 
 		case InkToken::Arrow: {
-			if (next_token_is(all_tokens, token_index, InkToken::Text)) {
+			if (next_token_is(all_tokens, token_index, InkToken::Text) && !strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true).empty()) {
 				if (!in_parens) {
 					std::string target = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
 					std::vector<ExpressionParser::Token*> target_tokens;
