@@ -1427,7 +1427,10 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 						if (operand.from_variable && op->data.unary_type == TokenOperator::UnaryType::Postfix) {
 							TokenNumberInt add{op->data.type == Type::Increment ? 1 : -1};
 							Token* new_result = result->operator_plus(&add);
-							variables[static_cast<TokenVariable*>(stack.top())->data] = new_result->get_variant_value(variables, constants, variable_redirects).value();
+
+							const std::string& var_name = static_cast<TokenVariable*>(stack.top())->data;
+							variables[var_name] = new_result->get_variant_value(variables, constants, variable_redirects).value();
+							variables.flag_variable_changed(var_name);
 							delete operand.token;
 							delete new_result;
 						}
@@ -1467,7 +1470,12 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 						}
 
 						if (std::optional<Variant> var_value = value->get_variant_value(variables, constants, variable_redirects); var_value.has_value()) {
-							variables[var_name] = var_value.value();
+							bool changed = var_value != variables[var_name];
+							variables[var_name] = *var_value;
+
+							if (changed) {
+								variables.flag_variable_changed(var_name);
+							}
 						} else {
 							throw;
 						}

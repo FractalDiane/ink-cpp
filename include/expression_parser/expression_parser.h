@@ -9,6 +9,8 @@
 #include <functional>
 #include <variant>
 #include <optional>
+#include <algorithm>
+#include <initializer_list>
 
 #include "serialization.h"
 #include "uuid.h"
@@ -81,8 +83,75 @@ Token* variant_to_token(const Variant& variant);
 
 using TokenStack = Stack<Token*>;
 
+using VariableObserverFunc = std::function<void(const std::string&, const Variant&)>;
+
+class VariableMap {
+private:
+	std::unordered_map<std::string, Variant> map;
+	std::unordered_map<std::string, std::vector<VariableObserverFunc>> observers;
+
+public:
+	VariableMap() : map{}, observers{} {}
+	VariableMap(std::initializer_list<std::pair<const std::string, Variant>> init) : map{init}, observers{} {}
+
+	auto& operator[](const std::string& key) { return map[key]; }
+	const auto& at(const std::string& key) const { return map.at(key); }
+	auto find(const std::string& key) const { return map.find(key); }
+	auto begin() const { return map.begin(); }
+	auto end() const { return map.end(); }
+	auto insert(std::pair<std::string, Variant>&& what) { return map.insert(what); }
+
+	template <typename It>
+	void insert(It first, It last) { return map.insert(first, last); }
+
+	////////////////////////////////////////////////////////////////////////////////////////////////
+
+	void observe_variable(const std::string& variable_name, VariableObserverFunc callback) {
+		if (auto entry = observers.find(variable_name); entry != observers.end()) {
+			entry->second.push_back(callback);
+		} else {
+			observers[variable_name] = {callback};
+		}
+	}
+
+	void unobserve_variable(const std::string& variable_name) {
+		if (auto entry = observers.find(variable_name); entry != observers.end()) {
+			entry->second.clear();
+		}
+	}
+
+	void unobserve_variable(VariableObserverFunc observer) {
+		for (auto& entry : observers) {
+			std::erase_if(entry.second,
+				[observer](VariableObserverFunc this_observer) { return this_observer.target<VariableObserverFunc>() == observer.target<VariableObserverFunc>(); }
+			);
+		}
+	}
+
+	void unobserve_variable(const std::string& variable_name, VariableObserverFunc observer) {
+		if (auto entry = observers.find(variable_name); entry != observers.end()) {
+			std::erase_if(entry->second,
+				[observer](VariableObserverFunc this_observer) { return this_observer.target<VariableObserverFunc>() == observer.target<VariableObserverFunc>(); }
+			);
+		}
+	}
+
+	void flag_variable_changed(const std::string& variable) {
+		execute_variable_observers(variable, map[variable]);
+	}
+
+private:
+	void execute_variable_observers(const std::string& variable, const ExpressionParser::Variant& new_value) {
+		if (auto entry = observers.find(variable); entry != observers.end()) {
+			for (VariableObserverFunc& observer : entry->second) {
+				(observer)(variable, new_value);
+			}
+		}
+	}
+};
+
 typedef std::unordered_map<Uuid, std::unordered_map<std::string, std::string>> RedirectMap;
-typedef std::unordered_map<std::string, Variant> VariableMap;
+//typedef std::unordered_map<std::string, Variant> VariableMap;
 using PtrTokenFunc = std::function<Token*(TokenStack&, VariableMap&, const VariableMap&, RedirectMap&)>;
 typedef std::unordered_map<std::string, PtrTokenFunc> FunctionMap;
 
