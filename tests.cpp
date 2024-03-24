@@ -70,6 +70,7 @@ FIXTURE(TemporaryVariableTests);
 FIXTURE(FunctionTests);
 FIXTURE(ConstantTests);
 FIXTURE(TunnelTests);
+FIXTURE(ThreadTests);
 
 FIXTURE(MiscellaneousTests);
 
@@ -1312,10 +1313,38 @@ TEST_F(TunnelTests, InlineTunnels) {
 }
 #pragma endregion
 
+#pragma region ThreadTests
+TEST_F(ThreadTests, BasicThreads) {
+	STORY("20_threads/20a_basic_threads.ink");
+	EXPECT_TEXT(
+		"I had a headache; threading is hard to get your head around.",
+		"It was a tense moment for Monty and me.",
+		"We continued to walk down the dusty road.",
+	);
+
+	EXPECT_CHOICES("\"What did you have for lunch today?\"", "\"Nice weather, we're having,\"", "Continue walking");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT("\"Nice weather, we're having,\" I said.", "\"I've seen better,\" he replied.", "Before long, we arrived at his house.");
+}
+#pragma endregion
+
 #pragma region Miscellaneous Tests
 TEST_F(MiscellaneousTests, UnicodeSupport) {
 	STORY("miscellaneous/unicode_support.ink");
 	EXPECT_TEXT("Well, it's £1 for a five-minute argument, but it'll be £8 for a course of ten.");
+}
+
+static int observer_test = 0;
+
+TEST_F(MiscellaneousTests, VariableObservation) {
+	STORY("miscellaneous/variable_observation.ink");
+	story.observe_variable("test", [](const std::string& var_name, const ExpressionParser::Variant& new_value) { ++observer_test; });
+	EXPECT_EQ(observer_test, 0);
+	
+	story.continue_story();
+	story.continue_story();
+	EXPECT_EQ(observer_test, 1);
 }
 #pragma endregion
 

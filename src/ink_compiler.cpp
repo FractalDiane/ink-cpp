@@ -380,15 +380,21 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 		case InkToken::Equal: {
 			if (at_line_start) {
-				if (next_token_is_sequence(all_tokens, token_index, {InkToken::Equal, InkToken::Equal})) {
-					if (next_token_is(all_tokens, token_index + 2, InkToken::Text) || next_token_is(all_tokens, token_index + 2, InkToken::KeywordFunction)) {
+				//if (next_token_is_sequence(all_tokens, token_index, {InkToken::Equal, InkToken::Equal})) {
+				if (next_token_is(all_tokens, token_index, InkToken::Equal)) {
+					++token_index;
+					if (next_token_is(all_tokens, token_index, InkToken::Equal)) {
+						++token_index;
+					}
+
+					if (next_token_is(all_tokens, token_index, InkToken::Text) || next_token_is(all_tokens, token_index, InkToken::KeywordFunction)) {
 						Knot new_knot;
-						if (all_tokens[token_index + 3].token == InkToken::KeywordFunction) {
+						if (all_tokens[token_index + 1].token == InkToken::KeywordFunction) {
 							new_knot.is_function = true;
 							++token_index;
 						}
 
-						std::string new_knot_name = strip_string_edges(all_tokens[token_index + 3].text_contents, true, true, true);
+						std::string new_knot_name = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
 						if (new_knot.is_function) {
 							declared_functions.insert(new_knot_name);
 						}
@@ -397,8 +403,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						new_knot.uuid = Uuid(current_uuid++);
 						new_knot.type = WeaveContentType::Knot;
 
-						if (next_token_is(all_tokens, token_index + 3, InkToken::LeftParen)) {
-							token_index += 5;
+						if (next_token_is(all_tokens, token_index + 1, InkToken::LeftParen)) {
+							token_index += 3;
 
 							std::string all_params;
 							all_params.reserve(50);

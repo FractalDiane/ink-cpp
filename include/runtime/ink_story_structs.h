@@ -15,8 +15,11 @@ enum class WeaveContentType {
 
 enum class DivertType {
 	ToKnot,
+
 	ToTunnel,
 	FromTunnel,
+
+	Thread,
 };
 
 //typedef std::uint32_t Uuid;

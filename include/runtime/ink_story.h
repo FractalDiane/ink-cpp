@@ -9,17 +9,25 @@
 #include <unordered_map>
 #include <vector>
 #include <string_view>
+#include <functional>
 
 class InkStory {
+public:
+	using VariableObserverFunc = std::function<void(const std::string&, const ExpressionParser::Variant&)>;
+
 private:
 	InkStoryData* story_data;
 	InkStoryState story_state;
+
+	std::unordered_map<std::string, std::vector<VariableObserverFunc>> variable_observers;
 
 private:
 	void init_story();
 	void bind_ink_functions();
 
 	std::optional<ExpressionParser::Variant> divert_to_function_knot(const std::string& knot);
+
+	void execute_variable_observers(const std::string& variable, const ExpressionParser::Variant& new_value);
 
 public:
 	explicit InkStory() : story_data{nullptr} {}
@@ -59,4 +67,9 @@ public:
 
 	std::optional<ExpressionParser::Variant> get_variable(const std::string& name) const;
 	void set_variable(const std::string& name, ExpressionParser::Variant&& value);
+
+	void observe_variable(const std::string& variable_name, VariableObserverFunc callback);
+	void unobserve_variable(const std::string& variable_name);
+	void unobserve_variable(VariableObserverFunc observer);
+	void unobserve_variable(const std::string& variable_name, VariableObserverFunc observer);
 };

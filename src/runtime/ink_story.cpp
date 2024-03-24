@@ -202,6 +202,14 @@ std::optional<ExpressionParser::Variant> InkStory::divert_to_function_knot(const
 	return eval_result.return_value.has_value() || eval_result.result.empty() ? eval_result.return_value : eval_result.result;
 }
 
+void InkStory::execute_variable_observers(const std::string& variable, const ExpressionParser::Variant& new_value) {
+	if (auto entry = variable_observers.find(variable); entry != variable_observers.end()) {
+		for (VariableObserverFunc& observer : entry->second) {
+			(observer)(variable, new_value);
+		}
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool InkStory::can_continue() {
@@ -418,4 +426,34 @@ std::optional<ExpressionParser::Variant> InkStory::get_variable(const std::strin
 
 void InkStory::set_variable(const std::string& name, ExpressionParser::Variant&& value) {
 	story_state.variables[name] = value;
+}
+
+void InkStory::observe_variable(const std::string& variable_name, VariableObserverFunc callback) {
+	if (auto entry = variable_observers.find(variable_name); entry != variable_observers.end()) {
+		entry->second.push_back(callback);
+	} else {
+		variable_observers[variable_name] = {callback};
+	}
+}
+
+void InkStory::unobserve_variable(const std::string& variable_name) {
+	if (auto entry = variable_observers.find(variable_name); entry != variable_observers.end()) {
+		entry->second.clear();
+	}
+}
+
+void InkStory::unobserve_variable(VariableObserverFunc observer) {
+	for (auto& entry : variable_observers) {
+		std::erase_if(entry.second,
+			[observer](VariableObserverFunc this_observer) { return this_observer.target<VariableObserverFunc>() == observer.target<VariableObserverFunc>(); }
+		);
+	}
+}
+
+void InkStory::unobserve_variable(const std::string& variable_name, VariableObserverFunc observer) {
+	if (auto entry = variable_observers.find(variable_name); entry != variable_observers.end()) {
+		std::erase_if(entry->second,
+			[observer](VariableObserverFunc this_observer) { return this_observer.target<VariableObserverFunc>() == observer.target<VariableObserverFunc>(); }
+		);
+	}
 }
