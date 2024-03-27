@@ -114,6 +114,61 @@ std::string InkObjectChoice::to_string() const {
 	return result;
 }
 
+InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& story_state) {
+	GetChoicesResult choices_result;
+
+	choices_result.fallback_index = SIZE_MAX;
+	for (std::size_t i = 0; i < choices.size(); ++i) {
+		InkChoiceEntry& this_choice = choices[i];
+		if (this_choice.sticky || !story_state.has_choice_been_taken(this, i)) {
+			if (!this_choice.fallback) {
+				bool include_choice = true;
+				const std::vector<std::vector<ExpressionParser::Token*>>& conditions = this_choice.conditions;
+				if (!conditions.empty()) {
+					for (const std::vector<ExpressionParser::Token*>& condition : conditions) {
+						ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
+						ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(condition, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
+						if (!ExpressionParser::as_bool(result)) {
+							include_choice = false;
+							break;
+						}
+					}
+				}
+
+				if (include_choice) {
+					story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
+				
+					InkStoryEvalResult choice_eval_result;
+					choice_eval_result.result.reserve(50);
+					for (InkObject* object : this_choice.text) {
+						if (object->get_id() == ObjectId::ChoiceTextMix && static_cast<InkObjectChoiceTextMix*>(object)->is_end()) {
+							break;
+						}
+						
+						object->execute(story_state, choice_eval_result);
+					}
+
+					choices_result.choices.push_back({
+						strip_string_edges(choice_eval_result.result, true, true, true),
+						&this_choice,
+						i,
+					});
+
+					story_state.current_choices.push_back(choices_result.choices.back().text);
+				}
+			} else {
+				choices_result.fallback_index = i;
+			}
+		}
+	}
+
+	for (std::size_t i = 0; i < choices_result.choices.size(); ++i) {
+		story_state.current_choices.pop_back();
+	}
+
+	return choices_result;
+}
+
 void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	if (story_state.selected_choice == SIZE_MAX || story_state.current_choices.empty()) {
 		story_state.in_choice_text = true;
@@ -122,45 +177,11 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.current_choice_indices.clear();
 		story_state.selected_choice = SIZE_MAX;
 
-		std::size_t fallback_index = SIZE_MAX;
-		for (std::size_t i = 0; i < choices.size(); ++i) {
-			InkChoiceEntry& this_choice = choices[i];
-			if (this_choice.sticky || !story_state.has_choice_been_taken(this, i)) {
-				if (!this_choice.fallback) {
-					bool include_choice = true;
-					const std::vector<std::vector<ExpressionParser::Token*>>& conditions = this_choice.conditions;
-					if (!conditions.empty()) {
-						for (const std::vector<ExpressionParser::Token*>& condition : conditions) {
-							ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
-							ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(condition, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
-							if (!ExpressionParser::as_bool(result)) {
-								include_choice = false;
-								break;
-							}
-						}
-					}
-
-					if (include_choice) {
-						story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
-					
-						InkStoryEvalResult choice_eval_result;
-						choice_eval_result.result.reserve(50);
-						for (InkObject* object : this_choice.text) {
-							if (object->get_id() == ObjectId::ChoiceTextMix && static_cast<InkObjectChoiceTextMix*>(object)->is_end()) {
-								break;
-							}
-							
-							object->execute(story_state, choice_eval_result);
-						}
-
-						story_state.current_choices.push_back(strip_string_edges(choice_eval_result.result, true, true, true));
-						story_state.current_choice_structs.push_back(&this_choice);
-						story_state.current_choice_indices.push_back(i);
-					}
-				} else {
-					fallback_index = i;
-				}
-			}
+		GetChoicesResult final_choices = get_choices(story_state);
+		for (const ChoiceComponents& choice : final_choices.choices) {
+			story_state.current_choices.push_back(choice.text);
+			story_state.current_choice_structs.push_back(choice.entry);
+			story_state.current_choice_indices.push_back(choice.index);
 		}
 
 		story_state.in_choice_text = false;
@@ -168,8 +189,8 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 
 		if (!story_state.current_choices.empty()) {
 			story_state.at_choice = true;
-		} else if (fallback_index != SIZE_MAX) {
-			story_state.current_knots_stack.push_back({&(choices[fallback_index].result), 0});
+		} else if (final_choices.fallback_index != SIZE_MAX) {
+			story_state.current_knots_stack.push_back({&(choices[final_choices.fallback_index].result), 0});
 			story_state.at_choice = false;
 		}
 	} else {

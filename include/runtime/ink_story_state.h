@@ -24,6 +24,12 @@ struct InkStoryState {
 		std::size_t index;
 	};
 
+	struct ThreadEntry {
+		InkObject* choice = nullptr;
+		Knot* knot = nullptr;
+		std::size_t index = 0;
+	};
+
 	std::mt19937 rng{std::random_device()()};
 
 	std::vector<KnotStatus> current_knots_stack;
@@ -40,6 +46,8 @@ struct InkStoryState {
 	ChoiceMixPosition choice_mix_position = ChoiceMixPosition::Before;
 	std::unordered_map<Knot*, std::unordered_map<class InkObject*, std::unordered_set<std::size_t>>> choices_taken;
 	std::size_t total_choices_taken = 0;
+
+	std::vector<ThreadEntry> current_thread_entries;
 
 	/*std::unordered_map<Knot*, std::size_t> knot_visit_counts;
 	std::unordered_map<Stitch*, std::size_t> stitch_visit_counts;

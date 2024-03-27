@@ -18,6 +18,18 @@ struct InkChoiceEntry {
 };
 
 class InkObjectChoice : public InkObject {
+public:
+	struct ChoiceComponents {
+		std::string text;
+		InkChoiceEntry* entry;
+		std::size_t index = 0;
+	};
+
+	struct GetChoicesResult {
+		std::vector<ChoiceComponents> choices;
+		std::size_t fallback_index = 0;
+	};
+
 private:
 	std::vector<InkChoiceEntry> choices;
 
@@ -32,6 +44,8 @@ public:
 
 	virtual ByteVec to_bytes() const override;
 	virtual InkObject* populate_from_bytes(const ByteVec& bytes, std::size_t& index) override;
+
+	GetChoicesResult get_choices(InkStoryState& story_state);
 };
 
 template <>

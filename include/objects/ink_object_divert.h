@@ -25,4 +25,6 @@ public:
 	virtual bool has_any_contents(bool strip) const override { return !target_knot.empty() || type == DivertType::FromTunnel; }
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
+
+	std::string get_target(InkStoryState& story_state, const ExpressionParser::VariableMap& story_constants);
 };

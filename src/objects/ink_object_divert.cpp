@@ -47,16 +47,22 @@ InkObject* InkObjectDivert::populate_from_bytes(const ByteVec& bytes, std::size_
 	return this;
 }
 
-void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
-
+std::string InkObjectDivert::get_target(InkStoryState& story_state, const ExpressionParser::VariableMap& story_constants) {
 	std::string target;	
+
 	std::optional<ExpressionParser::Variant> target_var = ExpressionParser::execute_expression_tokens(target_knot, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
 	if (target_var.has_value() && target_var->index() == ExpressionParser::Variant_String) {
 		target = ExpressionParser::as_string(*target_var);
 	} else if (!target_knot.empty()) {
 		target = target_knot[0]->to_printable_string();
 	}
+
+	return target;
+}
+
+void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
+	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
+	std::string target = get_target(story_state, story_constants);
 
 	if (target == "END" || target == "DONE") {
 		story_state.should_end_story = true;

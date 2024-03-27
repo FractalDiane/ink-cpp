@@ -885,7 +885,8 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			}
 		} break;
 
-		case InkToken::Arrow: {
+		case InkToken::Arrow:
+		case InkToken::BackArrow: {
 			if (next_token_is(all_tokens, token_index, InkToken::Text) && !strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true).empty()) {
 				if (!in_parens) {
 					std::string target = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
@@ -920,24 +921,29 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						}
 					}
 
-					bool to_tunnel = false;
+					if (token.token == InkToken::Arrow) {
+						bool to_tunnel = false;
 
-					// HACK: do this a way better way
-					std::size_t index = token_index + 2;
-					while (index < all_tokens.size() && all_tokens[index].token == InkToken::Text
-						&& strip_string_edges(all_tokens[index].text_contents, true, true, true).empty()) {
-						++index;
+						// HACK: do this a way better way
+						std::size_t index = token_index + 2;
+						while (index < all_tokens.size() && all_tokens[index].token == InkToken::Text
+							&& strip_string_edges(all_tokens[index].text_contents, true, true, true).empty()) {
+							++index;
+						}
+
+						--index;
+
+						if (next_token_is(all_tokens, index, InkToken::Arrow)) {
+							to_tunnel = true;
+							just_added_divert_to_tunnel = true;
+						}
+						
+						result_object = new InkObjectDivert(target_tokens, arguments, to_tunnel ? DivertType::ToTunnel : DivertType::ToKnot);
+						++token_index;
+					} else {
+						result_object = new InkObjectDivert(target_tokens, arguments, DivertType::Thread);
+						++token_index;
 					}
-
-					--index;
-
-					if (next_token_is(all_tokens, index, InkToken::Arrow)) {
-						to_tunnel = true;
-						just_added_divert_to_tunnel = true;
-					}
-					
-					result_object = new InkObjectDivert(target_tokens, arguments, to_tunnel ? DivertType::ToTunnel : DivertType::ToKnot);
-					++token_index;
 				} else {
 					result_object = new InkObjectText("->");
 				}

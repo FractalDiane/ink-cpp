@@ -21,6 +21,7 @@ private:
 	void bind_ink_functions();
 
 	std::optional<ExpressionParser::Variant> divert_to_function_knot(const std::string& knot);
+	InkStoryEvalResult run_thread(const GetContentResult& target);
 
 public:
 	explicit InkStory() : story_data{nullptr} {}
