@@ -1,5 +1,7 @@
 #include "objects/ink_object.h"
 
+#include "expression_parser/expression_parser.h"
+
 ByteVec Serializer<InkObject*>::operator()(const InkObject* value) {
 	return value->get_serialized_bytes();
 }
@@ -18,6 +20,12 @@ std::string InkObject::to_string() const {
 
 std::vector<std::uint8_t> InkObject::to_bytes() const {
 	return {};
+}
+
+InkObject::~InkObject() {
+	for (ExpressionParser::Token* token : function_return_values) {
+		delete token;
+	}
 }
 
 InkObject* InkObject::populate_from_bytes(const std::vector<std::uint8_t>& bytes, std::size_t& index) {
@@ -98,4 +106,49 @@ InkObject* InkObject::create_from_id(ObjectId id) {
 			throw std::runtime_error(std::format("Tried to create an inkb object with an unknown object ID ({})", static_cast<std::uint8_t>(id)));
 		} break;
 	}
+}
+
+bool InkObject::prepare_next_function_call(ExpressionParser::ShuntedExpression& expression, InkStoryState& story_state, InkStoryEvalResult& eval_result) {
+	bool preparation_finished = expression.function_eval_index >= expression.tokens.size();
+	if (expression.function_eval_index == SIZE_MAX) {
+		expression.function_eval_index = 0;
+		preparation_finished = false;
+	} else if (!preparation_finished) {
+		if (eval_result.return_value.has_value()) {
+			ExpressionParser::Token* value = ExpressionParser::variant_to_token(*eval_result.return_value);
+			function_return_values.push_back(value);
+			expression.function_prepared_tokens[expression.function_eval_index] = value;
+			for (std::size_t i = 0; i < eval_result.argument_count; ++i) {
+				expression.function_prepared_tokens.erase(expression.function_prepared_tokens.begin() + (expression.function_eval_index - 1));
+				--expression.function_eval_index;
+			}
+		}
+
+		++expression.function_eval_index;
+	}
+	
+	if (!preparation_finished) {
+		eval_result.arguments.clear();
+		for (std::size_t i = expression.function_eval_index; i < expression.function_prepared_tokens.size(); ++i) {
+			ExpressionParser::Token* this_token = expression.function_prepared_tokens[i];
+			if (this_token->get_type() == ExpressionParser::TokenType::Function) {
+				auto* token_func = static_cast<ExpressionParser::TokenFunction*>(this_token);
+				if (token_func->data.fetch_method == ExpressionParser::TokenFunction::FetchMethod::StoryKnot) {
+					eval_result.target_knot = token_func->data.name;
+					eval_result.divert_type = DivertType::Function;
+					expression.function_eval_index = i;
+					return true;
+				}
+			} else {
+				ExpressionParser::RedirectMap dummy;
+				if (std::optional<ExpressionParser::Variant> value = this_token->get_variant_value({}, {}, dummy); value.has_value()) {
+					eval_result.arguments.push_back(*value);
+				}
+			}
+		}
+
+		eval_result.arguments.clear();
+	}
+	
+	return false;
 }

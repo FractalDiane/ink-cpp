@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include <cmath>
 #include <stack>
+#include <stdexcept>
 
 using namespace ExpressionParser;
 
@@ -164,7 +165,8 @@ Token* Deserializer<Token*>::operator()(const ByteVec& bytes, std::size_t& index
 
 		case TokenType::Function: {
 			std::string name = dsstring(bytes, index);
-			TokenFunction* result_func = new TokenFunction(name, nullptr, true);
+			auto fetch_method = static_cast<TokenFunction::FetchMethod>(ds8(bytes, index));
+			TokenFunction* result_func = new TokenFunction(name, nullptr, fetch_method);
 			result = result_func;
 		} break;
 
@@ -913,22 +915,35 @@ ByteVec TokenVariable::to_serialized_bytes() const {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Token* TokenFunction::call(TokenStack& stack, const FunctionMap& functions, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) {
-	if (!data.defer_fetch) {
-		return (data.function)(stack, variables, constants, variable_redirects);
-	} else {
-		if (auto builtin = BuiltinFunctions.find(data.name); builtin != BuiltinFunctions.end()) {
+	switch (data.fetch_method) {
+		case TokenFunction::FetchMethod::Immediate: {
+			return (data.function)(stack, variables, constants, variable_redirects);
+		} break;
+
+		case TokenFunction::FetchMethod::Defer: {
+			if (auto builtin = BuiltinFunctions.find(data.name); builtin != BuiltinFunctions.end()) {
 			return (builtin->second)(stack, variables, constants, variable_redirects);
-		} else if (auto function = functions.find(data.name); function != functions.end()) {
-			return (function->second)(stack, variables, constants, variable_redirects);
-		} else {
-			throw;
-		}
+			} else if (auto function = functions.find(data.name); function != functions.end()) {
+				return (function->second)(stack, variables, constants, variable_redirects);
+			} else {
+				throw std::runtime_error("Tried calling an unknown function");
+			}
+		} break;
+
+		case TokenFunction::FetchMethod::StoryKnot:
+		default: {
+			throw std::runtime_error("Story knot function was not prepared before evaluating expression");
+		} break;
 	}
 }
 
 ByteVec TokenFunction::to_serialized_bytes() const {
 	Serializer<std::string> s;
-	return s(data.name);
+	Serializer<std::uint8_t> s8;
+	ByteVec result = s(data.name);
+	ByteVec result2 = s8(static_cast<std::uint8_t>(data.fetch_method));
+	result.push_back(result2[0]);
+	return result2;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -949,7 +964,7 @@ ByteVec TokenParenComma::to_serialized_bytes() const {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void try_add_word(std::vector<Token*>& result, std::string& word, const FunctionMap& functions, bool in_knot_name, const std::unordered_set<std::string>& deferred_functions) {
+void try_add_word(const std::string& expression, std::size_t index, std::vector<Token*>& result, std::string& word, const FunctionMap& functions, bool in_knot_name, const std::unordered_set<std::string>& deferred_functions) {
 	if (!word.empty()) {
 		bool found_result = false;
 		if (auto keyword = OperatorKeywords.find(word); keyword != OperatorKeywords.end()) {
@@ -962,13 +977,13 @@ void try_add_word(std::vector<Token*>& result, std::string& word, const Function
 			result.push_back(new TokenBoolean(false));
 			found_result = true;
 		} else if (auto builtin_func = BuiltinFunctions.find(word); builtin_func != BuiltinFunctions.end()) {
-			result.push_back(new TokenFunction(builtin_func->first, builtin_func->second, false));
+			result.push_back(new TokenFunction(builtin_func->first, builtin_func->second, TokenFunction::FetchMethod::Immediate));
 			found_result = true;
 		} else if (auto func = functions.find(word); func != functions.end()) {
-			result.push_back(new TokenFunction(func->first, func->second, false));
+			result.push_back(new TokenFunction(func->first, func->second, TokenFunction::FetchMethod::Immediate));
 			found_result = true;
 		} else if (deferred_functions.contains(word)) {
-			result.push_back(new TokenFunction(word, nullptr, true));
+			result.push_back(new TokenFunction(word, nullptr, TokenFunction::FetchMethod::Defer));
 			found_result = true;
 		} else if (word == "temp") {
 			result.push_back(new TokenKeyword(TokenKeyword::Type::Temp));
@@ -995,6 +1010,14 @@ void try_add_word(std::vector<Token*>& result, std::string& word, const Function
 				}
 			}
 		}
+
+		if (!found_result) {
+			if (index < expression.length() - 1 && expression[index] == '(') {
+				result.push_back(new TokenFunction(word, nullptr, TokenFunction::FetchMethod::StoryKnot));
+				found_result = true;
+			}
+		}
+		
 
 		if (!found_result) {
 			if (in_knot_name) {
@@ -1030,7 +1053,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				case '+': {
 					if (next_char(expression, index) == '+') {
 						if (next_char(expression, index + 1) <= 32) {
-							try_add_word(result, current_word, functions, in_knot_name, deferred_functions);
+							try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
 							result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Postfix));
 						} else {
 							result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Prefix));
@@ -1045,7 +1068,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				case '-': {
 					if (next_char(expression, index) == '-') {
 						if (next_char(expression, index + 1) <= 32) {
-							try_add_word(result, current_word, functions, in_knot_name, deferred_functions);
+							try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
 							result.push_back(new TokenOperator(TokenOperator::Type::Decrement, UnaryType::Postfix));
 						} else {
 							result.push_back(new TokenOperator(TokenOperator::Type::Decrement, UnaryType::Prefix));
@@ -1149,17 +1172,17 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 
 				case '(': {
-					try_add_word(result, current_word, functions, in_knot_name, deferred_functions);
+					try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
 					result.push_back(new TokenParenComma(TokenParenComma::Type::LeftParen));
 				} break;
 
 				case ')': {
-					try_add_word(result, current_word, functions, in_knot_name, deferred_functions);
+					try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
 					result.push_back(new TokenParenComma(TokenParenComma::Type::RightParen));
 				} break;
 
 				case ',': {
-					try_add_word(result, current_word, functions, in_knot_name, deferred_functions);
+					try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
 					result.push_back(new TokenParenComma(TokenParenComma::Type::Comma));
 				} break;
 
@@ -1173,7 +1196,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 					if (this_char > 32) {
 						current_word.push_back(this_char);
 					} else {
-						try_add_word(result, current_word, functions, in_knot_name, deferred_functions);
+						try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
 					}
 				} break;
 			}
@@ -1190,7 +1213,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 		++index;
 	}
 
-	try_add_word(result, current_word, functions, in_knot_name, deferred_functions);
+	try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
 
 	return result;
 }
@@ -1547,7 +1570,7 @@ std::optional<Variant> ExpressionParser::execute_expression(const std::string& e
 	return result;
 }
 
-std::vector<Token*> ExpressionParser::tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
+ShuntedExpression ExpressionParser::tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
 	std::unordered_set<Token*> tokens_shunted;
 	std::vector<Token*> tokenized = tokenize_expression(expression, functions, deferred_functions);
 	std::vector<Token*> shunted = shunt(tokenized, tokens_shunted);
@@ -1558,5 +1581,5 @@ std::vector<Token*> ExpressionParser::tokenize_and_shunt_expression(const std::s
 		}
 	}
 
-	return shunted;
+	return ShuntedExpression(shunted);
 }

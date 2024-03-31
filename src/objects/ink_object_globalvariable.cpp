@@ -11,7 +11,7 @@ ByteVec InkObjectGlobalVariable::to_bytes() const {
 	
 	ByteVec result = sstring(name);
 	ByteVec result2 = s8(static_cast<std::uint8_t>(is_constant));
-	ByteVec result3 = vstoken(value_shunted_tokens);
+	ByteVec result3 = vstoken(value_shunted_tokens.tokens);
 
 	result.insert(result.end(), result2.begin(), result2.end());
 	result.insert(result.end(), result3.begin(), result3.end());
@@ -26,19 +26,17 @@ InkObject* InkObjectGlobalVariable::populate_from_bytes(const ByteVec& bytes, st
 
 	name = dsstring(bytes, index);
 	is_constant = static_cast<bool>(ds8(bytes, index));
-	value_shunted_tokens = vdstoken(bytes, index);
+	value_shunted_tokens = ExpressionParser::ShuntedExpression(vdstoken(bytes, index));
 
 	return this;
 }
 
 InkObjectGlobalVariable::~InkObjectGlobalVariable() {
-	for (ExpressionParser::Token* token : value_shunted_tokens) {
-		delete token;
-	}
+	value_shunted_tokens.dealloc_tokens();
 }
 
 void InkObjectGlobalVariable::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
 	auto& map = is_constant ? story_state.constants : story_state.variables;
-	map[name] = ExpressionParser::execute_expression_tokens(value_shunted_tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
+	map[name] = ExpressionParser::execute_expression_tokens(value_shunted_tokens.tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
 }

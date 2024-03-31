@@ -462,15 +462,21 @@ struct TokenParenComma : public Token {
 };
 
 struct TokenFunction : public Token {
+	enum FetchMethod {
+		Immediate,
+		Defer,
+		StoryKnot,
+	};
+
 	struct Data {
 		std::string name;
 		PtrTokenFunc function;
-		bool defer_fetch;
+		FetchMethod fetch_method;
 	} data;
 
-	TokenFunction(const std::string& name, PtrTokenFunc function, bool defer_fetch) : data{name, function, defer_fetch} {}
+	TokenFunction(const std::string& name, PtrTokenFunc function, FetchMethod fetch_method) : data{name, function, fetch_method} {}
 
-	virtual Token* copy() const override { return new TokenFunction(data.name, data.function, data.defer_fetch); }
+	virtual Token* copy() const override { return new TokenFunction(data.name, data.function, data.fetch_method); }
 
 	virtual TokenType get_type() const override { return TokenType::Function; }
 
@@ -495,6 +501,22 @@ struct TokenVariable : public Token {
 	virtual ByteVec to_serialized_bytes() const override;
 };
 
+struct ShuntedExpression {
+	std::vector<Token*> tokens;
+	std::vector<Token*> function_prepared_tokens;
+	std::size_t function_eval_index;
+
+	ShuntedExpression() : tokens{}, function_prepared_tokens{}, function_eval_index{SIZE_MAX} {}
+	explicit ShuntedExpression(const std::vector<Token*>& tokens) : tokens{tokens}, function_prepared_tokens{tokens}, function_eval_index{SIZE_MAX} {}
+	explicit ShuntedExpression(std::vector<Token*>&& tokens) : tokens{tokens}, function_prepared_tokens{tokens}, function_eval_index{SIZE_MAX} {}
+
+	void dealloc_tokens() {
+		for (Token* token : tokens) {
+			delete token;
+		}
+	}
+};
+
 std::vector<Token*> tokenize_expression(const std::string& expression, const FunctionMap& all_functions, const std::unordered_set<std::string>& deferred_functions);
 
 std::vector<Token*> shunt(const std::vector<Token*>& infix, std::unordered_set<Token*>& tokens_shunted);
@@ -504,6 +526,6 @@ std::optional<Variant> execute_expression_tokens(const std::vector<Token*>& toke
 std::optional<Variant> execute_expression(const std::string& expression, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
 std::optional<Variant> execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
 
-std::vector<Token*> tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions);
+ShuntedExpression tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions);
 
 }

@@ -1186,6 +1186,11 @@ TEST_F(FunctionTests, FunctionParamsByRef) {
 		);
 	}
 }
+
+TEST_F(FunctionTests, ComplexFunctions) {
+	STORY("17_functions/17h_complex_functions.ink");
+	story.continue_story();
+}
 #pragma endregion
 
 #pragma region ConstantTests

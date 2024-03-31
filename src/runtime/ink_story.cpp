@@ -136,7 +136,7 @@ void InkStory::bind_ink_functions() {
 
 	#undef EXP_FUNC
 
-	for (auto& knot : story_data->knots) {
+	/*for (auto& knot : story_data->knots) {
 		if (knot.second.is_function) {
 			story_state.functions.insert({knot.first,
 			[knot, this](TokenStack& stack, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) -> ExpressionParser::Token* {
@@ -164,10 +164,10 @@ void InkStory::bind_ink_functions() {
 				}
 			}});
 		}
-	}
+	}*/
 }
 
-std::optional<ExpressionParser::Variant> InkStory::divert_to_function_knot(const std::string& knot) {
+/*std::optional<ExpressionParser::Variant> InkStory::divert_to_function_knot(const std::string& knot) {
 	Knot* knot_ptr = &story_data->knots[knot];
 
 	std::size_t initial_knot_count = story_state.current_knots_stack.size();
@@ -242,7 +242,7 @@ InkStoryEvalResult InkStory::run_thread(const GetContentResult& target) {
 	}
 
 	return eval_result;
-}
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -289,80 +289,101 @@ std::string InkStory::continue_story() {
 			}
 
 			if (target.found_any) {
-				if (eval_result.divert_type != DivertType::Thread) {
-					switch (target.result_type) {
-						case WeaveContentType::Knot: {
-							if (eval_result.divert_type == DivertType::ToTunnel) {
-								story_state.current_knots_stack.push_back({target.knot, 0});
-							} else {
-								while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
-									story_state.current_knots_stack.pop_back();
+				switch (eval_result.divert_type) {
+					case DivertType::ToKnot:
+					case DivertType::ToTunnel: {
+						switch (target.result_type) {
+							case WeaveContentType::Knot: {
+								if (eval_result.divert_type == DivertType::ToTunnel) {
+									story_state.current_knots_stack.push_back({target.knot, 0});
+								} else {
+									while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+										story_state.current_knots_stack.pop_back();
+									}
+
+									story_state.current_knots_stack.back() = {target.knot, 0};
+								}
+								
+								story_state.story_tracking.increment_visit_count(target.knot);
+
+								for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
+									story_state.variables[target.knot->parameters[i].name] = eval_result.arguments[i];
 								}
 
-								story_state.current_knots_stack.back() = {target.knot, 0};
-							}
-							
-							story_state.story_tracking.increment_visit_count(target.knot);
-
-							for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
-								story_state.variables[target.knot->parameters[i].name] = eval_result.arguments[i];
-							}
-
-							story_state.current_stitch = nullptr;
-							changed_knot = true;
-						} break;
-
-						case WeaveContentType::Stitch: {
-							story_state.current_stitch = target.stitch;
-
-							if (eval_result.divert_type == DivertType::ToTunnel) {
-								story_state.current_knots_stack.push_back({target.knot, target.stitch->index});
-							} else {
-								while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
-									story_state.current_knots_stack.pop_back();
-								}
-
-								story_state.current_knots_stack.back() = {target.knot, target.stitch->index};
-							}
-							
-							story_state.story_tracking.increment_visit_count(target.knot ? target.knot : story_state.current_nonchoice_knot().knot, story_state.current_stitch);
-							if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
+								story_state.current_stitch = nullptr;
 								changed_knot = true;
-							}
+							} break;
 
-							for (std::size_t i = 0; i < target.stitch->parameters.size(); ++i) {
-								story_state.variables[target.stitch->parameters[i].name] = eval_result.arguments[i];
-							}
-
-							story_state.just_diverted_to_non_knot = true;
-						} break;
-
-						case WeaveContentType::GatherPoint:
-						default: {
-							if (eval_result.divert_type == DivertType::ToTunnel) {
-								story_state.current_knots_stack.push_back({target.knot, target.gather_point->index});
-							} else {
-								while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
-									story_state.current_knots_stack.pop_back();
-								}
-
-								story_state.current_knots_stack.back() = {target.knot, target.gather_point->index};
-							}
-							
-							if (target.stitch) {
+							case WeaveContentType::Stitch: {
 								story_state.current_stitch = target.stitch;
-							}
 
-							if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
-								changed_knot = true;
-							}
+								if (eval_result.divert_type == DivertType::ToTunnel) {
+									story_state.current_knots_stack.push_back({target.knot, target.stitch->index});
+								} else {
+									while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+										story_state.current_knots_stack.pop_back();
+									}
 
-							story_state.just_diverted_to_non_knot = true;
-						} break;
-					}
-				} else {
-					InkStoryEvalResult thread_result = run_thread(target);
-					eval_result.result += thread_result.result;
+									story_state.current_knots_stack.back() = {target.knot, target.stitch->index};
+								}
+								
+								story_state.story_tracking.increment_visit_count(target.knot ? target.knot : story_state.current_nonchoice_knot().knot, story_state.current_stitch);
+								if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
+									changed_knot = true;
+								}
+
+								for (std::size_t i = 0; i < target.stitch->parameters.size(); ++i) {
+									story_state.variables[target.stitch->parameters[i].name] = eval_result.arguments[i];
+								}
+
+								story_state.just_diverted_to_non_knot = true;
+							} break;
+
+							case WeaveContentType::GatherPoint:
+							default: {
+								if (eval_result.divert_type == DivertType::ToTunnel) {
+									story_state.current_knots_stack.push_back({target.knot, target.gather_point->index});
+								} else {
+									while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+										story_state.current_knots_stack.pop_back();
+									}
+
+									story_state.current_knots_stack.back() = {target.knot, target.gather_point->index};
+								}
+								
+								if (target.stitch) {
+									story_state.current_stitch = target.stitch;
+								}
+
+								if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
+									changed_knot = true;
+								}
+
+								story_state.just_diverted_to_non_knot = true;
+							} break;
+						}
+					} break;
+
+					case DivertType::Function: {
+						story_state.current_knots_stack.push_back({target.knot, 0});
+						story_state.story_tracking.increment_visit_count(target.knot);
+
+						for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
+							story_state.variables[target.knot->parameters[i].name] = eval_result.arguments[i];
+						}
+
+						//eval_result.reached_newline = false;
+						changed_knot = true;
+					} break;
+
+					case DivertType::Thread: {
+						//InkStoryEvalResult thread_result = run_thread(target);
+						//eval_result.result += thread_result.result;
+					} break;
+
+					default: {
+						throw;
+					} break;
 				}
 			}
 
@@ -378,6 +399,14 @@ std::string InkStory::continue_story() {
 			++story_state.current_knot().index;
 			changed_knot = true;
 			eval_result.divert_type = DivertType::ToKnot;
+		}
+
+		if (eval_result.reached_function_return) {
+			eval_result.argument_count = story_state.current_knots_stack.back().knot->parameters.size();
+			story_state.current_knots_stack.pop_back();
+
+			eval_result.reached_function_return = false;
+			changed_knot = true;
 		}
 
 		std::vector<GatherPoint> no_current_stitch;

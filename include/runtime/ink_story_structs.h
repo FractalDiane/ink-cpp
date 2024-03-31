@@ -19,10 +19,10 @@ enum class DivertType {
 	ToTunnel,
 	FromTunnel,
 
+	Function,
+
 	Thread,
 };
-
-//typedef std::uint32_t Uuid;
 
 struct InkWeaveContent {
 	std::string name;

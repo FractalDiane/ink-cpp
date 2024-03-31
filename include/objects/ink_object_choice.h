@@ -10,7 +10,7 @@ struct InkChoiceEntry {
 	std::vector<InkObject*> text;
 	Knot result;
 	bool sticky = false;
-	std::vector<std::vector<ExpressionParser::Token*>> conditions;
+	std::vector<ExpressionParser::ShuntedExpression> conditions;
 	bool fallback = false;
 	bool immediately_continue_to_result = false;
 
@@ -28,6 +28,7 @@ public:
 	struct GetChoicesResult {
 		std::vector<ChoiceComponents> choices;
 		std::size_t fallback_index = 0;
+		bool need_to_prepare_function = false;
 	};
 
 private:
@@ -45,7 +46,7 @@ public:
 	virtual ByteVec to_bytes() const override;
 	virtual InkObject* populate_from_bytes(const ByteVec& bytes, std::size_t& index) override;
 
-	GetChoicesResult get_choices(InkStoryState& story_state);
+	GetChoicesResult get_choices(InkStoryState& story_state, InkStoryEvalResult& eval_result);
 };
 
 template <>

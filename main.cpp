@@ -24,8 +24,8 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "15_conditional_blocks"
-#define TEST_FILE "15j_modified_shuffles"
+#define TEST_FOLDER "17_functions"
+#define TEST_FILE "17h_complex_functions"
 
 int main(int argc, char* argv[]) {
 	//if (argc > 1) {
@@ -44,14 +44,33 @@ int main(int argc, char* argv[]) {
 		}
 	}*/
 
-	InkCompiler compiler;
+	/*InkCompiler compiler;
 	[[maybe_unused]]
 	InkStory story1 = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
 
 	InkCompiler compiler2;
 	compiler2.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink", INKCPP_WORKING_DIR "/" TEST_FILE ".inkb");
 	[[maybe_unused]]
-	InkStory story2{INKCPP_WORKING_DIR "/" TEST_FILE ".inkb"};
+	InkStory story2{INKCPP_WORKING_DIR "/" TEST_FILE ".inkb"};*/
 
-	std::cout << "test" << std::endl;
+	//std::cout << "test" << std::endl;
+
+	InkCompiler compiler;
+	InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	print_vector(story.get_current_choices());
 }

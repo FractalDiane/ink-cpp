@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "serialization.h"
 #include "runtime/ink_story_state.h"
@@ -22,8 +23,11 @@ enum class ObjectId {
 };
 
 class InkObject {
+protected:
+	std::vector<struct ExpressionParser::Token*> function_return_values;
+
 public:
-	virtual ~InkObject() = default;
+	virtual ~InkObject();
 
 	virtual std::string to_string() const;
 	virtual std::vector<std::uint8_t> to_bytes() const;
@@ -38,6 +42,9 @@ public:
 	ByteVec get_serialized_bytes() const;
 
 	static InkObject* create_from_id(ObjectId id);
+
+protected:
+	bool prepare_next_function_call(struct ExpressionParser::ShuntedExpression& expression, InkStoryState& story_state, InkStoryEvalResult& eval_result);
 };
 
 template <>

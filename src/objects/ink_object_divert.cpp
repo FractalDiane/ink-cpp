@@ -1,14 +1,10 @@
 #include "objects/ink_object_divert.h"
 
 InkObjectDivert::~InkObjectDivert() {
-	for (ExpressionParser::Token* token : target_knot) {
-		delete token;
-	}
+	target_knot.dealloc_tokens();
 
-	for (const std::vector<ExpressionParser::Token*>& argument : arguments) {
-		for (ExpressionParser::Token* token : argument) {
-			delete token;
-		}
+	for (ExpressionParser::ShuntedExpression& argument : arguments) {
+		argument.dealloc_tokens();
 	}
 }
 
@@ -17,14 +13,14 @@ std::vector<std::uint8_t> InkObjectDivert::to_bytes() const {
 	Serializer<std::uint8_t> s8;
 	Serializer<std::uint16_t> s16;
 	
-	ByteVec result = starget(target_knot);
+	ByteVec result = starget(target_knot.tokens);
 	ByteVec result2 = s8(static_cast<std::uint8_t>(type));
 
 	ByteVec result3 = s16(static_cast<std::uint16_t>(arguments.size()));
 	result.insert(result.end(), result2.begin(), result2.end());
 	result.insert(result.end(), result3.begin(), result3.end());
 	for (const auto& arg : arguments) {
-		ByteVec result_arg = starget(arg);
+		ByteVec result_arg = starget(arg.tokens);
 		result.insert(result.end(), result_arg.begin(), result_arg.end());
 	}
 
@@ -36,12 +32,12 @@ InkObject* InkObjectDivert::populate_from_bytes(const ByteVec& bytes, std::size_
 	Deserializer<std::uint16_t> ds16;
 	VectorDeserializer<ExpressionParser::Token*> dstarget;
 
-	target_knot = dstarget(bytes, index);
+	target_knot = ExpressionParser::ShuntedExpression(dstarget(bytes, index));
 	type = static_cast<DivertType>(ds8(bytes, index));
 
 	std::size_t arg_count = static_cast<std::size_t>(ds16(bytes, index));
 	for (std::size_t i = 0; i < arg_count; ++i) {
-		arguments.push_back(dstarget(bytes, index));
+		arguments.push_back(ExpressionParser::ShuntedExpression(dstarget(bytes, index)));
 	}
 
 	return this;
@@ -50,11 +46,11 @@ InkObject* InkObjectDivert::populate_from_bytes(const ByteVec& bytes, std::size_
 std::string InkObjectDivert::get_target(InkStoryState& story_state, const ExpressionParser::VariableMap& story_constants) {
 	std::string target;	
 
-	std::optional<ExpressionParser::Variant> target_var = ExpressionParser::execute_expression_tokens(target_knot, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
+	std::optional<ExpressionParser::Variant> target_var = ExpressionParser::execute_expression_tokens(target_knot.tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
 	if (target_var.has_value() && target_var->index() == ExpressionParser::Variant_String) {
 		target = ExpressionParser::as_string(*target_var);
-	} else if (!target_knot.empty()) {
-		target = target_knot[0]->to_printable_string();
+	} else if (!target_knot.tokens.empty()) {
+		target = target_knot.tokens[0]->to_printable_string();
 	}
 
 	return target;
@@ -69,8 +65,8 @@ void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 	} else {
 		eval_result.target_knot = target;
 		eval_result.divert_type = type;
-		for (const std::vector<ExpressionParser::Token*>& argument : arguments) {
-			ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(argument, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
+		for (const ExpressionParser::ShuntedExpression& argument : arguments) {
+			ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(argument.tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
 			eval_result.arguments.push_back(result);
 		}
 	}

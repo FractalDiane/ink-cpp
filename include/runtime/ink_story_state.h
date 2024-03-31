@@ -87,6 +87,7 @@ struct InkStoryEvalResult {
 	std::string target_knot;
 	DivertType divert_type = DivertType::ToKnot;
 	
+	std::size_t argument_count = 0;
 	bool reached_function_return = false;
 	std::optional<ExpressionParser::Variant> return_value;
 

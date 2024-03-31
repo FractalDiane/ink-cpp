@@ -31,7 +31,7 @@ ByteVec Serializer<InkChoiceEntry>::operator()(const InkChoiceEntry& entry) {
 	result.insert(result.end(), result7.begin(), result7.end());
 
 	for (const auto& vec : entry.conditions) {
-		ByteVec result_tokens = stokens(vec);
+		ByteVec result_tokens = stokens(vec.tokens);
 		result.insert(result.end(), result_tokens.begin(), result_tokens.end());
 	}
 
@@ -56,7 +56,7 @@ InkChoiceEntry Deserializer<InkChoiceEntry>::operator()(const ByteVec& bytes, st
 
 	std::uint16_t conditions_size = ds16(bytes, index);
 	for (std::uint16_t i = 0; i < conditions_size; ++i) {
-		result.conditions.push_back(dstokens(bytes, index));
+		result.conditions.push_back(ExpressionParser::ShuntedExpression(dstokens(bytes, index)));
 	}
 
 	return result;
@@ -83,10 +83,8 @@ InkObjectChoice::~InkObjectChoice() {
 			delete object;
 		}
 		
-		for (std::vector<ExpressionParser::Token*>& condition : choice.conditions) {
-			for (ExpressionParser::Token* token : condition) {
-				delete token;
-			}
+		for (ExpressionParser::ShuntedExpression& condition : choice.conditions) {
+			condition.dealloc_tokens();
 		}
 	}
 }
@@ -114,7 +112,7 @@ std::string InkObjectChoice::to_string() const {
 	return result;
 }
 
-InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& story_state) {
+InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	GetChoicesResult choices_result;
 
 	choices_result.fallback_index = SIZE_MAX;
@@ -123,11 +121,16 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 		if (this_choice.sticky || !story_state.has_choice_been_taken(this, i)) {
 			if (!this_choice.fallback) {
 				bool include_choice = true;
-				const std::vector<std::vector<ExpressionParser::Token*>>& conditions = this_choice.conditions;
+				std::vector<ExpressionParser::ShuntedExpression>& conditions = this_choice.conditions;
 				if (!conditions.empty()) {
-					for (const std::vector<ExpressionParser::Token*>& condition : conditions) {
+					for (ExpressionParser::ShuntedExpression& condition : conditions) {
+						if (prepare_next_function_call(condition, story_state, eval_result)) {
+							choices_result.need_to_prepare_function = true;
+							return choices_result;
+						}
+
 						ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
-						ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(condition, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
+						ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(condition.function_prepared_tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
 						if (!ExpressionParser::as_bool(result)) {
 							include_choice = false;
 							break;
@@ -177,7 +180,11 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.current_choice_indices.clear();
 		story_state.selected_choice = SIZE_MAX;
 
-		GetChoicesResult final_choices = get_choices(story_state);
+		GetChoicesResult final_choices = get_choices(story_state, eval_result);
+		if (final_choices.need_to_prepare_function) {
+			return;
+		}
+
 		for (const ChoiceComponents& choice : final_choices.choices) {
 			story_state.current_choices.push_back(choice.text);
 			story_state.current_choice_structs.push_back(choice.entry);
