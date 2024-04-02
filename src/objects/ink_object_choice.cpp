@@ -114,6 +114,7 @@ std::string InkObjectChoice::to_string() const {
 
 InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	GetChoicesResult choices_result;
+	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
 
 	choices_result.fallback_index = SIZE_MAX;
 	for (std::size_t i = 0; i < choices.size(); ++i) {
@@ -124,12 +125,11 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 				std::vector<ExpressionParser::ShuntedExpression>& conditions = this_choice.conditions;
 				if (!conditions.empty()) {
 					for (ExpressionParser::ShuntedExpression& condition : conditions) {
-						if (prepare_next_function_call(condition, story_state, eval_result)) {
+						if (prepare_next_function_call(condition, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects)) {
 							choices_result.need_to_prepare_function = true;
 							return choices_result;
 						}
 
-						ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
 						ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(condition.function_prepared_tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
 						if (!ExpressionParser::as_bool(result)) {
 							include_choice = false;

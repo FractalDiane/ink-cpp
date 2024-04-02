@@ -288,6 +288,7 @@ std::string InkStory::continue_story() {
 				}
 			}
 
+			bool function = false;
 			if (target.found_any) {
 				switch (eval_result.divert_type) {
 					case DivertType::ToKnot:
@@ -307,7 +308,7 @@ std::string InkStory::continue_story() {
 								story_state.story_tracking.increment_visit_count(target.knot);
 
 								for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
-									story_state.variables[target.knot->parameters[i].name] = eval_result.arguments[i];
+									story_state.variables[target.knot->parameters[i].name] = story_state.arguments_stack.back()[i];
 								}
 
 								story_state.current_stitch = nullptr;
@@ -333,7 +334,7 @@ std::string InkStory::continue_story() {
 								}
 
 								for (std::size_t i = 0; i < target.stitch->parameters.size(); ++i) {
-									story_state.variables[target.stitch->parameters[i].name] = eval_result.arguments[i];
+									story_state.variables[target.stitch->parameters[i].name] = story_state.arguments_stack.back()[i];
 								}
 
 								story_state.just_diverted_to_non_knot = true;
@@ -369,11 +370,12 @@ std::string InkStory::continue_story() {
 						story_state.story_tracking.increment_visit_count(target.knot);
 
 						for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
-							story_state.variables[target.knot->parameters[i].name] = eval_result.arguments[i];
+							story_state.variables[target.knot->parameters[i].name] = story_state.arguments_stack.back()[i];
 						}
 
-						//eval_result.reached_newline = false;
+						story_state.function_call_stack.push_back(target.knot);
 						changed_knot = true;
+						function = true;
 					} break;
 
 					case DivertType::Thread: {
@@ -388,7 +390,11 @@ std::string InkStory::continue_story() {
 			}
 
 			eval_result.target_knot.clear();
-			eval_result.arguments.clear();
+
+			if (!function && changed_knot) {
+				story_state.arguments_stack.pop_back();
+			}
+			
 			eval_result.divert_type = DivertType::ToKnot;
 		} else if (eval_result.divert_type == DivertType::FromTunnel) {
 			while (story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
@@ -402,10 +408,17 @@ std::string InkStory::continue_story() {
 		}
 
 		if (eval_result.reached_function_return) {
-			eval_result.argument_count = story_state.current_knots_stack.back().knot->parameters.size();
+			//eval_result.argument_count = story_state.current_knots_stack.back().knot->parameters.size();
+			while (story_state.current_knot().knot != story_state.function_call_stack.back()) {
+				story_state.current_knots_stack.pop_back();
+			}
+			
 			story_state.current_knots_stack.pop_back();
+			story_state.function_call_stack.pop_back();
+			story_state.arguments_stack.pop_back();
 
 			eval_result.reached_function_return = false;
+			eval_result.reached_newline = false;
 			changed_knot = true;
 		}
 
@@ -427,29 +440,40 @@ std::string InkStory::continue_story() {
 			++story_state.current_knot().index;
 		}
 
-		if (story_state.index_in_knot() >= story_state.current_knot_size() && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
-			story_state.current_knots_stack.pop_back();
+		if (story_state.index_in_knot() >= story_state.current_knot_size()) {
+			if (story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+				story_state.current_knots_stack.pop_back();
 
-			bool found_gather = false;
-			for (auto it = story_state.current_knots_stack.rbegin(); it != story_state.current_knots_stack.rend(); ++it) {
-				for (GatherPoint& gather_point : it->knot->gather_points) {
-					if (gather_point.level <= story_state.current_knots_stack.size() && gather_point.index > story_state.index_in_knot()) {
-						story_state.current_knot().index = gather_point.index;
-						story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, &gather_point);
-						found_gather = true;
+				bool found_gather = false;
+				for (auto it = story_state.current_knots_stack.rbegin(); it != story_state.current_knots_stack.rend(); ++it) {
+					for (GatherPoint& gather_point : it->knot->gather_points) {
+						if (gather_point.level <= story_state.current_knots_stack.size() && gather_point.index > story_state.index_in_knot()) {
+							story_state.current_knot().index = gather_point.index;
+							story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, &gather_point);
+							found_gather = true;
+							break;
+						}
+					}
+
+					if (found_gather) {
 						break;
 					}
 				}
 
 				if (found_gather) {
-					break;
+					eval_result.reached_newline = true;
+				} else {
+					++story_state.current_knot().index;
 				}
-			}
-
-			if (found_gather) {
-				eval_result.reached_newline = true;
-			} else {
-				++story_state.current_knot().index;
+			} else if (story_state.current_knot().knot->is_function) {
+				while (story_state.current_knot().knot != story_state.function_call_stack.back()) {
+					story_state.current_knots_stack.pop_back();
+				}
+				
+				story_state.current_knots_stack.pop_back();
+				story_state.function_call_stack.pop_back();
+				story_state.arguments_stack.pop_back();
+				eval_result.reached_newline = false;
 			}
 		}
 	}

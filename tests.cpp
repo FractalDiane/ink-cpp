@@ -1142,12 +1142,10 @@ TEST_F(FunctionTests, FunctionsInInterpolation) {
 
 TEST_F(FunctionTests, FunctionSideEffects) {
 	STORY("17_functions/17c_function_side_effects.ink");
-	EXPECT_TEXT(
-		"You have 10 HP.",
-		"A stray pebble flies in and hits you on the head. It deals no damage, but you are so startled that you fall over and land on your face.",
-		"You took 2 damage.",
-		"You now have 8 HP.",
-	);
+	EXPECT_TEXT("You have 10 HP.",);
+	EXPECT_TEXT("A stray pebble flies in and hits you on the head. It deals no damage, but you are so startled that you fall over and land on your face.");
+	EXPECT_TEXT("You took 2 damage.")
+	EXPECT_TEXT("You now have 8 HP.")
 }
 
 TEST_F(FunctionTests, InlineFunctionCall) {

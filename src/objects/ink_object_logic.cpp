@@ -23,7 +23,9 @@ InkObjectLogic::~InkObjectLogic() {
 void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	using namespace ExpressionParser;
 
-	if (prepare_next_function_call(contents_shunted_tokens, story_state, eval_result)) {
+	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
+
+	if (prepare_next_function_call(contents_shunted_tokens, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects)) {
 		return;
 	}
 
@@ -36,8 +38,6 @@ void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eva
 		}
 	}
 
-	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
-	
 	std::optional<ExpressionParser::Variant> result = ExpressionParser::execute_expression_tokens(contents_shunted_tokens.function_prepared_tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
 	if (is_return) {
 		//if (result.has_value()) {

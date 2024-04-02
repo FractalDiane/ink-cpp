@@ -6,6 +6,7 @@
 
 #include "serialization.h"
 #include "runtime/ink_story_state.h"
+#include "expression_parser/expression_parser.h"
 
 enum class ObjectId {
 	Text,
@@ -44,7 +45,8 @@ public:
 	static InkObject* create_from_id(ObjectId id);
 
 protected:
-	bool prepare_next_function_call(struct ExpressionParser::ShuntedExpression& expression, InkStoryState& story_state, InkStoryEvalResult& eval_result);
+	bool prepare_next_function_call(struct ExpressionParser::ShuntedExpression& expression, InkStoryState& story_state, InkStoryEvalResult& eval_result,
+									const ExpressionParser::VariableMap& variables, const ExpressionParser::VariableMap& constants, ExpressionParser::RedirectMap& redirects);
 };
 
 template <>

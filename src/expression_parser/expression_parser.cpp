@@ -165,8 +165,10 @@ Token* Deserializer<Token*>::operator()(const ByteVec& bytes, std::size_t& index
 
 		case TokenType::Function: {
 			std::string name = dsstring(bytes, index);
+			std::uint8_t args = ds8(bytes, index);
 			auto fetch_method = static_cast<TokenFunction::FetchMethod>(ds8(bytes, index));
 			TokenFunction* result_func = new TokenFunction(name, nullptr, fetch_method);
+			result_func->data.argument_count = args;
 			result = result_func;
 		} break;
 
@@ -941,7 +943,8 @@ ByteVec TokenFunction::to_serialized_bytes() const {
 	Serializer<std::string> s;
 	Serializer<std::uint8_t> s8;
 	ByteVec result = s(data.name);
-	ByteVec result2 = s8(static_cast<std::uint8_t>(data.fetch_method));
+	ByteVec result2 = s8(data.argument_count);
+	ByteVec result3 = s8(static_cast<std::uint8_t>(data.fetch_method));
 	result.push_back(result2[0]);
 	return result2;
 }
@@ -1214,6 +1217,38 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 	}
 
 	try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
+
+	std::vector<std::pair<TokenFunction*, std::uint8_t>> arg_count_stack;
+	for (Token* token : result) {
+		switch (token->get_type()) {
+			case TokenType::Function: {
+				arg_count_stack.emplace_back(static_cast<TokenFunction*>(token), static_cast<std::uint8_t>(0));
+			} break;
+
+			case TokenType::ParenComma: {
+				switch (static_cast<TokenParenComma*>(token)->data) {
+					case TokenParenComma::Type::Comma: {
+						++arg_count_stack.back().second;
+					} break;
+
+					case TokenParenComma::Type::RightParen: {
+						if (!arg_count_stack.empty()) {
+							arg_count_stack.back().first->data.argument_count = arg_count_stack.back().second;
+							arg_count_stack.pop_back();
+						}
+					} break;
+
+					default: break;
+				}
+			} break;
+
+			default: {
+				if (!arg_count_stack.empty() && arg_count_stack.back().second == 0) {
+					arg_count_stack.back().second = 1;
+				}
+			} break;
+		}
+	}
 
 	return result;
 }
