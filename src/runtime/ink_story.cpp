@@ -415,7 +415,7 @@ std::string InkStory::continue_story() {
 			
 			story_state.current_knots_stack.pop_back();
 			story_state.function_call_stack.pop_back();
-			story_state.arguments_stack.pop_back();
+			//story_state.arguments_stack.pop_back();
 
 			eval_result.reached_function_return = false;
 			eval_result.reached_newline = false;

@@ -44,9 +44,9 @@ InkObject* InkObjectDivert::populate_from_bytes(const ByteVec& bytes, std::size_
 }
 
 std::string InkObjectDivert::get_target(InkStoryState& story_state, const ExpressionParser::VariableMap& story_constants) {
-	std::string target;	
+	std::string target;
 
-	std::optional<ExpressionParser::Variant> target_var = ExpressionParser::execute_expression_tokens(target_knot.tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
+	ExpressionParser::ExecuteResult target_var = ExpressionParser::execute_expression_tokens(target_knot.tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
 	if (target_var.has_value() && target_var->index() == ExpressionParser::Variant_String) {
 		target = ExpressionParser::as_string(*target_var);
 	} else if (!target_knot.tokens.empty()) {
@@ -67,7 +67,7 @@ void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		eval_result.divert_type = type;
 		story_state.arguments_stack.push_back({});
 		std::vector<ExpressionParser::Variant>& args = story_state.arguments_stack.back();
-		for (const ExpressionParser::ShuntedExpression& argument : arguments) {
+		for (ExpressionParser::ShuntedExpression& argument : arguments) {
 			ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(argument.tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
 			args.push_back(result);
 		}

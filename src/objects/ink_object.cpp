@@ -106,35 +106,76 @@ InkObject* InkObject::create_from_id(ObjectId id) {
 	}
 }
 
-bool InkObject::prepare_next_function_call(ExpressionParser::ShuntedExpression& expression, InkStoryState& story_state, InkStoryEvalResult& eval_result, const ExpressionParser::VariableMap& variables, const ExpressionParser::VariableMap& constants, ExpressionParser::RedirectMap& redirects) {
-	if (expression.preparation_finished) {
-		return false;
-	}
+ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(ExpressionParser::ShuntedExpression& expression, InkStoryState& story_state, InkStoryEvalResult& eval_result, ExpressionParser::VariableMap& variables, const ExpressionParser::VariableMap& constants, ExpressionParser::RedirectMap& redirects) {
+	//if (expression.preparation_finished) {
+	//	return false;
+	//}
 
-	if (expression.function_eval_index == SIZE_MAX) {
-		expression.function_eval_index = 0;
-	} else {
-		std::uint8_t arg_count = static_cast<ExpressionParser::TokenFunction*>(expression.function_prepared_tokens[expression.function_eval_index])->data.argument_count;
-		if (eval_result.return_value.has_value()) {
-			ExpressionParser::Token* value = ExpressionParser::variant_to_token(*eval_result.return_value);
-			function_return_values.push_back(value);
-			expression.function_prepared_tokens[expression.function_eval_index] = value;
+	if (!expression.preparation_finished) {
+		if (expression.function_eval_index == SIZE_MAX) {
+			expression.function_eval_index = 0;
 		} else {
-			expression.function_prepared_tokens.erase(expression.function_prepared_tokens.begin() + expression.function_eval_index);
-		}
+			//std::uint8_t arg_count = static_cast<ExpressionParser::TokenFunction*>(expression.function_prepared_tokens[expression.function_eval_index])->data.argument_count;
+			if (eval_result.return_value.has_value()) {
+				ExpressionParser::Token* value = ExpressionParser::variant_to_token(*eval_result.return_value);
+				function_return_values.push_back(value);
+				expression.function_prepared_tokens[expression.function_eval_index] = value;
+			} else {
+				expression.function_prepared_tokens.erase(expression.function_prepared_tokens.begin() + expression.function_eval_index);
+			}
 
-		for (std::uint8_t i = 0; i < arg_count; ++i) {
-			expression.function_prepared_tokens.erase(expression.function_prepared_tokens.begin() + (expression.function_eval_index - 1));
-			--expression.function_eval_index;
-		}
+			/*for (std::uint8_t i = 0; i < arg_count; ++i) {
+				expression.function_prepared_tokens.erase(expression.function_prepared_tokens.begin() + (expression.function_eval_index - 1));
+				--expression.function_eval_index;
+			}*/
 
-		++expression.function_eval_index;
+			for (std::uint8_t i = 0; i < story_state.arguments_stack.back().size(); ++i) {
+				expression.function_prepared_tokens.erase(expression.function_prepared_tokens.begin() + (expression.function_eval_index - 1));
+				--expression.function_eval_index;
+			}
+
+			++expression.function_eval_index;
+
+			story_state.arguments_stack.pop_back();
+		}
+	}
+	
+	ExpressionParser::ExecuteResult result = ExpressionParser::execute_expression_tokens(expression.function_prepared_tokens, variables, constants, redirects, story_state.functions);
+	if (result.has_value()) {
+		expression.preparation_finished = true;
+		return *result;
+	} else if (result.error().reason == ExpressionParser::NulloptResult::Reason::NoReturnValue) {
+		expression.preparation_finished = true;
+		return std::unexpected(result.error());
 	}
 
-	story_state.arguments_stack.push_back({});
-	std::vector<ExpressionParser::Variant>& args = story_state.arguments_stack.back();
+	const ExpressionParser::NulloptResult& nullopt_result = result.error();
+	if (nullopt_result.reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
+		if (nullopt_result.function->data.argument_count > 0) {
+			story_state.arguments_stack.push_back({});
+			std::vector<ExpressionParser::Variant>& args = story_state.arguments_stack.back();
+
+			for (ExpressionParser::Token* token : nullopt_result.arguments) {
+				std::optional<ExpressionParser::Variant> arg_value = token->get_variant_value(variables, constants, redirects);
+				args.push_back(*arg_value);
+			}
+		}
+
+		eval_result.target_knot = nullopt_result.function->data.name;
+		eval_result.divert_type = DivertType::Function;
+		expression.function_eval_index = nullopt_result.function_index;
+
+		return std::unexpected(nullopt_result);
+	} else {
+		throw std::runtime_error("Error while executing expression tokens");
+	}
+
 	
-	for (std::size_t i = expression.function_eval_index; i < expression.function_prepared_tokens.size(); ++i) {
+
+	
+	
+	
+	/*(for (std::size_t i = expression.function_eval_index; i < expression.function_prepared_tokens.size(); ++i) {
 		ExpressionParser::Token* this_token = expression.function_prepared_tokens[i];
 		if (this_token->get_type() == ExpressionParser::TokenType::Function) {
 			auto* token_func = static_cast<ExpressionParser::TokenFunction*>(this_token);
@@ -151,16 +192,16 @@ bool InkObject::prepare_next_function_call(ExpressionParser::ShuntedExpression& 
 
 				return true;
 			}
-		} /*else {
+		} else {
 			ExpressionParser::RedirectMap dummy;
 			if (std::optional<ExpressionParser::Variant> value = this_token->get_variant_value(variables, constants, redirects); value.has_value()) {
 				args.push_back(*value);
 			}
-		}*/
+		}
 	}
 
 	story_state.arguments_stack.pop_back();
 	
 	expression.preparation_finished = true;
-	return false;
+	return false;*/
 }

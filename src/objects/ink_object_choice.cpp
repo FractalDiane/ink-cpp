@@ -125,13 +125,14 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 				std::vector<ExpressionParser::ShuntedExpression>& conditions = this_choice.conditions;
 				if (!conditions.empty()) {
 					for (ExpressionParser::ShuntedExpression& condition : conditions) {
-						if (prepare_next_function_call(condition, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects)) {
+						ExpressionParser::ExecuteResult condition_result = prepare_next_function_call(condition, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
+						if (!condition_result.has_value() && condition_result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
 							choices_result.need_to_prepare_function = true;
 							return choices_result;
 						}
 
-						ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(condition.function_prepared_tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
-						if (!ExpressionParser::as_bool(result)) {
+						//ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(condition.function_prepared_tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
+						if (!ExpressionParser::as_bool(*condition_result)) {
 							include_choice = false;
 							break;
 						}

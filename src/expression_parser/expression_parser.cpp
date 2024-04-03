@@ -1419,13 +1419,15 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 		}\
 \
 		stack.push(result);\
+		++tokens_assimilated;\
 	} break;
 
-std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::vector<Token*>& expression_tokens, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions) {
+ExecuteResult ExpressionParser::execute_expression_tokens(std::vector<Token*>& expression_tokens, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions, bool alter_input_tokens) {
 	TokenStack stack;
 	std::unordered_set<Token*> tokens_to_dealloc;
 
 	std::size_t index = 0;
+	std::size_t tokens_assimilated = 0;
 	while (index < expression_tokens.size()) {
 		Token* this_token = expression_tokens[index];
 
@@ -1546,7 +1548,17 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 			} break;
 
 			case TokenType::Function: {
-				if (Token* result = static_cast<TokenFunction*>(this_token)->call(stack, functions, variables, constants, variable_redirects)) {
+				auto* token_func = static_cast<TokenFunction*>(this_token);
+				if (token_func->data.fetch_method == TokenFunction::FetchMethod::StoryKnot) {
+					std::vector<Token*> func_args;
+					for (std::uint8_t i = 0; i < token_func->data.argument_count; ++i) {
+						func_args.push_back(stack.top(token_func->data.argument_count - i - 1));
+					}
+
+					return std::unexpected(NulloptResult(NulloptResult::Reason::FoundKnotFunction, token_func, index, func_args));
+				}
+
+				if (Token* result = token_func->call(stack, functions, variables, constants, variable_redirects)) {
 					stack.push(result);
 					tokens_to_dealloc.insert(result);
 				}
@@ -1569,12 +1581,16 @@ std::optional<Variant> ExpressionParser::execute_expression_tokens(const std::ve
 		delete token;
 	}
 
-	return result;
+	if (result.has_value()) {
+		return *result;
+	} else {
+		return std::unexpected(NulloptResult(NulloptResult::Reason::NoReturnValue));
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::optional<Variant> ExpressionParser::execute_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
+ExecuteResult ExpressionParser::execute_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
 	std::unordered_set<Token*> dummy;
 	std::vector<Token*> tokenized = tokenize_expression(expression, functions, deferred_functions);
 	std::vector<Token*> shunted = shunt(tokenized, dummy);
@@ -1582,7 +1598,7 @@ std::optional<Variant> ExpressionParser::execute_expression(const std::string& e
 	VariableMap no_vars;
 	VariableMap no_consts;
 	RedirectMap no_redirects;
-	std::optional<Variant> result = execute_expression_tokens(shunted, no_vars, no_consts, no_redirects, functions);
+	ExecuteResult result = execute_expression_tokens(shunted, no_vars, no_consts, no_redirects, functions);
 
 	for (Token* token : tokenized) {
 		delete token;
@@ -1591,12 +1607,12 @@ std::optional<Variant> ExpressionParser::execute_expression(const std::string& e
 	return result;
 }
 
-std::optional<Variant> ExpressionParser::execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
+ExecuteResult ExpressionParser::execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
 	std::unordered_set<Token*> dummy;
 	std::vector<Token*> tokenized = tokenize_expression(expression, functions, deferred_functions);
 	std::vector<Token*> shunted = shunt(tokenized, dummy);
 
-	std::optional<Variant> result = execute_expression_tokens(shunted, variables, constants, variable_redirects, functions);
+	ExecuteResult result = execute_expression_tokens(shunted, variables, constants, variable_redirects, functions);
 
 	for (Token* token : tokenized) {
 		delete token;

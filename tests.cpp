@@ -112,7 +112,7 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 	ExpressionParser::VariableMap variables;
 	ExpressionParser::VariableMap constants;
 	ExpressionParser::RedirectMap redirects;
-	std::optional<ExpressionParser::Variant> result_token = ExpressionParser::execute_expression_tokens(result_postfix, variables, constants, redirects, {});
+	ExpressionParser::ExecuteResult result_token = ExpressionParser::execute_expression_tokens(result_postfix, variables, constants, redirects, {});
 	EXPECT_FALSE(result_token.has_value());
 	EXPECT_EQ(std::get<std::int64_t>(variables["test"]), 12);
 

@@ -25,7 +25,8 @@ void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eva
 
 	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
 
-	if (prepare_next_function_call(contents_shunted_tokens, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects)) {
+	ExpressionParser::ExecuteResult logic_result = prepare_next_function_call(contents_shunted_tokens, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
+	if (!logic_result.has_value() && logic_result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
 		return;
 	}
 
@@ -38,12 +39,16 @@ void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eva
 		}
 	}
 
-	std::optional<ExpressionParser::Variant> result = ExpressionParser::execute_expression_tokens(contents_shunted_tokens.function_prepared_tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
+	//ExpressionParser::ExecuteResult result = ExpressionParser::execute_expression_tokens(contents_shunted_tokens.function_prepared_tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
 	if (is_return) {
 		//if (result.has_value()) {
 		//	eval_result.result += ExpressionParser::to_printable_string(*result);
 		//}
 
-		eval_result.return_value = result;
+		if (logic_result.has_value()) {
+			eval_result.return_value = *logic_result;
+		} else {
+			eval_result.return_value = std::nullopt;
+		}
 	}
 }

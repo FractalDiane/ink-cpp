@@ -525,16 +525,28 @@ std::vector<Token*> tokenize_expression(const std::string& expression, const Fun
 
 std::vector<Token*> shunt(const std::vector<Token*>& infix, std::unordered_set<Token*>& tokens_shunted);
 
-enum class NulloptReason {
-	NoReturnValue,
-	FoundKnotFunction,
-	Failed,
+struct NulloptResult {
+	enum class Reason {
+		NoReturnValue,
+		FoundKnotFunction,
+		Failed,
+	} reason;
+
+	TokenFunction* function;
+	std::size_t function_index;
+	std::vector<Token*> arguments;
+
+	NulloptResult(Reason reason) : reason{reason}, function{nullptr}, function_index{0}, arguments{} {}
+	NulloptResult(Reason reason, TokenFunction* function, std::size_t function_index, const std::vector<Token*>& arguments) : reason{reason}, function{function}, function_index{function_index}, arguments{arguments} {}
 };
 
-std::optional<Variant> execute_expression_tokens(const std::vector<Token*>& tokens, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& all_functions);
 
-std::optional<Variant> execute_expression(const std::string& expression, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
-std::optional<Variant> execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
+typedef std::expected<Variant, NulloptResult> ExecuteResult;
+
+ExecuteResult execute_expression_tokens(std::vector<Token*>& tokens, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& all_functions, bool alter_input_tokens = false);
+
+ExecuteResult execute_expression(const std::string& expression, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
+ExecuteResult execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
 
 ShuntedExpression tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions);
 
