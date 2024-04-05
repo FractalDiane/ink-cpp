@@ -107,10 +107,6 @@ InkObject* InkObject::create_from_id(ObjectId id) {
 }
 
 ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(ExpressionParser::ShuntedExpression& expression, InkStoryState& story_state, InkStoryEvalResult& eval_result, ExpressionParser::VariableMap& variables, const ExpressionParser::VariableMap& constants, ExpressionParser::RedirectMap& redirects) {
-	//if (expression.preparation_finished) {
-	//	return false;
-	//}
-
 	if (!story_state.current_knot().returning_from_function) {
 		expression.push_entry();
 	}
@@ -126,8 +122,18 @@ ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(Expression
 			expression_entry.function_prepared_tokens.erase(expression_entry.function_prepared_tokens.begin() + expression_entry.function_eval_index);
 		}
 
-		for (std::uint8_t i = 0; i < story_state.arguments_stack.back().size(); ++i) {
-			expression_entry.function_prepared_tokens.erase(expression_entry.function_prepared_tokens.begin() + (expression_entry.function_eval_index - 1));
+		--expression_entry.function_eval_index;
+
+		std::size_t args_expected = expression_entry.argument_count;
+		while (args_expected > 0) {
+			ExpressionParser::Token* this_token = expression_entry.function_prepared_tokens[expression_entry.function_eval_index];
+			if (this_token->get_type() == ExpressionParser::TokenType::Operator) {
+				++args_expected;
+			} else {
+				--args_expected;
+			}
+
+			expression_entry.function_prepared_tokens.erase(expression_entry.function_prepared_tokens.begin() + expression_entry.function_eval_index);
 			--expression_entry.function_eval_index;
 		}
 
@@ -136,49 +142,17 @@ ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(Expression
 
 	ExpressionParser::ExecuteResult result = ExpressionParser::execute_expression_tokens(expression.stack_back().function_prepared_tokens, variables, constants, redirects, story_state.functions);
 	if (result.has_value()) {
-		//expression.preparation_finished = true;
 		expression.pop_entry();
 		return *result;
 	} else if (result.error().reason == ExpressionParser::NulloptResult::Reason::NoReturnValue) {
-		//expression.preparation_finished = true;
 		expression.pop_entry();
 		return std::unexpected(result.error());
 	}
 
-	/*if (!expression.preparation_finished) {
-		if (expression.function_eval_index == SIZE_MAX) {
-			expression.function_eval_index = 0;
-		} else {
-			//std::uint8_t arg_count = static_cast<ExpressionParser::TokenFunction*>(expression.function_prepared_tokens[expression.function_eval_index])->data.argument_count;
-			if (eval_result.return_value.has_value()) {
-				ExpressionParser::Token* value = ExpressionParser::variant_to_token(*eval_result.return_value);
-				function_return_values.push_back(value);
-				expression.function_prepared_tokens.back()[expression.function_eval_index] = value;
-			} else {
-				expression.function_prepared_tokens.erase(expression.function_prepared_tokens.begin() + expression.function_eval_index);
-			}
-
-			/*for (std::uint8_t i = 0; i < arg_count; ++i) {
-				expression.function_prepared_tokens.erase(expression.function_prepared_tokens.begin() + (expression.function_eval_index - 1));
-				--expression.function_eval_index;
-			}
-
-			for (std::uint8_t i = 0; i < story_state.arguments_stack.back().size(); ++i) {
-				expression.function_prepared_tokens.back().erase(expression.function_prepared_tokens.back().begin() + (expression.function_eval_index - 1));
-				--expression.function_eval_index;
-			}
-
-			++expression.function_eval_index;
-
-			story_state.arguments_stack.pop_back();
-		}
-	}*/
-	
-	
-
 	const ExpressionParser::NulloptResult& nullopt_result = result.error();
 	if (nullopt_result.reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
 		story_state.arguments_stack.push_back({});
+		expression_entry.argument_count = nullopt_result.function->data.argument_count;
 		if (nullopt_result.function->data.argument_count > 0) {
 			std::vector<ExpressionParser::Variant>& args = story_state.arguments_stack.back();
 
@@ -196,39 +170,4 @@ ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(Expression
 	} else {
 		throw std::runtime_error("Error while executing expression tokens");
 	}
-
-	
-
-	
-	
-	
-	/*(for (std::size_t i = expression.function_eval_index; i < expression.function_prepared_tokens.size(); ++i) {
-		ExpressionParser::Token* this_token = expression.function_prepared_tokens[i];
-		if (this_token->get_type() == ExpressionParser::TokenType::Function) {
-			auto* token_func = static_cast<ExpressionParser::TokenFunction*>(this_token);
-			if (token_func->data.fetch_method == ExpressionParser::TokenFunction::FetchMethod::StoryKnot) {
-				eval_result.target_knot = token_func->data.name;
-				eval_result.divert_type = DivertType::Function;
-				expression.function_eval_index = i;
-				//expression.function_eval_arg_count = token_func->data.argument_count;
-
-				for (std::uint8_t a = token_func->data.argument_count; a > 0; --a) {
-					std::optional<ExpressionParser::Variant> arg_value = expression.function_prepared_tokens[i - a]->get_variant_value(variables, constants, redirects);
-					args.push_back(*arg_value);
-				}
-
-				return true;
-			}
-		} else {
-			ExpressionParser::RedirectMap dummy;
-			if (std::optional<ExpressionParser::Variant> value = this_token->get_variant_value(variables, constants, redirects); value.has_value()) {
-				args.push_back(*value);
-			}
-		}
-	}
-
-	story_state.arguments_stack.pop_back();
-	
-	expression.preparation_finished = true;
-	return false;*/
 }

@@ -1222,6 +1222,10 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 	for (Token* token : result) {
 		switch (token->get_type()) {
 			case TokenType::Function: {
+				if (!arg_count_stack.empty() && arg_count_stack.back().second == 0) {
+					arg_count_stack.back().second = 1;
+				}
+				
 				arg_count_stack.emplace_back(static_cast<TokenFunction*>(token), static_cast<std::uint8_t>(0));
 			} break;
 

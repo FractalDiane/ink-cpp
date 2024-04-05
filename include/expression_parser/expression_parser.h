@@ -510,7 +510,7 @@ struct ShuntedExpression {
 	struct StackEntry {
 		std::vector<Token*> function_prepared_tokens;
 		std::size_t function_eval_index = SIZE_MAX;
-		//std::size_t function_eval_arg_count = 0;
+		std::size_t argument_count = 0;
 		bool preparation_finished = false;
 	};
 

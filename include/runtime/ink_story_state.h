@@ -50,14 +50,8 @@ struct InkStoryState {
 
 	std::vector<std::vector<ExpressionParser::Variant>> arguments_stack;
 	std::vector<Knot*> function_call_stack;
-	std::unordered_map<Uuid, std::size_t> expression_recursion_depths;
 
 	std::vector<ThreadEntry> current_thread_entries;
-
-	/*std::unordered_map<Knot*, std::size_t> knot_visit_counts;
-	std::unordered_map<Stitch*, std::size_t> stitch_visit_counts;
-	std::unordered_map<std::string, std::size_t> gather_point_visit_counts;*/
-	//std::unordered_map<std::string, std::size_t> turns_since_knots;
 
 	InkStoryTracking story_tracking;
 
