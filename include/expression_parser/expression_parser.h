@@ -504,15 +504,39 @@ struct TokenVariable : public Token {
 };
 
 struct ShuntedExpression {
+	Uuid uuid;
 	std::vector<Token*> tokens;
-	std::vector<Token*> function_prepared_tokens;
-	std::size_t function_eval_index;
-	//std::size_t function_eval_arg_count;
-	bool preparation_finished;
 
-	ShuntedExpression() : tokens{}, function_prepared_tokens{}, function_eval_index{SIZE_MAX}, preparation_finished{false} {}
-	explicit ShuntedExpression(const std::vector<Token*>& tokens) : tokens{tokens}, function_prepared_tokens{tokens}, function_eval_index{SIZE_MAX}, preparation_finished{false} {}
-	explicit ShuntedExpression(std::vector<Token*>&& tokens) : tokens{tokens}, function_prepared_tokens{tokens}, function_eval_index{SIZE_MAX}, preparation_finished{false} {}
+	struct StackEntry {
+		std::vector<Token*> function_prepared_tokens;
+		std::size_t function_eval_index = SIZE_MAX;
+		//std::size_t function_eval_arg_count = 0;
+		bool preparation_finished = false;
+	};
+
+	std::vector<StackEntry> preparation_stack;
+
+	ShuntedExpression() : tokens{}, preparation_stack{}, uuid{0} {}
+	explicit ShuntedExpression(const std::vector<Token*>& tokens) : tokens{tokens}, preparation_stack{}, uuid{0} {}
+	explicit ShuntedExpression(std::vector<Token*>&& tokens) : tokens{tokens}, preparation_stack{}, uuid{0} {}
+
+	void push_entry() {
+		StackEntry new_entry;
+		new_entry.function_prepared_tokens = tokens;
+		preparation_stack.push_back(new_entry);
+	}
+
+	void pop_entry() {
+		preparation_stack.pop_back();
+	}
+
+	StackEntry& stack_back() {
+		return preparation_stack.back();
+	}
+
+	bool stack_empty() const { 
+		return preparation_stack.empty();
+	}
 
 	void dealloc_tokens() {
 		for (Token* token : tokens) {

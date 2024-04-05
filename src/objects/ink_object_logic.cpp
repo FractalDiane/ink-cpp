@@ -31,8 +31,8 @@ void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eva
 	}
 
 	bool is_return = false;
-	if (!contents_shunted_tokens.function_prepared_tokens.empty()) {
-		Token* first = contents_shunted_tokens.function_prepared_tokens[0];
+	if (!contents_shunted_tokens.tokens.empty()) {
+		Token* first = contents_shunted_tokens.tokens[0];
 		if (first->get_type() == TokenType::Keyword && static_cast<TokenKeyword*>(first)->data == TokenKeyword::Type::Return) {
 			is_return = true;
 			eval_result.reached_function_return = true;

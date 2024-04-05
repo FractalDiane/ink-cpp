@@ -696,6 +696,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			Knot items_else;
 			std::vector<std::string> text_items;
 			ExpressionParser::ShuntedExpression switch_expression;
+			switch_expression.uuid = current_uuid++;
 
 			bool is_conditional = false;
 			bool will_be_conditional = false;
@@ -795,6 +796,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 										try {
 											ExpressionParser::ShuntedExpression shunted = ExpressionParser::tokenize_and_shunt_expression(this_condition, {}, declared_functions);
+											shunted.uuid = current_uuid++;
 											if (items_conditions.back().first.tokens.empty()) {
 												items_conditions.back().first = shunted;
 											} else {
@@ -845,6 +847,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 				try {
 					ExpressionParser::ShuntedExpression condition_shunted = ExpressionParser::tokenize_and_shunt_expression(condition, {}, declared_functions);
+					condition_shunted.uuid = current_uuid++;
 					choice_stack.back().conditions.push_back(condition_shunted);
 				} catch (...) {
 					throw std::runtime_error("Malformed choice condition");
@@ -863,6 +866,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					std::string all_text = join_string_vector(text_items, std::string());
 					try {
 						ExpressionParser::ShuntedExpression shunted = ExpressionParser::tokenize_and_shunt_expression(all_text, {}, declared_functions);
+						shunted.uuid = current_uuid++;
 						result_object = new InkObjectInterpolation(shunted);
 					} catch (...) {
 						throw std::runtime_error("Malformed interpolation");
@@ -891,6 +895,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				if (!in_parens) {
 					std::string target = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
 					ExpressionParser::ShuntedExpression target_tokens;
+					target_tokens.uuid = current_uuid++;
 					try {
 						target_tokens = ExpressionParser::tokenize_and_shunt_expression(target, {}, declared_functions);
 					} catch (...) {
@@ -914,6 +919,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						for (const std::string& arg : split) {
 							try {
 								ExpressionParser::ShuntedExpression tokenized = ExpressionParser::tokenize_and_shunt_expression(arg, {}, declared_functions);
+								tokenized.uuid = current_uuid++;
 								arguments.push_back(tokenized);
 							} catch (...) {
 								throw std::runtime_error("Malformed knot argument");
@@ -949,6 +955,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				}
 			} else if (next_token_is(all_tokens, token_index, InkToken::Arrow)) {
 				ExpressionParser::ShuntedExpression target_tokens;
+				target_tokens.uuid = current_uuid++;
 				if (next_token_is(all_tokens, token_index + 1, InkToken::Text)) {
 					std::string target = strip_string_edges(all_tokens[token_index + 2].text_contents, true, true, true);
 					try {
@@ -1016,6 +1023,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 				try {
 					ExpressionParser::ShuntedExpression expression_shunted = ExpressionParser::tokenize_and_shunt_expression(expression, {}, declared_functions);
+					expression_shunted.uuid = current_uuid++;
 					result_object = new InkObjectLogic(expression_shunted);
 				} catch (...) {
 					throw std::runtime_error("Malformed logic statement");
@@ -1087,6 +1095,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 					try {
 						ExpressionParser::ShuntedExpression expression_shunted = ExpressionParser::tokenize_and_shunt_expression(expression, {}, declared_functions);
+						expression_shunted.uuid = current_uuid++;
 						result_object = new InkObjectGlobalVariable(identifier, token.token == InkToken::KeywordConst, expression_shunted);
 					} catch (...) {
 						throw std::runtime_error("Malformed value of VAR/CONST statement");

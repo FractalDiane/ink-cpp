@@ -21,7 +21,8 @@ struct InkStoryState {
 
 	struct KnotStatus {
 		Knot* knot;
-		std::size_t index;
+		std::size_t index = 0;
+		bool returning_from_function = false;
 	};
 
 	struct ThreadEntry {
@@ -49,6 +50,7 @@ struct InkStoryState {
 
 	std::vector<std::vector<ExpressionParser::Variant>> arguments_stack;
 	std::vector<Knot*> function_call_stack;
+	std::unordered_map<Uuid, std::size_t> expression_recursion_depths;
 
 	std::vector<ThreadEntry> current_thread_entries;
 

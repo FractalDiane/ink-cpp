@@ -366,6 +366,7 @@ std::string InkStory::continue_story() {
 					} break;
 
 					case DivertType::Function: {
+						story_state.current_knot().returning_from_function = true;
 						story_state.current_knots_stack.push_back({target.knot, 0});
 						story_state.story_tracking.increment_visit_count(target.knot);
 
@@ -472,7 +473,7 @@ std::string InkStory::continue_story() {
 				
 				story_state.current_knots_stack.pop_back();
 				story_state.function_call_stack.pop_back();
-				story_state.arguments_stack.pop_back();
+				//story_state.arguments_stack.pop_back();
 				eval_result.reached_newline = false;
 			}
 		}
