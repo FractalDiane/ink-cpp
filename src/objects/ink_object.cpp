@@ -124,6 +124,7 @@ ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(Expression
 
 		--expression_entry.function_eval_index;
 
+		// thanks Ryan
 		std::size_t args_expected = expression_entry.argument_count;
 		while (args_expected > 0) {
 			ExpressionParser::Token* this_token = expression_entry.function_prepared_tokens[expression_entry.function_eval_index];
