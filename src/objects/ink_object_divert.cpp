@@ -66,10 +66,10 @@ void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		eval_result.target_knot = target;
 		eval_result.divert_type = type;
 		story_state.arguments_stack.push_back({});
-		std::vector<ExpressionParser::Variant>& args = story_state.arguments_stack.back();
+		std::vector<std::pair<std::string, ExpressionParser::Variant>>& args = story_state.arguments_stack.back();
 		for (ExpressionParser::ShuntedExpression& argument : arguments) {
 			ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(argument.tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
-			args.push_back(result);
+			args.push_back({std::string(), result});
 		}
 	}
 }

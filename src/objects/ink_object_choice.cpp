@@ -131,7 +131,6 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 							return choices_result;
 						}
 
-						//ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(condition.function_prepared_tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
 						if (!ExpressionParser::as_bool(*condition_result)) {
 							include_choice = false;
 							break;
@@ -150,6 +149,12 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 						}
 						
 						object->execute(story_state, choice_eval_result);
+						if (choice_eval_result.imminent_function_prep) {
+							eval_result.target_knot = choice_eval_result.target_knot;
+							eval_result.divert_type = DivertType::Function;
+							choices_result.need_to_prepare_function = true;
+							return choices_result;
+						}
 					}
 
 					choices_result.choices.push_back({
@@ -210,6 +215,11 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		choice_eval_result.result.reserve(50);
 		for (InkObject* object : selected_choice_struct->text) {
 			object->execute(story_state, choice_eval_result);
+			if (choice_eval_result.imminent_function_prep) {
+				eval_result.target_knot = choice_eval_result.target_knot;
+				eval_result.divert_type = DivertType::Function;
+				return;
+			}
 		}
 
 		eval_result.result = choice_eval_result.result;

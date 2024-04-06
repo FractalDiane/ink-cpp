@@ -49,7 +49,7 @@ struct InkStoryState {
 	std::unordered_map<Knot*, std::unordered_map<class InkObject*, std::unordered_set<std::size_t>>> choices_taken;
 	std::size_t total_choices_taken = 0;
 
-	std::vector<std::vector<ExpressionParser::Variant>> arguments_stack;
+	std::vector<std::vector<std::pair<std::string, ExpressionParser::Variant>>> arguments_stack;
 	std::vector<Knot*> function_call_stack;
 
 	std::vector<ThreadEntry> current_thread_entries;
@@ -86,6 +86,7 @@ struct InkStoryEvalResult {
 
 	std::string target_knot;
 	DivertType divert_type = DivertType::ToKnot;
+	bool imminent_function_prep = false;
 	
 	std::size_t argument_count = 0;
 	bool reached_function_return = false;

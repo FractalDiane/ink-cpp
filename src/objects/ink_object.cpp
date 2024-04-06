@@ -154,16 +154,23 @@ ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(Expression
 		story_state.arguments_stack.push_back({});
 		expression_entry.argument_count = nullopt_result.function->data.argument_count;
 		if (nullopt_result.function->data.argument_count > 0) {
-			std::vector<ExpressionParser::Variant>& args = story_state.arguments_stack.back();
+			std::vector<std::pair<std::string, ExpressionParser::Variant>>& args = story_state.arguments_stack.back();
 
 			for (ExpressionParser::Token* token : nullopt_result.arguments) {
 				std::optional<ExpressionParser::Variant> arg_value = token->get_variant_value(variables, constants, redirects);
-				args.push_back(*arg_value);
+				std::pair<std::string, ExpressionParser::Variant> arg;
+				arg.second = *arg_value;
+				if (token->get_type() == ExpressionParser::TokenType::Variable) {
+					arg.first = static_cast<ExpressionParser::TokenVariable*>(token)->data;
+				}
+
+				args.push_back(arg);
 			}
 		}
 
 		eval_result.target_knot = nullopt_result.function->data.name;
 		eval_result.divert_type = DivertType::Function;
+		eval_result.imminent_function_prep = true;
 		expression_entry.function_eval_index = nullopt_result.function_index;
 
 		return std::unexpected(nullopt_result);
