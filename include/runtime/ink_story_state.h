@@ -23,6 +23,7 @@ struct InkStoryState {
 		Knot* knot;
 		std::size_t index = 0;
 		bool returning_from_function = false;
+		bool any_new_content = false;
 	};
 
 	struct ThreadEntry {

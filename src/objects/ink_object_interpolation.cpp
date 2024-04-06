@@ -29,6 +29,8 @@ void InkObjectInterpolation::execute(InkStoryState& story_state, InkStoryEvalRes
 
 	//ExpressionParser::ExecuteResult result = ExpressionParser::execute_expression_tokens(what_to_interpolate.function_prepared_tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
 	if (interpolate_result.has_value()) {
-		eval_result.result += ExpressionParser::to_printable_string(*interpolate_result);
+		std::string result = ExpressionParser::to_printable_string(*interpolate_result);
+		eval_result.result += result;
+		story_state.current_nonchoice_knot().any_new_content = !result.empty();
 	}
 }

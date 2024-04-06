@@ -148,6 +148,7 @@ bool InkStory::can_continue() {
 
 std::string InkStory::continue_story() {
 	story_state.current_tags.clear();
+	story_state.current_knot().any_new_content = false;
 
 	InkStoryEvalResult eval_result;
 	eval_result.result.reserve(512);
@@ -157,7 +158,10 @@ std::string InkStory::continue_story() {
 		bool changed_knot = false;
 		InkObject* current_object = story_state.current_knot().knot->objects[story_state.index_in_knot()];
 
-		if (eval_result.reached_newline && eval_result.has_any_contents(true) && current_object->stop_before_this()) {
+		if (eval_result.reached_newline
+		&& eval_result.has_any_contents(true)
+		&& (!story_state.current_nonchoice_knot().knot->is_function || story_state.current_nonchoice_knot().any_new_content)
+		&& current_object->stop_before_this()) {
 			if (story_state.in_glue) {
 				story_state.in_glue = false;
 			} else {
