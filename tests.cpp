@@ -1187,7 +1187,22 @@ TEST_F(FunctionTests, FunctionParamsByRef) {
 
 TEST_F(FunctionTests, ComplexFunctions) {
 	STORY("17_functions/17h_complex_functions.ink");
-	story.continue_story();
+	EXPECT_TEXT("hello");
+	EXPECT_TEXT("there");
+	EXPECT_TEXT("x = 3.800000");
+	EXPECT_TEXT("y = 2");
+	EXPECT_TEXT("hello");
+	EXPECT_TEXT("therehello");
+	EXPECT_TEXT("there4");
+	EXPECT_TEXT("hello");
+	EXPECT_TEXT("there");
+	EXPECT_TEXT("this");
+	EXPECT_TEXT("is");
+	EXPECT_TEXT("a");
+	EXPECT_TEXT("testhi");
+	EXPECT_CHOICES("Yes.", "No.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("Yes.");
 }
 #pragma endregion
 

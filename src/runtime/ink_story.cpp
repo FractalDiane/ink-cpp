@@ -1,18 +1,6 @@
 #include "runtime/ink_story.h"
 
 #include "objects/ink_object.h"
-/*#include "objects/ink_object_choice.h"
-#include "objects/ink_object_choicetextmix.h"
-#include "objects/ink_object_conditional.h"
-#include "objects/ink_object_divert.h"
-#include "objects/ink_object_globalvariable.h"
-#include "objects/ink_object_glue.h"
-#include "objects/ink_object_interpolation.h"
-#include "objects/ink_object_linebreak.h"
-#include "objects/ink_object_logic.h"
-#include "objects/ink_object_sequence.h"
-#include "objects/ink_object_tag.h"
-#include "objects/ink_object_text.h"*/
 #include "objects/ink_object_choice.h"
 #include "objects/ink_object_divert.h"
 
@@ -158,9 +146,12 @@ std::string InkStory::continue_story() {
 		bool changed_knot = false;
 		InkObject* current_object = story_state.current_knot().knot->objects[story_state.index_in_knot()];
 
+		
+		InkStoryState::KnotStatus& last_knot = story_state.previous_nonfunction_knot();
+		bool last_knot_had_newline = last_knot.index > 0 && last_knot.knot->objects[last_knot.index - 1]->get_id() == ObjectId::LineBreak;
 		if (eval_result.reached_newline
 		&& eval_result.has_any_contents(true)
-		&& (!story_state.current_nonchoice_knot().knot->is_function || story_state.current_nonchoice_knot().any_new_content)
+		&& (!story_state.current_nonchoice_knot().knot->is_function || story_state.current_nonchoice_knot().any_new_content || last_knot_had_newline)
 		&& current_object->stop_before_this()) {
 			if (story_state.in_glue) {
 				story_state.in_glue = false;

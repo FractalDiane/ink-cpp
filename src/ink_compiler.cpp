@@ -1029,6 +1029,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					throw std::runtime_error("Malformed logic statement");
 				}
 
+				--token_index;
 				end_line = true;
 			} else {
 				result_object = new InkObjectText("~");
