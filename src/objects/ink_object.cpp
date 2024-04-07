@@ -155,13 +155,13 @@ ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(Expression
 		for (ExpressionParser::Token* token : expression_entry.tokens_to_dealloc) {
 			delete token;
 		}
-		
+
 		expression.pop_entry();
 		return std::unexpected(result.error());
 	}
 
 	const ExpressionParser::NulloptResult& nullopt_result = result.error();
-	expression_entry.tokens_to_dealloc.insert_range(nullopt_result.tokens_to_dealloc);
+	expression_entry.tokens_to_dealloc.insert(nullopt_result.tokens_to_dealloc.begin(), nullopt_result.tokens_to_dealloc.end());
 	if (nullopt_result.reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
 		story_state.arguments_stack.push_back({});
 		expression_entry.argument_count = nullopt_result.function->data.argument_count;
