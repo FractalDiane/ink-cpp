@@ -1423,7 +1423,6 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 		}\
 \
 		stack.push(result);\
-		++tokens_assimilated;\
 	} break;
 
 ExecuteResult ExpressionParser::execute_expression_tokens(std::vector<Token*>& expression_tokens, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions, bool alter_input_tokens) {
@@ -1431,7 +1430,6 @@ ExecuteResult ExpressionParser::execute_expression_tokens(std::vector<Token*>& e
 	std::unordered_set<Token*> tokens_to_dealloc;
 
 	std::size_t index = 0;
-	std::size_t tokens_assimilated = 0;
 	while (index < expression_tokens.size()) {
 		Token* this_token = expression_tokens[index];
 
@@ -1559,7 +1557,7 @@ ExecuteResult ExpressionParser::execute_expression_tokens(std::vector<Token*>& e
 						func_args.push_back(stack.top(token_func->data.argument_count - i - 1));
 					}
 
-					return std::unexpected(NulloptResult(NulloptResult::Reason::FoundKnotFunction, token_func, index, func_args));
+					return std::unexpected(NulloptResult(NulloptResult::Reason::FoundKnotFunction, token_func, index, func_args, tokens_to_dealloc));
 				}
 
 				if (Token* result = token_func->call(stack, functions, variables, constants, variable_redirects)) {

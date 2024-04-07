@@ -512,6 +512,8 @@ struct ShuntedExpression {
 		std::size_t function_eval_index = SIZE_MAX;
 		std::size_t argument_count = 0;
 		bool preparation_finished = false;
+
+		std::unordered_set<Token*> tokens_to_dealloc;
 	};
 
 	std::vector<StackEntry> preparation_stack;
@@ -559,9 +561,10 @@ struct NulloptResult {
 	TokenFunction* function;
 	std::size_t function_index;
 	std::vector<Token*> arguments;
+	std::unordered_set<Token*> tokens_to_dealloc;
 
-	NulloptResult(Reason reason) : reason{reason}, function{nullptr}, function_index{0}, arguments{} {}
-	NulloptResult(Reason reason, TokenFunction* function, std::size_t function_index, const std::vector<Token*>& arguments) : reason{reason}, function{function}, function_index{function_index}, arguments{arguments} {}
+	NulloptResult(Reason reason) : reason{reason}, function{nullptr}, function_index{0}, arguments{}, tokens_to_dealloc{} {}
+	NulloptResult(Reason reason, TokenFunction* function, std::size_t function_index, const std::vector<Token*>& arguments, const std::unordered_set<Token*>& tokens_to_dealloc) : reason{reason}, function{function}, function_index{function_index}, arguments{arguments}, tokens_to_dealloc{tokens_to_dealloc} {}
 };
 
 

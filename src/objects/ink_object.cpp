@@ -145,14 +145,23 @@ ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(Expression
 
 	ExpressionParser::ExecuteResult result = ExpressionParser::execute_expression_tokens(expression.stack_back().function_prepared_tokens, variables, constants, redirects, story_state.functions);
 	if (result.has_value()) {
+		for (ExpressionParser::Token* token : expression_entry.tokens_to_dealloc) {
+			delete token;
+		}
+
 		expression.pop_entry();
 		return *result;
 	} else if (result.error().reason == ExpressionParser::NulloptResult::Reason::NoReturnValue) {
+		for (ExpressionParser::Token* token : expression_entry.tokens_to_dealloc) {
+			delete token;
+		}
+		
 		expression.pop_entry();
 		return std::unexpected(result.error());
 	}
 
 	const ExpressionParser::NulloptResult& nullopt_result = result.error();
+	expression_entry.tokens_to_dealloc.insert_range(nullopt_result.tokens_to_dealloc);
 	if (nullopt_result.reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
 		story_state.arguments_stack.push_back({});
 		expression_entry.argument_count = nullopt_result.function->data.argument_count;
