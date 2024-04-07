@@ -116,6 +116,10 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 	GetChoicesResult choices_result;
 	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
 
+	if (!story_state.current_knot().returning_from_function) {
+		conditions_fully_prepared.clear();
+	}
+
 	choices_result.fallback_index = SIZE_MAX;
 	for (std::size_t i = 0; i < choices.size(); ++i) {
 		InkChoiceEntry& this_choice = choices[i];
@@ -125,15 +129,19 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 				std::vector<ExpressionParser::ShuntedExpression>& conditions = this_choice.conditions;
 				if (!conditions.empty()) {
 					for (ExpressionParser::ShuntedExpression& condition : conditions) {
-						ExpressionParser::ExecuteResult condition_result = prepare_next_function_call(condition, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
-						if (!condition_result.has_value() && condition_result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
-							choices_result.need_to_prepare_function = true;
-							return choices_result;
-						}
+						if (!conditions_fully_prepared.contains(condition.uuid)) {
+							ExpressionParser::ExecuteResult condition_result = prepare_next_function_call(condition, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
+							if (!condition_result.has_value() && condition_result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
+								choices_result.need_to_prepare_function = true;
+								return choices_result;
+							} else {
+								conditions_fully_prepared.insert(condition.uuid);
+							}
 
-						if (!ExpressionParser::as_bool(*condition_result)) {
-							include_choice = false;
-							break;
+							if (!ExpressionParser::as_bool(*condition_result)) {
+								include_choice = false;
+								break;
+							}
 						}
 					}
 				}

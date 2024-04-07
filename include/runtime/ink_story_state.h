@@ -23,6 +23,7 @@ struct InkStoryState {
 		Knot* knot;
 		std::size_t index = 0;
 		bool returning_from_function = false;
+		Uuid current_function_prep_expression = UINT32_MAX;
 		bool any_new_content = false;
 	};
 
@@ -88,6 +89,7 @@ struct InkStoryEvalResult {
 	std::string target_knot;
 	DivertType divert_type = DivertType::ToKnot;
 	bool imminent_function_prep = false;
+	Uuid function_prep_expression = UINT32_MAX;
 	
 	std::size_t argument_count = 0;
 	bool reached_function_return = false;

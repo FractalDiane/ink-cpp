@@ -180,7 +180,8 @@ std::string InkStory::continue_story() {
 			if (target.found_any) {
 				switch (eval_result.divert_type) {
 					case DivertType::ToKnot:
-					case DivertType::ToTunnel: {
+					case DivertType::ToTunnel:
+					case DivertType::FromTunnel: {
 						switch (target.result_type) {
 							case WeaveContentType::Knot: {
 								if (eval_result.divert_type == DivertType::ToTunnel) {

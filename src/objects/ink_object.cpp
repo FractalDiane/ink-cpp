@@ -107,13 +107,14 @@ InkObject* InkObject::create_from_id(ObjectId id) {
 }
 
 ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(ExpressionParser::ShuntedExpression& expression, InkStoryState& story_state, InkStoryEvalResult& eval_result, ExpressionParser::VariableMap& variables, const ExpressionParser::VariableMap& constants, ExpressionParser::RedirectMap& redirects) {
-	if (!story_state.current_knot().returning_from_function) {
+	bool continuing_preparation = story_state.current_knot().returning_from_function && story_state.current_knot().current_function_prep_expression == expression.uuid;
+	if (!continuing_preparation) {
 		expression.push_entry();
 	}
 
 	ExpressionParser::ShuntedExpression::StackEntry& expression_entry = expression.stack_back();
 
-	if (story_state.current_knot().returning_from_function) {
+	if (continuing_preparation) {
 		if (eval_result.return_value.has_value()) {
 			ExpressionParser::Token* value = ExpressionParser::variant_to_token(*eval_result.return_value);
 			function_return_values.push_back(value);
@@ -139,6 +140,7 @@ ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(Expression
 		}
 
 		story_state.current_knot().returning_from_function = false;
+		story_state.current_knot().current_function_prep_expression = UINT32_MAX;
 	}
 
 	ExpressionParser::ExecuteResult result = ExpressionParser::execute_expression_tokens(expression.stack_back().function_prepared_tokens, variables, constants, redirects, story_state.functions);
@@ -172,6 +174,7 @@ ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(Expression
 		eval_result.target_knot = nullopt_result.function->data.name;
 		eval_result.divert_type = DivertType::Function;
 		eval_result.imminent_function_prep = true;
+		story_state.current_knot().current_function_prep_expression = expression.uuid;
 		expression_entry.function_eval_index = nullopt_result.function_index;
 
 		return std::unexpected(nullopt_result);

@@ -5,6 +5,7 @@
 #include "expression_parser/expression_parser.h"
 
 #include <string>
+#include <unordered_set>
 
 struct InkChoiceEntry {
 	std::vector<InkObject*> text;
@@ -33,6 +34,8 @@ public:
 
 private:
 	std::vector<InkChoiceEntry> choices;
+
+	std::unordered_set<Uuid> conditions_fully_prepared;
 
 public:
 	InkObjectChoice(const std::vector<InkChoiceEntry>& choices) : choices{choices} {}
