@@ -51,13 +51,23 @@ std::string join_string_vector(const std::vector<std::string>& vector, std::stri
 	}
 }
 
-std::vector<std::string> split_string(const std::string& string, char delimiter, bool ignore_delim_spaces) noexcept {
+std::vector<std::string> split_string(const std::string& string, char delimiter, bool ignore_delim_spaces, bool paren_arguments) noexcept {
 	if (!string.empty()) {
 		std::vector<std::string> result;
 		std::string current_string;
+
+		std::size_t paren_level = 0;
 		current_string.reserve(50);
 		for (auto chr = string.begin(); chr != string.end(); ++chr) {
-			if (*chr != delimiter) {
+			if (paren_arguments) {
+				if (*chr == '(') {
+					++paren_level;
+				} else if (*chr == ')') {
+					--paren_level;
+				}
+			}
+
+			if (*chr != delimiter || (paren_arguments && paren_level > 0)) {
 				current_string.push_back(*chr);
 			} else {
 				result.push_back(current_string);

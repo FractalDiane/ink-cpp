@@ -815,6 +815,12 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 						default: {
 							InkObject* compiled_object = compile_token(all_tokens, all_tokens[token_index], story_knots);
+							// HACK: get rid of whitespace in switch results if they're text
+							if (is_switch && compiled_object->get_id() == ObjectId::Text) {
+								InkObjectText* object_text = static_cast<InkObjectText*>(compiled_object);
+								object_text->set_text_contents(strip_string_edges(object_text->get_text_contents(), true, false, true));
+							}
+
 							if (compiled_object->has_any_contents(true)) {
 								if (is_conditional) {
 									Knot& target_array = in_else ? items_else : items_conditions.back().second;
@@ -908,14 +914,22 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 						std::string all_args;
 						all_args.reserve(50);
-						while (all_tokens[token_index].token != InkToken::RightParen) {
+
+						std::size_t extra_paren_count = 0;
+						while (all_tokens[token_index].token != InkToken::RightParen || extra_paren_count > 0) {
 							all_args += all_tokens[token_index].text_contents;
+							if (all_tokens[token_index].token == InkToken::LeftParen) {
+								++extra_paren_count;
+							} else if (all_tokens[token_index].token == InkToken::RightParen) {
+								--extra_paren_count;
+							}
+
 							++token_index;
 						}
 
 						--token_index;
 
-						std::vector<std::string> split = split_string(all_args, ',', true);
+						std::vector<std::string> split = split_string(all_args, ',', true, true);
 						for (const std::string& arg : split) {
 							try {
 								ExpressionParser::ShuntedExpression tokenized = ExpressionParser::tokenize_and_shunt_expression(arg, {}, declared_functions);

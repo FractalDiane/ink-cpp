@@ -179,6 +179,10 @@ std::string InkStory::continue_story() {
 			bool function = false;
 			if (target.found_any) {
 				switch (eval_result.divert_type) {
+					case DivertType::Thread: {
+						story_state.in_thread = true;
+						[[fallthrough]];
+					}
 					case DivertType::ToKnot:
 					case DivertType::ToTunnel:
 					case DivertType::FromTunnel: {
@@ -288,10 +292,9 @@ std::string InkStory::continue_story() {
 						eval_result.imminent_function_prep = false;
 					} break;
 
-					case DivertType::Thread: {
-						//InkStoryEvalResult thread_result = run_thread(target);
-						//eval_result.result += thread_result.result;
-					} break;
+					/*case DivertType::Thread: {
+						
+					} break;*/
 
 					default: {
 						throw;
@@ -318,7 +321,6 @@ std::string InkStory::continue_story() {
 		}
 
 		if (eval_result.reached_function_return) {
-			//eval_result.argument_count = story_state.current_knots_stack.back().knot->parameters.size();
 			while (story_state.current_knot().knot != story_state.function_call_stack.back()) {
 				story_state.current_knots_stack.pop_back();
 			}

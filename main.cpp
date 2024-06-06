@@ -25,7 +25,7 @@ void print_vector(const std::vector<T>& vector) {
 }
 
 #define TEST_FOLDER "17_functions"
-#define TEST_FILE "17h_complex_functions"
+#define TEST_FILE "17f_print_num"
 
 int main(int argc, char* argv[]) {
 	//if (argc > 1) {
@@ -58,8 +58,10 @@ int main(int argc, char* argv[]) {
 	InkCompiler compiler;
 	InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
 	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(1);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(1);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;

@@ -74,6 +74,8 @@ FIXTURE(ThreadTests);
 
 FIXTURE(MiscellaneousTests);
 
+FIXTURE(InkProof);
+
 #pragma region NonStoryFunctionTests
 TEST_F(NonStoryFunctionTests, DeinkifyExpression) {
 	EXPECT_EQ(deinkify_expression("true and true"), "true && true");
@@ -1366,6 +1368,134 @@ TEST_F(MiscellaneousTests, VariableObservation) {
 }
 #pragma endregion
 
+#pragma region InkProof
+TEST_F(InkProof, MinimalStory) {
+	STORY("ink-proof/1_minimal_story.ink");
+	EXPECT_TEXT("Hello, world!");
+}
+
+TEST_F(InkProof, FoggComfortsPassepartout) {
+	STORY("ink-proof/2_fogg_passepartout.ink");
+	EXPECT_TEXT(R"("What's that?" my master asked.)");
+	EXPECT_CHOICES(
+		R"("I am somewhat tired.")",
+		R"("Nothing, Monsieur!")",
+		R"("I said, this journey is appalling.")",
+	);
+
+	story.choose_choice_index(2);
+
+	EXPECT_TEXT(
+		R"("I said, this journey is appalling and I want no more of it.")",
+		R"("Ah," he replied, not unkindly. "I see you are feeling frustrated. Tomorrow, things will improve.")",
+	);
+}
+
+TEST_F(InkProof, TunnelToDeath) {
+	STORY("ink-proof/3_tunnel_to_death.ink");
+	EXPECT_TEXT("Should you cross the river?");
+	EXPECT_CHOICES("Yes", "No");
+
+	story.choose_choice_index(1);
+	EXPECT_TEXT(
+		"You follow the path along the river for some time and finally encounter a huge man with a wooden stick.",
+		"As you start talking to him, he beats you with his weapon.",
+	);
+
+	EXPECT_CHOICES("Fight back", "Flee");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT("You desperately run for your life and never look back.");
+}
+
+TEST_F(InkProof, PrintNumAsEnglish) {
+	STORY("ink-proof/4_print_num_as_english.ink");
+	EXPECT_TEXT("You have fifty-eight coins.");
+}
+
+TEST_F(InkProof, ConstVariable) {
+	STORY("ink-proof/5_const_variable.ink");
+	EXPECT_TEXT("5");
+}
+
+TEST_F(InkProof, MultipleConstantRefs) {
+	STORY("ink-proof/6_multiple_constant_refs.ink");
+	EXPECT_TEXT("success");
+}
+
+TEST_F(InkProof, SetNonexistentVariable) {
+	STORY("ink-proof/7_set_nonexistent_variable.ink");
+	EXPECT_TEXT("Hello world.");
+}
+
+TEST_F(InkProof, TempGlobalConflict) {
+	STORY("ink-proof/8_temp_global_conflict.ink");
+	EXPECT_TEXT("0");
+}
+
+TEST_F(InkProof, TempInOptions) {
+	STORY("ink-proof/9_temp_in_options.ink");
+	EXPECT_TEXT("1", "End of choice", "this another");
+}
+
+TEST_F(InkProof, TempNotFound) {
+	STORY("ink-proof/10_temp_not_found.ink");
+	EXPECT_CHOICES("1");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("0", "hello");
+}
+
+TEST_F(InkProof, TempAtGlobalScope) {
+	STORY("ink-proof/11_temp_at_global_scope.ink");
+	EXPECT_TEXT("54");
+	
+}
+
+TEST_F(InkProof, VarDeclareInConditional) {
+	STORY("ink-proof/12_var_declare_in_conditional.ink");
+	EXPECT_TEXT("5");
+}
+
+TEST_F(InkProof, VariableDivertTarget) {
+	STORY("ink-proof/13_variable_divert_target.ink");
+	EXPECT_TEXT("Here.");
+}
+
+TEST_F(InkProof, VarSwapRecurse) {
+	STORY("ink-proof/14_var_swap_recurse.ink");
+	EXPECT_TEXT("1 2");
+}
+
+TEST_F(InkProof, VariableTunnel) {
+	STORY("ink-proof/15_variable_tunnel.ink");
+	EXPECT_TEXT("STUFF");
+}
+
+TEST_F(InkProof, Empty) {
+	STORY("ink-proof/16_empty.ink");
+	EXPECT_TEXT("");
+}
+
+TEST_F(InkProof, End) {
+	STORY("ink-proof/17_end.ink");
+	EXPECT_TEXT("hello", "");
+}
+
+TEST_F(InkProof, End2) {
+	STORY("ink-proof/18_end2.ink");
+	EXPECT_TEXT("hello", "");
+}
+
+TEST_F(InkProof, EndOfContent) {
+	STORY("ink-proof/19_end_of_content.ink");
+	EXPECT_TEXT("");
+}
+
+TEST_F(InkProof, EscapeCharacter) {
+	STORY("ink-proof/20_escape_character.ink");
+	EXPECT_TEXT("this is a '|' character");
+}
+#pragma endregion
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int main() {

@@ -53,6 +53,7 @@ struct InkStoryState {
 	std::vector<std::vector<std::pair<std::string, ExpressionParser::Variant>>> arguments_stack;
 	std::vector<Knot*> function_call_stack;
 
+	bool in_thread = false;
 	std::vector<ThreadEntry> current_thread_entries;
 
 	InkStoryTracking story_tracking;

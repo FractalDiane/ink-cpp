@@ -82,21 +82,38 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
 	
 	if (!is_switch) {
-		for (auto& entry : branches) {
-			ExpressionParser::Variant condition_result = ExpressionParser::execute_expression_tokens(entry.first.tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
-			if (ExpressionParser::as_bool(condition_result)) {
+		for (Entry& entry : branches) {
+			//ExpressionParser::Variant condition_result = ExpressionParser::execute_expression_tokens(entry.first.tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
+			ExpressionParser::ExecuteResult condition_result = prepare_next_function_call(entry.first, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
+			if (!condition_result.has_value() && condition_result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
+				return;
+			}
+			
+			if (condition_result.has_value() && ExpressionParser::as_bool(*condition_result)) {
 				story_state.current_knots_stack.push_back({&(entry.second), 0});
 				return;
 			}
 		}
 	} else {
 		// TODO: this might be redundant and strictly worse performance than the above version
-		ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(switch_expression.tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
+		//ExpressionParser::Variant result = ExpressionParser::execute_expression_tokens(switch_expression.tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
+		ExpressionParser::ExecuteResult result = prepare_next_function_call(switch_expression, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
+		if (!result.has_value() && result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
+			return;
+		}
+
 		for (auto& entry : branches) {
-			ExpressionParser::Variant condition_result = ExpressionParser::execute_expression_tokens(entry.first.tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
-			if (condition_result == result) {
-				story_state.current_knots_stack.push_back({&(entry.second), 0});
+			//ExpressionParser::Variant condition_result = ExpressionParser::execute_expression_tokens(entry.first.tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
+			ExpressionParser::ExecuteResult condition_result = prepare_next_function_call(entry.first, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
+			if (!condition_result.has_value() && condition_result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
 				return;
+			}
+
+			if (condition_result.has_value()) {
+				if (*condition_result == result) {
+					story_state.current_knots_stack.push_back({&(entry.second), 0});
+					return;
+				}
 			}
 		}
 	}

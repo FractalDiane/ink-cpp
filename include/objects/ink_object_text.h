@@ -26,4 +26,5 @@ public:
 
 	void append_text(const std::string& text);
 	const std::string& get_text_contents() const { return text_contents; }
+	void set_text_contents(std::string&& new_contents) { text_contents = new_contents; }
 };
