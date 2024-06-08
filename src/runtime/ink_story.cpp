@@ -131,7 +131,7 @@ bool InkStory::can_continue() {
 	InkStoryState::KnotStatus& current_knot_status = story_state.current_knot();
 	return !story_state.should_end_story
 	&& (current_knot_status.index < current_knot_status.knot->objects.size() || story_state.current_knots_stack.size() > 1)
-	&& (!story_state.at_choice || story_state.selected_choice != SIZE_MAX);
+	&& (!story_state.at_choice || story_state.selected_choice.has_value());
 }
 
 std::string InkStory::continue_story() {
@@ -141,18 +141,17 @@ std::string InkStory::continue_story() {
 	InkStoryEvalResult eval_result;
 	eval_result.result.reserve(512);
 	eval_result.target_knot.reserve(32);
-	while (!story_state.should_end_story && (!story_state.at_choice || story_state.selected_choice != SIZE_MAX) && story_state.index_in_knot() < story_state.current_knot_size()) {
+	while (!story_state.should_end_story && (!story_state.at_choice || story_state.selected_choice.has_value()) && story_state.index_in_knot() < story_state.current_knot_size()) {
 		Knot* knot_before_object = story_state.current_knot().knot;
 		bool changed_knot = false;
 		InkObject* current_object = story_state.current_knot().knot->objects[story_state.index_in_knot()];
 
-		
 		InkStoryState::KnotStatus& last_knot = story_state.previous_nonfunction_knot();
 		bool last_knot_had_newline = last_knot.index > 0 && last_knot.knot->objects[last_knot.index - 1]->get_id() == ObjectId::LineBreak;
 		if (eval_result.reached_newline
 		&& eval_result.has_any_contents(true)
 		&& (!story_state.current_nonchoice_knot().knot->is_function || story_state.current_nonchoice_knot().any_new_content || last_knot_had_newline)
-		&& current_object->stop_before_this()) {
+		&& current_object->stop_before_this(story_state)) {
 			if (story_state.in_glue) {
 				story_state.in_glue = false;
 			} else {
@@ -202,7 +201,7 @@ std::string InkStory::continue_story() {
 
 								for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
 									story_state.variables[target.knot->parameters[i].name] = story_state.arguments_stack.back()[i].second;
-									if (target.knot->parameters[i].by_ref) {
+									if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
 										story_state.variable_redirects[target.knot->uuid].insert({
 											target.knot->parameters[i].name,
 											story_state.arguments_stack.back()[i].first,
@@ -234,7 +233,7 @@ std::string InkStory::continue_story() {
 
 								for (std::size_t i = 0; i < target.stitch->parameters.size(); ++i) {
 									story_state.variables[target.stitch->parameters[i].name] = story_state.arguments_stack.back()[i].second;
-									if (target.knot->parameters[i].by_ref) {
+									if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
 										story_state.variable_redirects[target.knot->uuid].insert({
 											target.knot->parameters[i].name,
 											story_state.arguments_stack.back()[i].first,
@@ -254,7 +253,17 @@ std::string InkStory::continue_story() {
 										story_state.current_knots_stack.pop_back();
 									}
 
+									/*if (target.gather_point->in_choice) {
+										//story_state.current_knots_stack.back() = {target.}
+									} else {
+										story_state.current_knots_stack.back() = {target.knot, target.gather_point->index};
+									}*/
+
 									story_state.current_knots_stack.back() = {target.knot, target.gather_point->index};
+									if (target.gather_point->in_choice) {
+										//choose_choice_index(target.gather_point->choice_index);
+										story_state.choice_divert_index = target.gather_point->choice_index;
+									}
 								}
 								
 								if (target.stitch) {
@@ -277,7 +286,7 @@ std::string InkStory::continue_story() {
 
 						for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
 							story_state.variables[target.knot->parameters[i].name] = story_state.arguments_stack.back()[i].second;
-							if (target.knot->parameters[i].by_ref) {
+							if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
 								story_state.variable_redirects[target.knot->uuid].insert({
 									target.knot->parameters[i].name,
 									story_state.arguments_stack.back()[i].first,
@@ -414,7 +423,7 @@ const std::vector<std::string>& InkStory::get_current_tags() const {
 }
 
 void InkStory::choose_choice_index(std::size_t index) {
-	if (story_state.selected_choice == SIZE_MAX) {
+	if (!story_state.selected_choice.has_value()) {
 		story_state.selected_choice = index;
 		--story_state.current_knots_stack.back().index;
 	}

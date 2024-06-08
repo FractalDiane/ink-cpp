@@ -38,5 +38,13 @@ InkObjectGlobalVariable::~InkObjectGlobalVariable() {
 void InkObjectGlobalVariable::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
 	auto& map = is_constant ? story_state.constants : story_state.variables;
-	map[name] = ExpressionParser::execute_expression_tokens(value_shunted_tokens.tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions).value();
+	
+	ExpressionParser::ExecuteResult result = prepare_next_function_call(value_shunted_tokens, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
+	if (!result.has_value() && result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
+		return;
+	}
+
+	if (result.has_value()) {
+		map[name] = *result;
+	}
 }

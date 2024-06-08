@@ -1435,20 +1435,20 @@ TEST_F(InkProof, TempGlobalConflict) {
 
 TEST_F(InkProof, TempInOptions) {
 	STORY("ink-proof/9_temp_in_options.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("1");
+	story.choose_choice_index(0);
 	EXPECT_TEXT("1", "End of choice", "this another");
 }
 
 TEST_F(InkProof, TempNotFound) {
 	STORY("ink-proof/10_temp_not_found.ink");
-	EXPECT_CHOICES("1");
-	story.choose_choice_index(0);
-	EXPECT_TEXT("0", "hello");
+	EXPECT_TEXT("hello");
 }
 
 TEST_F(InkProof, TempAtGlobalScope) {
 	STORY("ink-proof/11_temp_at_global_scope.ink");
 	EXPECT_TEXT("54");
-	
 }
 
 TEST_F(InkProof, VarDeclareInConditional) {

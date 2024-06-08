@@ -1047,6 +1047,8 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 
 	bool in_knot_name = false;
 
+	#define TRY_ADD_WORD() try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions)
+
 	std::size_t index = 0;
 	while (index < expression.length()) {
 		using UnaryType = TokenOperator::UnaryType;
@@ -1056,7 +1058,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				case '+': {
 					if (next_char(expression, index) == '+') {
 						if (next_char(expression, index + 1) <= 32) {
-							try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
+							TRY_ADD_WORD();
 							result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Postfix));
 						} else {
 							result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Prefix));
@@ -1071,7 +1073,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				case '-': {
 					if (next_char(expression, index) == '-') {
 						if (next_char(expression, index + 1) <= 32) {
-							try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
+							TRY_ADD_WORD();
 							result.push_back(new TokenOperator(TokenOperator::Type::Decrement, UnaryType::Postfix));
 						} else {
 							result.push_back(new TokenOperator(TokenOperator::Type::Decrement, UnaryType::Prefix));
@@ -1091,6 +1093,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 
 				case '=': {
+					TRY_ADD_WORD();
 					if (next_char(expression, index) == '=') {
 						result.push_back(new TokenOperator(TokenOperator::Type::Equal, UnaryType::NotUnary));
 						++index;
@@ -1100,6 +1103,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 
 				case '<': {
+					TRY_ADD_WORD();
 					if (next_char(expression, index) == '=') {
 						result.push_back(new TokenOperator(TokenOperator::Type::LessEqual, UnaryType::NotUnary));
 						++index;
@@ -1111,6 +1115,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 				
 				case '>': {
+					TRY_ADD_WORD();
 					if (next_char(expression, index) == '=') {
 						result.push_back(new TokenOperator(TokenOperator::Type::GreaterEqual, UnaryType::NotUnary));
 						++index;
@@ -1122,18 +1127,22 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 
 				case '*': {
+					TRY_ADD_WORD();
 					result.push_back(new TokenOperator(TokenOperator::Type::Multiply, UnaryType::NotUnary));
 				} break;
 
 				case '/': {
+					TRY_ADD_WORD();
 					result.push_back(new TokenOperator(TokenOperator::Type::Divide, UnaryType::NotUnary));
 				} break;
 
 				case '%': {
+					TRY_ADD_WORD();
 					result.push_back(new TokenOperator(TokenOperator::Type::Modulus, UnaryType::NotUnary));
 				} break;
 
 				case '?': {
+					TRY_ADD_WORD();
 					result.push_back(new TokenOperator(TokenOperator::Type::Substring, UnaryType::NotUnary));
 				} break;
 
@@ -1147,6 +1156,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 
 				case '&': {
+					TRY_ADD_WORD();
 					if (next_char(expression, index) == '&') {
 						result.push_back(new TokenOperator(TokenOperator::Type::And, UnaryType::NotUnary));
 						++index;
@@ -1156,6 +1166,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 
 				case '|': {
+					TRY_ADD_WORD();
 					if (next_char(expression, index) == '|') {
 						result.push_back(new TokenOperator(TokenOperator::Type::Or, UnaryType::NotUnary));
 						++index;
@@ -1165,6 +1176,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 
 				case '^': {
+					TRY_ADD_WORD();
 					result.push_back(new TokenOperator(TokenOperator::Type::BitXor, UnaryType::NotUnary));
 				} break;
 
@@ -1175,17 +1187,17 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				} break;
 
 				case '(': {
-					try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
+					TRY_ADD_WORD();
 					result.push_back(new TokenParenComma(TokenParenComma::Type::LeftParen));
 				} break;
 
 				case ')': {
-					try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
+					TRY_ADD_WORD();
 					result.push_back(new TokenParenComma(TokenParenComma::Type::RightParen));
 				} break;
 
 				case ',': {
-					try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
+					TRY_ADD_WORD();
 					result.push_back(new TokenParenComma(TokenParenComma::Type::Comma));
 				} break;
 
@@ -1199,7 +1211,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 					if (this_char > 32) {
 						current_word.push_back(this_char);
 					} else {
-						try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
+						TRY_ADD_WORD();
 					}
 				} break;
 			}
@@ -1216,7 +1228,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 		++index;
 	}
 
-	try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions);
+	TRY_ADD_WORD();
 
 	std::vector<std::pair<TokenFunction*, std::uint8_t>> arg_count_stack;
 	for (Token* token : result) {
@@ -1253,6 +1265,8 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 			} break;
 		}
 	}
+
+	#undef TRY_ADD_WORD
 
 	return result;
 }
@@ -1511,10 +1525,17 @@ ExecuteResult ExpressionParser::execute_expression_tokens(std::vector<Token*>& e
 						Token* var = stack.top();
 						stack.pop();
 						if (var->get_type() != TokenType::Variable) {
-							throw;
+							throw std::runtime_error("Invalid use of assignment operator");
 						}
 
 						std::string var_name = static_cast<TokenVariable*>(var)->data;
+
+						if (value->get_type() == TokenType::Variable) {
+							std::string value_name = static_cast<TokenVariable*>(value)->data;
+							if (var_name == value_name) {
+								break;
+							}
+						}
 
 						// HACK: do this a way better way
 						while (true) {
@@ -1539,7 +1560,7 @@ ExecuteResult ExpressionParser::execute_expression_tokens(std::vector<Token*>& e
 								variables.flag_variable_changed(var_name);
 							}
 						} else {
-							throw;
+							throw std::runtime_error("Variable being assigned has no value");
 						}
 					} break;
 

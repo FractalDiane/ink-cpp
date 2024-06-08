@@ -56,11 +56,11 @@ namespace {
 		//{',', InkToken::Comma},
 	};
 
-	static const std::unordered_map<std::string, InkToken> TokenKeywords = {
-		{"VAR", InkToken::KeywordVar},
-		{"CONST", InkToken::KeywordConst},
-		{"LIST", InkToken::KeywordList},
-		{"function", InkToken::KeywordFunction},
+	static const std::unordered_map<std::string, std::pair<InkToken, bool>> TokenKeywords = {
+		{"VAR", {InkToken::KeywordVar, true}},
+		{"CONST", {InkToken::KeywordConst, true}},
+		{"LIST", {InkToken::KeywordList, true}},
+		{"function", {InkToken::KeywordFunction, false}},
 	};
 
 	char next_char(const std::string& script_text, size_t index) {
@@ -203,8 +203,10 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 		}
 
 		if (auto keyword_token = TokenKeywords.find(strip_string_edges(current_text, true, true, true)); keyword_token != TokenKeywords.end()) {
-			this_token.token = keyword_token->second;
-			current_text.clear();
+			if (!any_tokens_this_line || !keyword_token->second.second) {
+				this_token.token = keyword_token->second.first;
+				current_text.clear();
+			}
 		}
 
 		if (end_text) {

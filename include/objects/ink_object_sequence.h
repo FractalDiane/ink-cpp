@@ -38,5 +38,5 @@ public:
 	virtual ByteVec to_bytes() const override;
 	virtual InkObject* populate_from_bytes(const ByteVec& bytes, std::size_t& index) override;
 
-	virtual bool stop_before_this() const override { return multiline; }
+	virtual bool stop_before_this(const InkStoryState& story_state) const override { return multiline; }
 };

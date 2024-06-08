@@ -38,7 +38,7 @@ public:
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) = 0;
 
-	virtual bool stop_before_this() const { return false; }
+	virtual bool stop_before_this(const InkStoryState& story_state) const { return false; }
 	
 	ByteVec get_serialized_bytes() const;
 

@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <cstdint>
 #include <random>
+#include <optional>
 
 #include "runtime/ink_story_structs.h"
 #include "runtime/ink_story_tracking.h"
@@ -45,7 +46,7 @@ struct InkStoryState {
 	std::vector<std::string> current_choices;
 	std::vector<struct InkChoiceEntry*> current_choice_structs;
 	std::vector<std::size_t> current_choice_indices;
-	std::size_t selected_choice = SIZE_MAX;
+	std::optional<std::size_t> selected_choice = std::nullopt;
 	ChoiceMixPosition choice_mix_position = ChoiceMixPosition::Before;
 	std::unordered_map<Knot*, std::unordered_map<class InkObject*, std::unordered_set<std::size_t>>> choices_taken;
 	std::size_t total_choices_taken = 0;
@@ -63,6 +64,7 @@ struct InkStoryState {
 	bool in_choice_text = false;
 	bool at_choice = false;
 	bool just_diverted_to_non_knot = false;
+	std::optional<std::size_t> choice_divert_index = std::nullopt;
 
 	ExpressionParser::VariableMap variables;
 	ExpressionParser::VariableMap constants;

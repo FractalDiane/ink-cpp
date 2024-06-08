@@ -50,6 +50,8 @@ public:
 	virtual InkObject* populate_from_bytes(const ByteVec& bytes, std::size_t& index) override;
 
 	GetChoicesResult get_choices(InkStoryState& story_state, InkStoryEvalResult& eval_result);
+
+	virtual bool stop_before_this(const InkStoryState& story_state) const override { return story_state.choice_divert_index.has_value(); }
 };
 
 template <>

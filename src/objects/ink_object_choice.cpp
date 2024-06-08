@@ -187,12 +187,14 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 }
 
 void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	if (story_state.selected_choice == SIZE_MAX || story_state.current_choices.empty()) {
+	bool do_choice_setup = !story_state.selected_choice.has_value() || story_state.current_choices.empty();
+	bool select_choice_immediately = false;
+	if (do_choice_setup) {
 		story_state.in_choice_text = true;
 		story_state.current_choices.clear();
 		story_state.current_choice_structs.clear();
 		story_state.current_choice_indices.clear();
-		story_state.selected_choice = SIZE_MAX;
+		story_state.selected_choice = std::nullopt;
 
 		GetChoicesResult final_choices = get_choices(story_state, eval_result);
 		if (final_choices.need_to_prepare_function) {
@@ -214,9 +216,16 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			story_state.current_knots_stack.push_back({&(choices[final_choices.fallback_index].result), 0});
 			story_state.at_choice = false;
 		}
-	} else {
-		story_state.add_choice_taken(this, static_cast<std::size_t>(story_state.current_choice_indices[story_state.selected_choice]));
-		InkChoiceEntry* selected_choice_struct = story_state.current_choice_structs[story_state.selected_choice];
+
+		if (story_state.choice_divert_index.has_value()) {
+			story_state.selected_choice = *story_state.choice_divert_index;
+			select_choice_immediately = true;
+		}
+	}
+	
+	if (!do_choice_setup || select_choice_immediately) {
+		story_state.add_choice_taken(this, static_cast<std::size_t>(story_state.current_choice_indices[*story_state.selected_choice]));
+		InkChoiceEntry* selected_choice_struct = story_state.current_choice_structs[*story_state.selected_choice];
 
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 		InkStoryEvalResult choice_eval_result;
@@ -243,8 +252,9 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.story_tracking.increment_turns_since();
 
 		story_state.current_choices.clear();
-		story_state.selected_choice = SIZE_MAX;
+		story_state.selected_choice = std::nullopt;
 		++story_state.total_choices_taken;
 		story_state.at_choice = false;
+		story_state.choice_divert_index = std::nullopt;
 	}
 }
