@@ -762,6 +762,28 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 
 						case InkToken::Dash: {
 							if (at_line_start) {
+								bool is_condition_entry = !is_conditional;
+								if (!is_condition_entry) {
+									std::size_t index = token_index;
+									while (index < all_tokens.size()) {
+										InkToken this_token = all_tokens[index].token;
+										if (this_token == InkToken::Colon) {
+											is_condition_entry = true;
+											break;
+										}
+
+										if (this_token == InkToken::NewLine || this_token == InkToken::LeftBrace) {
+											break;
+										}
+
+										++index;
+									}
+								}
+								
+								if (!is_condition_entry) {
+									break;
+								}
+
 								if (is_explicit_alternative) {
 									++token_index;
 									if (found_dash) {
@@ -823,7 +845,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 								object_text->set_text_contents(strip_string_edges(object_text->get_text_contents(), true, false, true));
 							}
 
-							if (compiled_object->has_any_contents(true)) {
+							if (compiled_object->has_any_contents(false)) {
 								if (is_conditional) {
 									Knot& target_array = in_else ? items_else : items_conditions.back().second;
 									target_array.objects.push_back(compiled_object);

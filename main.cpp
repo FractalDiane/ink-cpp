@@ -25,7 +25,7 @@ void print_vector(const std::vector<T>& vector) {
 }
 
 #define TEST_FOLDER "ink-proof"
-#define TEST_FILE "10_temp_not_found"
+#define TEST_FILE "14_var_swap_recurse"
 
 int main(int argc, char* argv[]) {
 	//if (argc > 1) {
