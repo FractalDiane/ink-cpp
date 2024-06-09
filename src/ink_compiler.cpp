@@ -75,10 +75,12 @@ namespace {
 		return !tokens.empty() ? tokens.back() : InkLexer::Token();
 	}
 
-	void try_add_text_token(std::vector<InkLexer::Token>& result, const std::string& text) {
+	void try_add_text_token(std::vector<InkLexer::Token>& result, const std::string& text, bool& currently_escaped) {
 		InkLexer::Token text_token{InkToken::Text, text};
+		text_token.escaped = currently_escaped;
 		if (!text_token.text_contents.empty()) {
 			result.push_back(text_token);
+			currently_escaped = false;
 		}
 	}
 }
@@ -89,6 +91,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 	std::size_t index = 0;
 	std::string current_text;
 	current_text.reserve(50);
+	bool current_text_escaped = false;
 	bool any_tokens_this_line = false;
 	bool at_line_start = true;
 
@@ -104,6 +107,12 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 					this_token.token = InkToken::NewLine;
 					at_line_start = true;
 				}
+			} break;
+
+			case '\\': {
+				current_text += next_char(script_text, index);
+				current_text_escaped = true;
+				++index;
 			} break;
 
 			case '*':
@@ -210,7 +219,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 		}
 
 		if (end_text) {
-			try_add_text_token(result, current_text);
+			try_add_text_token(result, current_text, current_text_escaped);
 			current_text.clear();
 		}
 
@@ -223,7 +232,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 		++index;
 	}
 
-	try_add_text_token(result, current_text);
+	try_add_text_token(result, current_text, current_text_escaped);
 
 	return result;
 }
@@ -615,7 +624,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						
 						++token_index;
 
-						if (!past_choice_initial_braces && in_choice_token.token != InkToken::LeftBrace && (in_choice_token.token != InkToken::Text || !strip_string_edges(in_choice_token.text_contents, true, true, true).empty())) {
+						if (!past_choice_initial_braces && in_choice_token.token != InkToken::LeftBrace && (in_choice_token.escaped || in_choice_token.token != InkToken::Text || !strip_string_edges(in_choice_token.text_contents, true, true, true).empty())) {
 							past_choice_initial_braces = true;
 						}
 					}
@@ -1150,9 +1159,9 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		case InkToken::Text: {
 			std::string text_stripped = strip_string_edges(token.text_contents, true, true, true);
 			std::string text_notabs = strip_string_edges(token.text_contents);
-			if (!text_notabs.empty() && (!text_stripped.empty() || !in_choice_line || !at_line_start)) {
+			//if (!text_notabs.empty() && (!text_stripped.empty() || !in_choice_line || !at_line_start)) {
 				result_object = new InkObjectText(token.text_contents);
-			}
+			//}
 		} break;
 
 		default: break;
