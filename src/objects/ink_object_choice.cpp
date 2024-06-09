@@ -133,6 +133,11 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 							ExpressionParser::ExecuteResult condition_result = prepare_next_function_call(condition, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
 							if (!condition_result.has_value() && condition_result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
 								choices_result.need_to_prepare_function = true;
+
+								for (std::size_t j = 0; j < choices_result.choices.size(); ++j) {
+									story_state.current_choices.pop_back();
+								}
+
 								return choices_result;
 							} else {
 								conditions_fully_prepared.insert(condition.uuid);
@@ -161,6 +166,11 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 							eval_result.target_knot = choice_eval_result.target_knot;
 							eval_result.divert_type = DivertType::Function;
 							choices_result.need_to_prepare_function = true;
+
+							for (std::size_t j = 0; j < choices_result.choices.size(); ++j) {
+								story_state.current_choices.pop_back();
+							}
+
 							return choices_result;
 						}
 					}
@@ -187,17 +197,10 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 }
 
 void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	if (story_state.current_thread_depth > 0) {
-		story_state.current_thread_choice_complete = false;
-	}
-	
 	bool do_choice_setup = !story_state.selected_choice.has_value() || story_state.current_choices.empty();
 	bool select_choice_immediately = false;
 	if (do_choice_setup) {
 		story_state.in_choice_text = true;
-		story_state.current_choices.clear();
-		story_state.current_choice_structs.clear();
-		story_state.current_choice_indices.clear();
 		story_state.selected_choice = std::nullopt;
 
 		GetChoicesResult final_choices = get_choices(story_state, eval_result);
@@ -216,7 +219,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			}
 		}
 
-		story_state.current_thread_choice_complete = true;
+		story_state.should_wrap_up_thread = true;
 
 		story_state.in_choice_text = false;
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
@@ -263,6 +266,8 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.story_tracking.increment_turns_since();
 
 		story_state.current_choices.clear();
+		story_state.current_choice_structs.clear();
+		story_state.current_choice_indices.clear();
 		story_state.current_thread_entries.clear();
 		story_state.selected_choice = std::nullopt;
 		++story_state.total_choices_taken;

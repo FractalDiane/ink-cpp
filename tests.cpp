@@ -1362,6 +1362,35 @@ TEST_F(ThreadTests, NestedThreads) {
 	story.choose_choice_index(2);
 	EXPECT_TEXT("Before long, we arrived at his house.");
 }
+
+TEST_F(ThreadTests, ComplexThreads) {
+	STORY("20_threads/20c_complex_threads.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("Ask the General about the bloodied knife", "Drawers", "Wardrobe", "Go to Office");
+
+	story.choose_choice_index(0);
+	EXPECT_TEXT(R"("It's a bad business, I can tell you.")");
+	EXPECT_CHOICES("Drawers", "Wardrobe", "Go to Office");
+	story.choose_choice_index(1);
+	EXPECT_TEXT("This wardrobe looks conspicuous.");
+	EXPECT_CHOICES("Drawers", "Go to Office");
+	story.choose_choice_index(1);
+	EXPECT_TEXT("");
+
+	EXPECT_CHOICES("Ask the Doctor about the bloodied knife", "Cabinets", "Computer", "Go to Hallway");
+	story.choose_choice_index(0);
+	EXPECT_TEXT(R"("There's nothing strange about blood, is there?")");
+	EXPECT_CHOICES("Cabinets", "Computer", "Go to Hallway");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("These cabinets look incriminating.");
+	EXPECT_CHOICES("Computer", "Go to Hallway");
+	story.choose_choice_index(1);
+	EXPECT_TEXT("");
+
+	EXPECT_CHOICES("Drawers", "Go to Office");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("These drawers look suspicious.");
+}
 #pragma endregion
 
 #pragma region Miscellaneous Tests

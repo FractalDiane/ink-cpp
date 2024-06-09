@@ -58,7 +58,7 @@ struct InkStoryState {
 
 	std::size_t current_thread_depth = 0;
 	std::vector<ThreadEntry> current_thread_entries;
-	bool current_thread_choice_complete = false;
+	bool should_wrap_up_thread = false;
 
 	InkStoryTracking story_tracking;
 

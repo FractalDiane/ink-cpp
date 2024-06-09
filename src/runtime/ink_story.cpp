@@ -148,6 +148,8 @@ std::string InkStory::continue_story() {
 
 		InkStoryState::KnotStatus& last_knot = story_state.previous_nonfunction_knot();
 		bool last_knot_had_newline = last_knot.index > 0 && last_knot.knot->objects[last_knot.index - 1]->get_id() == ObjectId::LineBreak;
+		
+		// are we stopping here?
 		if (eval_result.reached_newline
 		&& eval_result.has_any_contents(true)
 		&& (!story_state.current_nonchoice_knot().knot->is_function || story_state.current_nonchoice_knot().any_new_content || last_knot_had_newline)
@@ -161,10 +163,15 @@ std::string InkStory::continue_story() {
 
 		current_object->execute(story_state, eval_result);
 
-		if (story_state.current_thread_depth > 0 && story_state.current_thread_choice_complete && current_object->get_id() == ObjectId::Choice) {
+		// after collecting the options from a choice, a thread returns to its origin
+		if (story_state.should_wrap_up_thread && story_state.current_thread_depth > 0) {
 			story_state.current_knots_stack.pop_back();
 			++story_state.current_knot().index;
 			--story_state.current_thread_depth;
+
+			story_state.should_wrap_up_thread = false;
+
+			//for (const InkStoryState::ThreadEntry& thread)
 		}
 
 		if (story_state.current_knot().knot != knot_before_object) {
@@ -173,6 +180,7 @@ std::string InkStory::continue_story() {
 
 		story_state.just_diverted_to_non_knot = false;
 
+		// diverts
 		if (!eval_result.target_knot.empty()) {
 			GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 			if (!target.found_any) {
@@ -324,6 +332,7 @@ std::string InkStory::continue_story() {
 			eval_result.divert_type = DivertType::ToKnot;
 		}
 
+		// if we're returning from a function, we need to get it off the stack
 		if (eval_result.reached_function_return) {
 			while (story_state.current_knot().knot != story_state.function_call_stack.back()) {
 				story_state.current_knots_stack.pop_back();
@@ -338,6 +347,7 @@ std::string InkStory::continue_story() {
 			changed_knot = true;
 		}
 
+		// any gather points we've hit need to have their visit counts incremented
 		std::vector<GatherPoint> no_current_stitch;
 		std::vector<GatherPoint>& other_gathers = story_state.current_stitch ? story_state.current_stitch->gather_points : no_current_stitch;
 		auto joint_gather_view = std::vector{
@@ -356,6 +366,7 @@ std::string InkStory::continue_story() {
 			++story_state.current_knot().index;
 		}
 
+		// if we've run out of content in this knot, the story continues to the next gather point
 		if (story_state.index_in_knot() >= story_state.current_knot_size()) {
 			if (story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
 				story_state.current_knots_stack.pop_back();

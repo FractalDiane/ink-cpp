@@ -25,7 +25,7 @@ void print_vector(const std::vector<T>& vector) {
 }
 
 #define TEST_FOLDER "20_threads"
-#define TEST_FILE "20a_basic_threads"
+#define TEST_FILE "20c_complex_threads"
 
 int main(int argc, char* argv[]) {
 	//if (argc > 1) {
@@ -60,14 +60,14 @@ int main(int argc, char* argv[]) {
 	std::cout << story.continue_story() << std::endl;
 	print_vector(story.get_current_choices());
 	//story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
+	/*std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	print_vector(story.get_current_choices());
 	story.choose_choice_index(1);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;*/
 	/*/story.choose_choice_index(1);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
