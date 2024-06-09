@@ -60,7 +60,15 @@ void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
 	std::string target = get_target(story_state, story_constants);
 
-	if (target == "END" || target == "DONE") {
+	bool is_done = target == "DONE";
+	if (is_done && !story_state.current_thread_entries.empty()) {
+		for (InkStoryState::ThreadEntry& entry : story_state.current_thread_entries) {
+			story_state.current_choices.push_back(entry.choice_text);
+			story_state.current_choice_structs.push_back(entry.choice_entry);
+			story_state.current_choice_indices.push_back(entry.choice_index);
+		}
+	}
+	else if (is_done || target == "END") {
 		story_state.should_end_story = true;
 	} else {
 		eval_result.target_knot = target;

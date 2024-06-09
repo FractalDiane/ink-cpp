@@ -161,6 +161,12 @@ std::string InkStory::continue_story() {
 
 		current_object->execute(story_state, eval_result);
 
+		if (story_state.current_thread_depth > 0 && story_state.current_thread_choice_complete && current_object->get_id() == ObjectId::Choice) {
+			story_state.current_knots_stack.pop_back();
+			++story_state.current_knot().index;
+			--story_state.current_thread_depth;
+		}
+
 		if (story_state.current_knot().knot != knot_before_object) {
 			changed_knot = true;
 		}
@@ -179,7 +185,7 @@ std::string InkStory::continue_story() {
 			if (target.found_any) {
 				switch (eval_result.divert_type) {
 					case DivertType::Thread: {
-						story_state.in_thread = true;
+						++story_state.current_thread_depth;
 						[[fallthrough]];
 					}
 					case DivertType::ToKnot:
@@ -187,7 +193,7 @@ std::string InkStory::continue_story() {
 					case DivertType::FromTunnel: {
 						switch (target.result_type) {
 							case WeaveContentType::Knot: {
-								if (eval_result.divert_type == DivertType::ToTunnel) {
+								if (eval_result.divert_type == DivertType::ToTunnel || eval_result.divert_type == DivertType::Thread) {
 									story_state.current_knots_stack.push_back({target.knot, 0});
 								} else {
 									while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
@@ -253,15 +259,8 @@ std::string InkStory::continue_story() {
 										story_state.current_knots_stack.pop_back();
 									}
 
-									/*if (target.gather_point->in_choice) {
-										//story_state.current_knots_stack.back() = {target.}
-									} else {
-										story_state.current_knots_stack.back() = {target.knot, target.gather_point->index};
-									}*/
-
 									story_state.current_knots_stack.back() = {target.knot, target.gather_point->index};
 									if (target.gather_point->in_choice) {
-										//choose_choice_index(target.gather_point->choice_index);
 										story_state.choice_divert_index = target.gather_point->choice_index;
 									}
 								}
@@ -300,10 +299,6 @@ std::string InkStory::continue_story() {
 
 						eval_result.imminent_function_prep = false;
 					} break;
-
-					/*case DivertType::Thread: {
-						
-					} break;*/
 
 					default: {
 						throw;
@@ -423,10 +418,15 @@ const std::vector<std::string>& InkStory::get_current_tags() const {
 }
 
 void InkStory::choose_choice_index(std::size_t index) {
-	if (!story_state.selected_choice.has_value()) {
+	//if (!story_state.selected_choice.has_value()) {
 		story_state.selected_choice = index;
-		--story_state.current_knots_stack.back().index;
-	}
+		if (!story_state.current_thread_entries.empty()) {
+			const InkStoryState::ThreadEntry& thread_entry = story_state.current_thread_entries[index];
+			story_state.current_knots_stack.back() = {thread_entry.containing_knot, thread_entry.index_in_knot};
+		} else {
+			--story_state.current_knots_stack.back().index;
+		}
+	//}
 }
 
 std::optional<ExpressionParser::Variant> InkStory::get_variable(const std::string& name) const {

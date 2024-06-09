@@ -1347,6 +1347,21 @@ TEST_F(ThreadTests, BasicThreads) {
 
 	EXPECT_TEXT("\"Nice weather, we're having,\" I said.", "\"I've seen better,\" he replied.", "Before long, we arrived at his house.");
 }
+
+TEST_F(ThreadTests, NestedThreads) {
+	STORY("20_threads/20b_nested_threads.ink");
+	EXPECT_TEXT(
+		"I had a headache; threading is hard to get your head around.",
+		"It was a tense moment for Monty and me.",
+		"We continued to walk down the dusty road.",
+		"HEY THERE",
+	);
+
+	EXPECT_CHOICES("\"What did you have for lunch today?\"", "\"Nice weather, we're having,\"", "Choice", "Continue walking");
+
+	story.choose_choice_index(2);
+	EXPECT_TEXT("Before long, we arrived at his house.");
+}
 #pragma endregion
 
 #pragma region Miscellaneous Tests

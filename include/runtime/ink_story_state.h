@@ -29,9 +29,11 @@ struct InkStoryState {
 	};
 
 	struct ThreadEntry {
-		InkObject* choice = nullptr;
-		Knot* knot = nullptr;
-		std::size_t index = 0;
+		std::string choice_text;
+		struct InkChoiceEntry* choice_entry = nullptr;
+		std::size_t choice_index = 0;
+		Knot* containing_knot = nullptr;
+		std::size_t index_in_knot = 0;
 	};
 
 	std::mt19937 rng{std::random_device()()};
@@ -54,8 +56,9 @@ struct InkStoryState {
 	std::vector<std::vector<std::pair<std::string, ExpressionParser::Variant>>> arguments_stack;
 	std::vector<Knot*> function_call_stack;
 
-	bool in_thread = false;
+	std::size_t current_thread_depth = 0;
 	std::vector<ThreadEntry> current_thread_entries;
+	bool current_thread_choice_complete = false;
 
 	InkStoryTracking story_tracking;
 

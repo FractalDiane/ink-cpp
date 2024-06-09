@@ -6,6 +6,7 @@
 
 #include <string>
 #include <unordered_set>
+#include <optional>
 
 struct InkChoiceEntry {
 	std::vector<InkObject*> text;
@@ -28,7 +29,7 @@ public:
 
 	struct GetChoicesResult {
 		std::vector<ChoiceComponents> choices;
-		std::size_t fallback_index = 0;
+		std::optional<std::size_t> fallback_index = 0;
 		bool need_to_prepare_function = false;
 	};
 

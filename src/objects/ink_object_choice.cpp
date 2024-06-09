@@ -120,7 +120,7 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 		conditions_fully_prepared.clear();
 	}
 
-	choices_result.fallback_index = SIZE_MAX;
+	choices_result.fallback_index = std::nullopt;
 	for (std::size_t i = 0; i < choices.size(); ++i) {
 		InkChoiceEntry& this_choice = choices[i];
 		if (this_choice.sticky || !story_state.has_choice_been_taken(this, i)) {
@@ -187,6 +187,10 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 }
 
 void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
+	if (story_state.current_thread_depth > 0) {
+		story_state.current_thread_choice_complete = false;
+	}
+	
 	bool do_choice_setup = !story_state.selected_choice.has_value() || story_state.current_choices.empty();
 	bool select_choice_immediately = false;
 	if (do_choice_setup) {
@@ -201,19 +205,26 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			return;
 		}
 
+		bool in_thread = story_state.current_thread_depth > 0;
 		for (const ChoiceComponents& choice : final_choices.choices) {
-			story_state.current_choices.push_back(choice.text);
-			story_state.current_choice_structs.push_back(choice.entry);
-			story_state.current_choice_indices.push_back(choice.index);
+			if (in_thread) {
+				story_state.current_thread_entries.emplace_back(choice.text, choice.entry, choice.index, story_state.current_knot().knot, story_state.current_knot().index);
+			} else {
+				story_state.current_choices.push_back(choice.text);
+				story_state.current_choice_structs.push_back(choice.entry);
+				story_state.current_choice_indices.push_back(choice.index);
+			}
 		}
+
+		story_state.current_thread_choice_complete = true;
 
 		story_state.in_choice_text = false;
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 
 		if (!story_state.current_choices.empty()) {
 			story_state.at_choice = true;
-		} else if (final_choices.fallback_index != SIZE_MAX) {
-			story_state.current_knots_stack.push_back({&(choices[final_choices.fallback_index].result), 0});
+		} else if (final_choices.fallback_index.has_value()) {
+			story_state.current_knots_stack.push_back({&(choices[*final_choices.fallback_index].result), 0});
 			story_state.at_choice = false;
 		}
 
@@ -223,7 +234,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		}
 	}
 	
-	if (!do_choice_setup || select_choice_immediately) {
+	if ((!do_choice_setup || select_choice_immediately) && story_state.current_thread_depth == 0) {
 		story_state.add_choice_taken(this, static_cast<std::size_t>(story_state.current_choice_indices[*story_state.selected_choice]));
 		InkChoiceEntry* selected_choice_struct = story_state.current_choice_structs[*story_state.selected_choice];
 
@@ -252,6 +263,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.story_tracking.increment_turns_since();
 
 		story_state.current_choices.clear();
+		story_state.current_thread_entries.clear();
 		story_state.selected_choice = std::nullopt;
 		++story_state.total_choices_taken;
 		story_state.at_choice = false;
