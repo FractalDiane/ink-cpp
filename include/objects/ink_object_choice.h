@@ -5,12 +5,14 @@
 #include "expression_parser/expression_parser.h"
 
 #include <string>
+#include <unordered_set>
+#include <optional>
 
 struct InkChoiceEntry {
 	std::vector<InkObject*> text;
 	Knot result;
 	bool sticky = false;
-	std::vector<std::vector<ExpressionParser::Token*>> conditions;
+	std::vector<ExpressionParser::ShuntedExpression> conditions;
 	bool fallback = false;
 	bool immediately_continue_to_result = false;
 
@@ -18,8 +20,23 @@ struct InkChoiceEntry {
 };
 
 class InkObjectChoice : public InkObject {
+public:
+	struct ChoiceComponents {
+		std::string text;
+		InkChoiceEntry* entry;
+		std::size_t index = 0;
+	};
+
+	struct GetChoicesResult {
+		std::vector<ChoiceComponents> choices;
+		std::optional<std::size_t> fallback_index = 0;
+		bool need_to_prepare_function = false;
+	};
+
 private:
 	std::vector<InkChoiceEntry> choices;
+
+	std::unordered_set<Uuid> conditions_fully_prepared;
 
 public:
 	InkObjectChoice(const std::vector<InkChoiceEntry>& choices) : choices{choices} {}
@@ -32,6 +49,10 @@ public:
 
 	virtual ByteVec to_bytes() const override;
 	virtual InkObject* populate_from_bytes(const ByteVec& bytes, std::size_t& index) override;
+
+	GetChoicesResult get_choices(InkStoryState& story_state, InkStoryEvalResult& eval_result);
+
+	virtual bool stop_before_this(const InkStoryState& story_state) const override { return story_state.choice_divert_index.has_value(); }
 };
 
 template <>

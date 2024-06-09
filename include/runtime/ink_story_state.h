@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <cstdint>
 #include <random>
+#include <optional>
 
 #include "runtime/ink_story_structs.h"
 #include "runtime/ink_story_tracking.h"
@@ -21,7 +22,18 @@ struct InkStoryState {
 
 	struct KnotStatus {
 		Knot* knot;
-		std::size_t index;
+		std::size_t index = 0;
+		bool returning_from_function = false;
+		Uuid current_function_prep_expression = UINT32_MAX;
+		bool any_new_content = false;
+	};
+
+	struct ThreadEntry {
+		std::string choice_text;
+		struct InkChoiceEntry* choice_entry = nullptr;
+		std::size_t choice_index = 0;
+		Knot* containing_knot = nullptr;
+		std::size_t index_in_knot = 0;
 	};
 
 	std::mt19937 rng{std::random_device()()};
@@ -36,15 +48,17 @@ struct InkStoryState {
 	std::vector<std::string> current_choices;
 	std::vector<struct InkChoiceEntry*> current_choice_structs;
 	std::vector<std::size_t> current_choice_indices;
-	std::size_t selected_choice = SIZE_MAX;
+	std::optional<std::size_t> selected_choice = std::nullopt;
 	ChoiceMixPosition choice_mix_position = ChoiceMixPosition::Before;
 	std::unordered_map<Knot*, std::unordered_map<class InkObject*, std::unordered_set<std::size_t>>> choices_taken;
 	std::size_t total_choices_taken = 0;
 
-	/*std::unordered_map<Knot*, std::size_t> knot_visit_counts;
-	std::unordered_map<Stitch*, std::size_t> stitch_visit_counts;
-	std::unordered_map<std::string, std::size_t> gather_point_visit_counts;*/
-	//std::unordered_map<std::string, std::size_t> turns_since_knots;
+	std::vector<std::vector<std::pair<std::string, ExpressionParser::Variant>>> arguments_stack;
+	std::vector<Knot*> function_call_stack;
+
+	std::size_t current_thread_depth = 0;
+	std::vector<ThreadEntry> current_thread_entries;
+	bool current_thread_choice_complete = false;
 
 	InkStoryTracking story_tracking;
 
@@ -53,6 +67,7 @@ struct InkStoryState {
 	bool in_choice_text = false;
 	bool at_choice = false;
 	bool just_diverted_to_non_knot = false;
+	std::optional<std::size_t> choice_divert_index = std::nullopt;
 
 	ExpressionParser::VariableMap variables;
 	ExpressionParser::VariableMap constants;
@@ -65,6 +80,7 @@ struct InkStoryState {
 	void add_choice_taken(class InkObject* choice_object, std::size_t index);
 	inline std::size_t index_in_knot() const { return current_knots_stack.back().index; }
 	inline KnotStatus& current_knot() { return current_knots_stack.back(); }
+	KnotStatus& previous_nonfunction_knot();
 	inline std::size_t current_knot_size() const { return current_knots_stack.back().knot->objects.size(); }
 	KnotStatus& current_nonchoice_knot();
 
@@ -78,11 +94,12 @@ struct InkStoryEvalResult {
 
 	std::string target_knot;
 	DivertType divert_type = DivertType::ToKnot;
+	bool imminent_function_prep = false;
+	Uuid function_prep_expression = UINT32_MAX;
 	
+	std::size_t argument_count = 0;
 	bool reached_function_return = false;
 	std::optional<ExpressionParser::Variant> return_value;
-
-	std::vector<ExpressionParser::Variant> arguments;
 
 	bool has_any_contents(bool strip);
 };

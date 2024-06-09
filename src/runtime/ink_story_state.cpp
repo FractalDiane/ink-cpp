@@ -30,6 +30,18 @@ void InkStoryState::add_choice_taken(InkObject* choice_object, std::size_t index
 	choice_indices_taken.insert(index);
 }
 
+InkStoryState::KnotStatus& InkStoryState::previous_nonfunction_knot() {
+	if (current_knots_stack.size() >= 2) {
+		for (auto it = current_knots_stack.rbegin() + 1; it != current_knots_stack.rend(); ++it) {
+			if (!it->knot->is_function && !it->knot->name.empty()) {
+				return *it;
+			}
+		}
+	}
+
+	return current_knots_stack.front();
+}
+
 InkStoryState::KnotStatus& InkStoryState::current_nonchoice_knot() {
 	for (auto it = current_knots_stack.rbegin(); it != current_knots_stack.rend(); ++it) {
 		if (!it->knot->name.empty()) {

@@ -17,10 +17,11 @@ public:
 		InkToken token;
 		std::string text_contents;
 		std::uint8_t count;
+		bool escaped;
 
-		Token() : token{InkToken::INVALID}, text_contents{}, count{1} {}
-		Token(InkToken token, const std::string& text) : token{token}, text_contents{text}, count{1} {}
-		Token(InkToken token, const std::string& text, std::uint8_t count) : token{token}, text_contents{text}, count{count} {}
+		Token() : token{InkToken::INVALID}, text_contents{}, count{1}, escaped{false} {}
+		Token(InkToken token, const std::string& text) : token{token}, text_contents{text}, count{1}, escaped{false} {}
+		Token(InkToken token, const std::string& text, std::uint8_t count) : token{token}, text_contents{text}, count{count}, escaped{false} {}
 
 		std::string to_string() const {
 			if (token == InkToken::Text) {

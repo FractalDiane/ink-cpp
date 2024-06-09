@@ -6,10 +6,10 @@
 
 class InkObjectLogic : public InkObject {
 private:
-	std::vector<struct ExpressionParser::Token*> contents_shunted_tokens;
+	struct ExpressionParser::ShuntedExpression contents_shunted_tokens;
 
 public:
-	InkObjectLogic(const std::vector<struct ExpressionParser::Token*>& contents_shunted_tokens) : contents_shunted_tokens{contents_shunted_tokens} {}
+	InkObjectLogic(const struct ExpressionParser::ShuntedExpression& contents_shunted_tokens) : contents_shunted_tokens{contents_shunted_tokens} {}
 
 	virtual ~InkObjectLogic() override;
 

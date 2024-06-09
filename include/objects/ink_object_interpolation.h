@@ -6,10 +6,10 @@
 
 class InkObjectInterpolation : public InkObject {
 private:
-	std::vector<struct ExpressionParser::Token*> what_to_interpolate;
+	struct ExpressionParser::ShuntedExpression what_to_interpolate;
 
 public:
-	InkObjectInterpolation(const std::vector<struct ExpressionParser::Token*>& interpolation) : what_to_interpolate{interpolation} {}
+	InkObjectInterpolation(const struct ExpressionParser::ShuntedExpression& interpolation) : what_to_interpolate{interpolation} {}
  
 	virtual ~InkObjectInterpolation() override;
 
@@ -20,5 +20,5 @@ public:
 	virtual ByteVec to_bytes() const override;
 	virtual InkObject* populate_from_bytes(const ByteVec& bytes, std::size_t& index) override;
 
-	virtual bool stop_before_this() const override { return true; }
+	virtual bool stop_before_this(const InkStoryState& story_state) const override { return what_to_interpolate.stack_empty() || what_to_interpolate.preparation_stack.back().function_eval_index == SIZE_MAX; }
 };

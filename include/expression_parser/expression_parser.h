@@ -9,6 +9,7 @@
 #include <functional>
 #include <variant>
 #include <optional>
+#include <expected>
 #include <algorithm>
 #include <initializer_list>
 
@@ -462,15 +463,22 @@ struct TokenParenComma : public Token {
 };
 
 struct TokenFunction : public Token {
+	enum FetchMethod {
+		Immediate,
+		Defer,
+		StoryKnot,
+	};
+
 	struct Data {
 		std::string name;
 		PtrTokenFunc function;
-		bool defer_fetch;
+		std::uint8_t argument_count;
+		FetchMethod fetch_method;
 	} data;
 
-	TokenFunction(const std::string& name, PtrTokenFunc function, bool defer_fetch) : data{name, function, defer_fetch} {}
+	TokenFunction(const std::string& name, PtrTokenFunc function, FetchMethod fetch_method) : data{name, function, 0, fetch_method} {}
 
-	virtual Token* copy() const override { return new TokenFunction(data.name, data.function, data.defer_fetch); }
+	virtual Token* copy() const override { return new TokenFunction(data.name, data.function, data.fetch_method); }
 
 	virtual TokenType get_type() const override { return TokenType::Function; }
 
@@ -495,15 +503,78 @@ struct TokenVariable : public Token {
 	virtual ByteVec to_serialized_bytes() const override;
 };
 
+struct ShuntedExpression {
+	Uuid uuid;
+	std::vector<Token*> tokens;
+
+	struct StackEntry {
+		std::vector<Token*> function_prepared_tokens;
+		std::size_t function_eval_index = SIZE_MAX;
+		std::size_t argument_count = 0;
+		bool preparation_finished = false;
+
+		std::unordered_set<Token*> tokens_to_dealloc;
+	};
+
+	std::vector<StackEntry> preparation_stack;
+
+	ShuntedExpression() : tokens{}, preparation_stack{}, uuid{0} {}
+	explicit ShuntedExpression(const std::vector<Token*>& tokens) : tokens{tokens}, preparation_stack{}, uuid{0} {}
+	explicit ShuntedExpression(std::vector<Token*>&& tokens) : tokens{tokens}, preparation_stack{}, uuid{0} {}
+
+	void push_entry() {
+		StackEntry new_entry;
+		new_entry.function_prepared_tokens = tokens;
+		preparation_stack.push_back(new_entry);
+	}
+
+	void pop_entry() {
+		preparation_stack.pop_back();
+	}
+
+	StackEntry& stack_back() {
+		return preparation_stack.back();
+	}
+
+	bool stack_empty() const { 
+		return preparation_stack.empty();
+	}
+
+	void dealloc_tokens() {
+		for (Token* token : tokens) {
+			delete token;
+		}
+	}
+};
+
 std::vector<Token*> tokenize_expression(const std::string& expression, const FunctionMap& all_functions, const std::unordered_set<std::string>& deferred_functions);
 
 std::vector<Token*> shunt(const std::vector<Token*>& infix, std::unordered_set<Token*>& tokens_shunted);
 
-std::optional<Variant> execute_expression_tokens(const std::vector<Token*>& tokens, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& all_functions);
+struct NulloptResult {
+	enum class Reason {
+		NoReturnValue,
+		FoundKnotFunction,
+		Failed,
+	} reason;
 
-std::optional<Variant> execute_expression(const std::string& expression, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
-std::optional<Variant> execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
+	TokenFunction* function;
+	std::size_t function_index;
+	std::vector<Token*> arguments;
+	std::unordered_set<Token*> tokens_to_dealloc;
 
-std::vector<Token*> tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions);
+	NulloptResult(Reason reason) : reason{reason}, function{nullptr}, function_index{0}, arguments{}, tokens_to_dealloc{} {}
+	NulloptResult(Reason reason, TokenFunction* function, std::size_t function_index, const std::vector<Token*>& arguments, const std::unordered_set<Token*>& tokens_to_dealloc) : reason{reason}, function{function}, function_index{function_index}, arguments{arguments}, tokens_to_dealloc{tokens_to_dealloc} {}
+};
+
+
+typedef std::expected<Variant, NulloptResult> ExecuteResult;
+
+ExecuteResult execute_expression_tokens(std::vector<Token*>& tokens, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& all_functions, bool alter_input_tokens = false);
+
+ExecuteResult execute_expression(const std::string& expression, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
+ExecuteResult execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
+
+ShuntedExpression tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions);
 
 }

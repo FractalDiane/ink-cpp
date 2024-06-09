@@ -6,25 +6,31 @@
 
 ByteVec InkObjectInterpolation::to_bytes() const {
 	VectorSerializer<ExpressionParser::Token*> s;
-	return s(what_to_interpolate);
+	return s(what_to_interpolate.tokens);
 }
 
 InkObject* InkObjectInterpolation::populate_from_bytes(const ByteVec& bytes, std::size_t& index) {
 	VectorDeserializer<ExpressionParser::Token*> ds;
-	what_to_interpolate = ds(bytes, index);
+	what_to_interpolate = ExpressionParser::ShuntedExpression(ds(bytes, index));
 	return this;
 }
 
 InkObjectInterpolation::~InkObjectInterpolation() {
-	for (ExpressionParser::Token* token : what_to_interpolate) {
-		delete token;
-	}
+	what_to_interpolate.dealloc_tokens();
 }
 
 void InkObjectInterpolation::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
-	std::optional<ExpressionParser::Variant> result = ExpressionParser::execute_expression_tokens(what_to_interpolate, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
-	if (result.has_value()) {
-		eval_result.result += ExpressionParser::to_printable_string(*result);
+
+	ExpressionParser::ExecuteResult interpolate_result = prepare_next_function_call(what_to_interpolate, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
+	if (!interpolate_result.has_value() && interpolate_result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
+		return;
+	}
+
+	//ExpressionParser::ExecuteResult result = ExpressionParser::execute_expression_tokens(what_to_interpolate.function_prepared_tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
+	if (interpolate_result.has_value()) {
+		std::string result = ExpressionParser::to_printable_string(*interpolate_result);
+		eval_result.result += result;
+		story_state.current_nonchoice_knot().any_new_content = !result.empty();
 	}
 }
