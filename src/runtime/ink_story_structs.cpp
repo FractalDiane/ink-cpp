@@ -173,7 +173,7 @@ std::string Knot::divert_target_to_global(const std::string& target) {
 		}
 
 		for (const GatherPoint& gather_point : stitch.gather_points) {
-			if (gather_point.name == target || target.contains(gather_point.name) && target.contains(stitch.name)) {
+			if (gather_point.name == target || (target.contains(gather_point.name) && target.contains(stitch.name))) {
 				return std::format("{}.{}.{}", name, stitch.name, gather_point.name);
 			}
 		}
