@@ -34,6 +34,9 @@ struct InkStoryState {
 		std::size_t choice_index = 0;
 		Knot* containing_knot = nullptr;
 		std::size_t index_in_knot = 0;
+		std::vector<ExpressionParser::Variant> arguments;
+
+		bool applied = false;
 	};
 
 	std::mt19937 rng{std::random_device()()};
@@ -45,7 +48,12 @@ struct InkStoryState {
 
 	std::vector<std::string> current_tags;
 
-	std::vector<std::string> current_choices;
+	struct StoryChoice {
+		std::string text;
+		bool from_thread;
+	};
+
+	std::vector<StoryChoice> current_choices;
 	std::vector<struct InkChoiceEntry*> current_choice_structs;
 	std::vector<std::size_t> current_choice_indices;
 	std::optional<std::size_t> selected_choice = std::nullopt;
@@ -85,6 +93,8 @@ struct InkStoryState {
 	KnotStatus& current_nonchoice_knot();
 
 	ExpressionParser::VariableMap get_story_constants();
+
+	void apply_thread_choices();
 };
 
 struct InkStoryEvalResult {

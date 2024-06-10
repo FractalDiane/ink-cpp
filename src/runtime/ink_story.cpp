@@ -168,10 +168,13 @@ std::string InkStory::continue_story() {
 			story_state.current_knots_stack.pop_back();
 			++story_state.current_knot().index;
 			--story_state.current_thread_depth;
-
 			story_state.should_wrap_up_thread = false;
 
-			//for (const InkStoryState::ThreadEntry& thread)
+			/*if (story_state.current_thread_depth == 0) {
+				story_state.should_wrap_up_thread = false;
+				//story_state.apply_thread_choices();
+				//story_state.current_thread_entries.clear();
+			}*/
 		}
 
 		if (story_state.current_knot().knot != knot_before_object) {
@@ -420,8 +423,14 @@ std::string InkStory::continue_story_maximally() {
 	return result;
 }
 
-const std::vector<std::string>& InkStory::get_current_choices() const {
-	return story_state.current_choices;
+std::vector<std::string> InkStory::get_current_choices() const {
+	std::vector<std::string> result;
+	result.reserve(story_state.current_choices.size());
+	for (const InkStoryState::StoryChoice& choice : story_state.current_choices) {
+		result.push_back(choice.text);
+	}
+
+	return result;
 }
 
 const std::vector<std::string>& InkStory::get_current_tags() const {
@@ -429,15 +438,15 @@ const std::vector<std::string>& InkStory::get_current_tags() const {
 }
 
 void InkStory::choose_choice_index(std::size_t index) {
-	//if (!story_state.selected_choice.has_value()) {
+	if (index < story_state.current_choices.size()) {
 		story_state.selected_choice = index;
-		if (!story_state.current_thread_entries.empty()) {
+		if (story_state.current_choices[index].from_thread) {
 			const InkStoryState::ThreadEntry& thread_entry = story_state.current_thread_entries[index];
 			story_state.current_knots_stack.back() = {thread_entry.containing_knot, thread_entry.index_in_knot};
 		} else {
 			--story_state.current_knots_stack.back().index;
 		}
-	//}
+	}
 }
 
 std::optional<ExpressionParser::Variant> InkStory::get_variable(const std::string& name) const {

@@ -181,7 +181,7 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 						i,
 					});
 
-					story_state.current_choices.push_back(choices_result.choices.back().text);
+					story_state.current_choices.emplace_back(choices_result.choices.back().text, false);
 				}
 			} else {
 				choices_result.fallback_index = i;
@@ -208,12 +208,17 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			return;
 		}
 
+
 		bool in_thread = story_state.current_thread_depth > 0;
+		if (!in_thread) {
+			story_state.apply_thread_choices();
+		}
+		
 		for (const ChoiceComponents& choice : final_choices.choices) {
 			if (in_thread) {
 				story_state.current_thread_entries.emplace_back(choice.text, choice.entry, choice.index, story_state.current_knot().knot, story_state.current_knot().index);
 			} else {
-				story_state.current_choices.push_back(choice.text);
+				story_state.current_choices.emplace_back(choice.text, false);
 				story_state.current_choice_structs.push_back(choice.entry);
 				story_state.current_choice_indices.push_back(choice.index);
 			}

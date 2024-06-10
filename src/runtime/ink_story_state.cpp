@@ -58,6 +58,18 @@ ExpressionParser::VariableMap InkStoryState::get_story_constants() {
 	return result;
 }
 
+void InkStoryState::apply_thread_choices() {
+	for (ThreadEntry& entry : current_thread_entries) {
+		if (!entry.applied) {
+			current_choices.emplace_back(entry.choice_text, true);
+			current_choice_structs.emplace_back(entry.choice_entry);
+			current_choice_indices.push_back(entry.choice_index);
+
+			entry.applied = true;
+		}
+	}
+}
+
 bool InkStoryEvalResult::has_any_contents(bool strip) {
 	return strip ? !strip_string_edges(result, true, true, true).empty() : !result.empty();
 }

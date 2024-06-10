@@ -1391,6 +1391,42 @@ TEST_F(ThreadTests, ComplexThreads) {
 	story.choose_choice_index(0);
 	EXPECT_TEXT("These drawers look suspicious.");
 }
+
+TEST_F(ThreadTests, ThreadDivertParameters) {
+	STORY("20_threads/20d_thread_divert_parameters.ink");
+	EXPECT_TEXT("The front step. The house smells. Of murder. And lavender.");
+	EXPECT_CHOICES("Review my case notes", "Go through the front door", "Sniff the air");
+	story.choose_choice_index(2);
+	EXPECT_TEXT("I hate lavender. It makes me think of soap, and soap makes me think about my marriage.");
+	EXPECT_CHOICES("Review my case notes", "Go through the front door");
+	story.choose_choice_index(1);
+	EXPECT_TEXT("I stepped inside the house.", "The hallway. Front door open to the street. Little bureau.");
+	EXPECT_CHOICES("Review my case notes", "Go through the front door", "Open the bureau");
+	story.choose_choice_index(2);
+	EXPECT_TEXT("Keys. More keys. Even more keys. How many locks do these people need?");
+	EXPECT_CHOICES("Review my case notes", "Go through the front door");
+	story.choose_choice_index(1);
+	EXPECT_TEXT("I stepped out into the cool sunshine.", "The front step. The house smells. Of murder. And lavender.");
+	EXPECT_CHOICES("Review my case notes", "Go through the front door");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I flicked through the notes I'd made so far. Still not obvious suspects.");
+	
+	for (int i = 0; i < 5; ++i) {
+		EXPECT_CHOICES("Go through the front door");
+		story.choose_choice_index(0);
+		EXPECT_TEXT("I stepped inside the house.", "The hallway. Front door open to the street. Little bureau.");
+		EXPECT_CHOICES("Go through the front door");
+		story.choose_choice_index(0);
+		EXPECT_TEXT("I stepped out into the cool sunshine.", "The front step. The house smells. Of murder. And lavender.");
+	}
+
+	EXPECT_CHOICES("Go through the front door");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("I stepped inside the house.", "The hallway. Front door open to the street. Little bureau.");
+	EXPECT_CHOICES("Review my case notes", "Go through the front door");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("Once again, I flicked through the notes I'd made so far. Still not obvious suspects.");
+}
 #pragma endregion
 
 #pragma region Miscellaneous Tests

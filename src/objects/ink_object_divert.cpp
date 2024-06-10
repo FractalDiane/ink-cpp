@@ -62,12 +62,7 @@ void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 
 	bool is_done = target == "DONE";
 	if (is_done && (story_state.current_thread_depth > 0 || !story_state.current_thread_entries.empty())) {
-		for (InkStoryState::ThreadEntry& entry : story_state.current_thread_entries) {
-			story_state.current_choices.push_back(entry.choice_text);
-			story_state.current_choice_structs.emplace_back(entry.choice_entry);
-			story_state.current_choice_indices.push_back(entry.choice_index);
-		}
-
+		story_state.apply_thread_choices();
 		story_state.should_wrap_up_thread = true;
 	}
 	else if (is_done || target == "END") {
