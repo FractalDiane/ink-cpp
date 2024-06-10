@@ -219,8 +219,10 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			}
 		}
 
-		story_state.should_wrap_up_thread = true;
-
+		if (story_state.current_thread_depth > 0) {
+			story_state.should_wrap_up_thread = true;
+		}
+		
 		story_state.in_choice_text = false;
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 

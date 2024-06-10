@@ -58,6 +58,12 @@ int main(int argc, char* argv[]) {
 	InkCompiler compiler;
 	InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
 	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	print_vector(story.get_current_choices());
+	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
 	print_vector(story.get_current_choices());
 	//story.choose_choice_index(0);
 	/*std::cout << story.continue_story() << std::endl;
