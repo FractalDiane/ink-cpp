@@ -216,7 +216,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		
 		for (const ChoiceComponents& choice : final_choices.choices) {
 			if (in_thread) {
-				story_state.current_thread_entries.emplace_back(choice.text, choice.entry, choice.index, story_state.current_knot().knot, story_state.current_knot().index);
+				story_state.current_thread_entries.emplace_back(choice.text, choice.entry, choice.index, story_state.current_knot().knot, story_state.current_knot().index, story_state.thread_arguments_stack.back());
 			} else {
 				story_state.current_choices.emplace_back(choice.text, false);
 				story_state.current_choice_structs.push_back(choice.entry);

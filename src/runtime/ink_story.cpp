@@ -166,15 +166,10 @@ std::string InkStory::continue_story() {
 		// after collecting the options from a choice, a thread returns to its origin
 		if (story_state.should_wrap_up_thread && story_state.current_thread_depth > 0) {
 			story_state.current_knots_stack.pop_back();
+			story_state.thread_arguments_stack.pop_back();
 			++story_state.current_knot().index;
 			--story_state.current_thread_depth;
 			story_state.should_wrap_up_thread = false;
-
-			/*if (story_state.current_thread_depth == 0) {
-				story_state.should_wrap_up_thread = false;
-				//story_state.apply_thread_choices();
-				//story_state.current_thread_entries.clear();
-			}*/
 		}
 
 		if (story_state.current_knot().knot != knot_before_object) {
@@ -197,6 +192,14 @@ std::string InkStory::continue_story() {
 				switch (eval_result.divert_type) {
 					case DivertType::Thread: {
 						++story_state.current_thread_depth;
+						std::vector<std::pair<std::string, ExpressionParser::Variant>> arguments = story_state.arguments_stack.back();
+						for (auto& arg : arguments) {
+							if (arg.second.index() == ExpressionParser::Variant_String) {
+								arg.second = story_state.current_knot().knot->divert_target_to_global(ExpressionParser::as_string(arg.second));
+							}
+						}
+
+						story_state.thread_arguments_stack.push_back(arguments);
 						[[fallthrough]];
 					}
 					case DivertType::ToKnot:
@@ -443,6 +446,17 @@ void InkStory::choose_choice_index(std::size_t index) {
 		if (story_state.current_choices[index].from_thread) {
 			const InkStoryState::ThreadEntry& thread_entry = story_state.current_thread_entries[index];
 			story_state.current_knots_stack.back() = {thread_entry.containing_knot, thread_entry.index_in_knot};
+			//story_state.arguments_stack.push_back(thread_entry.arguments);
+
+			for (std::size_t i = 0; i < thread_entry.containing_knot->parameters.size(); ++i) {
+				story_state.variables[thread_entry.containing_knot->parameters[i].name] = thread_entry.arguments[i].second;
+				if (thread_entry.containing_knot->parameters[i].by_ref && thread_entry.containing_knot->parameters[i].name != thread_entry.arguments[i].first) {
+					story_state.variable_redirects[thread_entry.containing_knot->uuid].insert({
+						thread_entry.containing_knot->parameters[i].name,
+						thread_entry.arguments[i].first,
+					});
+				}
+			}
 		} else {
 			--story_state.current_knots_stack.back().index;
 		}

@@ -2,6 +2,8 @@
 
 #include "objects/ink_object.h"
 
+#include <format>
+
 ByteVec Serializer<InkWeaveContent::Parameter>::operator()(const InkWeaveContent::Parameter& parameter) {
 	Serializer<std::uint8_t> s8;
 	Serializer<std::string> sstring;
@@ -162,4 +164,26 @@ Knot Deserializer<Knot>::operator()(const ByteVec& bytes, std::size_t& index) {
 	result.type = WeaveContentType::Knot;
 
 	return result;
+}
+
+std::string Knot::divert_target_to_global(const std::string& target) {
+	for (const Stitch& stitch : stitches) {
+		if (stitch.name == target) {
+			return std::format("{}.{}", name, stitch.name);
+		}
+
+		for (const GatherPoint& gather_point : stitch.gather_points) {
+			if (gather_point.name == target || target.contains(gather_point.name) && target.contains(stitch.name)) {
+				return std::format("{}.{}.{}", name, stitch.name, gather_point.name);
+			}
+		}
+	}
+
+	for (const GatherPoint& gather_point : gather_points) {
+		if (gather_point.name == target) {
+			return std::format("{}.{}", name, gather_point.name);
+		}
+	}
+
+	return target;
 }

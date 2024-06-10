@@ -34,7 +34,7 @@ struct InkStoryState {
 		std::size_t choice_index = 0;
 		Knot* containing_knot = nullptr;
 		std::size_t index_in_knot = 0;
-		std::vector<ExpressionParser::Variant> arguments;
+		std::vector<std::pair<std::string, ExpressionParser::Variant>> arguments;
 
 		bool applied = false;
 	};
@@ -66,6 +66,7 @@ struct InkStoryState {
 
 	std::size_t current_thread_depth = 0;
 	std::vector<ThreadEntry> current_thread_entries;
+	std::vector<std::vector<std::pair<std::string, ExpressionParser::Variant>>> thread_arguments_stack;
 	bool should_wrap_up_thread = false;
 
 	InkStoryTracking story_tracking;
