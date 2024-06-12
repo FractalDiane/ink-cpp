@@ -234,6 +234,9 @@ std::string InkStory::continue_story() {
 								}
 								
 								story_state.story_tracking.increment_visit_count(target.knot);
+								if (!target.knot->stitches.empty() && target.knot->stitches[0].index == 0) {
+									story_state.story_tracking.increment_visit_count(target.knot, &target.knot->stitches[0]);
+								}
 
 								for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
 									story_state.variables[target.knot->parameters[i].name] = story_state.arguments_stack.back()[i].second;
