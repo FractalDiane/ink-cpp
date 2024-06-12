@@ -25,7 +25,7 @@ void print_vector(const std::vector<T>& vector) {
 }
 
 #define TEST_FOLDER "ink-proof"
-#define TEST_FILE "25_nested_includes"
+#define TEST_FILE "28_read_count_across_threads"
 
 int main(int argc, char* argv[]) {
 	//if (argc > 1) {

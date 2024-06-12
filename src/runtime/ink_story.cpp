@@ -192,6 +192,22 @@ std::string InkStory::continue_story() {
 				switch (eval_result.divert_type) {
 					case DivertType::Thread: {
 						++story_state.current_thread_depth;
+
+						// still need to put something on the stack if a thread goes to the same knot, so it can return
+						if (target.knot == story_state.current_knot().knot) {
+							switch (target.result_type) {
+								case WeaveContentType::Stitch: {
+									story_state.current_knots_stack.push_back({target.knot, target.stitch->index});
+								} break;
+
+								case WeaveContentType::GatherPoint: {
+									story_state.current_knots_stack.push_back({target.knot, target.gather_point->index});
+								} break;
+
+								default: break;
+							}
+						}
+
 						std::vector<std::pair<std::string, ExpressionParser::Variant>> arguments = story_state.arguments_stack.back();
 						for (auto& arg : arguments) {
 							if (arg.second.index() == ExpressionParser::Variant_String) {

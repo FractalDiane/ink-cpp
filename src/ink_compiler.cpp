@@ -341,7 +341,6 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 					this_token_object = nullptr;
 					appended_text = true;
 				} else if (!(this_token_object->get_id() == ObjectId::LineBreak && (result_knots[current_knot_index].objects.empty() || (last_token_object && last_token_object->get_id() == ObjectId::LineBreak)))) {
-					//result_knots.back().objects.push_back(this_token_object);
 					result_knots[current_knot_index].objects.push_back(this_token_object);
 				} else {
 					delete this_token_object;
