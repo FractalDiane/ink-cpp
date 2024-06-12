@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include <cmath>
 #include <stack>
+#include <format>
 #include <stdexcept>
 
 using namespace ExpressionParser;
@@ -90,7 +91,15 @@ namespace {
 
 	Token* builtin_floor(TokenStack& stack, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) {
 		Variant what = stack.top()->get_variant_value(variables, constants, variable_redirects).value();
-		Token* result = new TokenNumberInt(static_cast<std::int64_t>(std::floor(as_float(what))));
+		Token* result = new TokenNumberFloat(std::floor(as_float(what)));
+		
+		stack.pop();
+		return result;
+	}
+
+	Token* builtin_ceil(TokenStack& stack, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) {
+		Variant what = stack.top()->get_variant_value(variables, constants, variable_redirects).value();
+		Token* result = new TokenNumberFloat(std::ceil(as_float(what)));
 		
 		stack.pop();
 		return result;
@@ -103,6 +112,7 @@ namespace {
 		{"INT", builtin_int},
 		{"FLOAT", builtin_float},
 		{"FLOOR", builtin_floor},
+		{"CEILING", builtin_ceil},
 	};
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
@@ -302,7 +312,7 @@ std::string ExpressionParser::to_printable_string(const Variant& variant) {
 			if (std::rint(value) == value) {
 				return std::to_string(static_cast<std::int64_t>(value));
 			} else {
-				return std::to_string(value);
+				return std::format("{:.7f}", value);
 			}
 		} break;
 
@@ -995,21 +1005,31 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 			result.push_back(new TokenKeyword(TokenKeyword::Type::Return));
 			found_result = true;
 		} else {
-			if (word.contains(".")) {
-				try {
-					double word_float = std::stod(word);
-					result.push_back(new TokenNumberFloat(word_float));
-					found_result = true;
-				} catch (...) {
-					
+			bool is_num = true;
+			for (const char& chr : word) {
+				if (chr != '.' && !std::isdigit(chr)) {
+					is_num = false;
+					break;
 				}
-			} else {
-				try {
-					std::int64_t word_int = std::stoll(word);
-					result.push_back(new TokenNumberInt(word_int));
-					found_result = true;
-				} catch (...) {
-					
+			}
+
+			if (is_num) {
+				if (word.contains(".")) {
+					try {
+						double word_float = std::stod(word);
+						result.push_back(new TokenNumberFloat(word_float));
+						found_result = true;
+					} catch (...) {
+						
+					}
+				} else {
+					try {
+						std::int64_t word_int = std::stoll(word);
+						result.push_back(new TokenNumberInt(word_int));
+						found_result = true;
+					} catch (...) {
+						
+					}
 				}
 			}
 		}

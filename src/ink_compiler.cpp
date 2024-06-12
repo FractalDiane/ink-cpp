@@ -56,11 +56,19 @@ namespace {
 		//{',', InkToken::Comma},
 	};
 
-	static const std::unordered_map<std::string, std::pair<InkToken, bool>> TokenKeywords = {
+	struct KeywordEntry {
+		InkToken token;
+		bool must_be_at_line_start;
+	};
+
+	static const std::unordered_map<std::string, KeywordEntry> TokenKeywords = {
 		{"VAR", {InkToken::KeywordVar, true}},
 		{"CONST", {InkToken::KeywordConst, true}},
 		{"LIST", {InkToken::KeywordList, true}},
 		{"function", {InkToken::KeywordFunction, false}},
+		{"INCLUDE", {InkToken::KeywordInclude, true}},
+		{"LIST", {InkToken::KeywordList, true}},
+		{"EXTERNAL", {InkToken::KeywordExternal, true}},
 	};
 
 	char next_char(const std::string& script_text, size_t index) {
@@ -212,8 +220,8 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 		}
 
 		if (auto keyword_token = TokenKeywords.find(strip_string_edges(current_text, true, true, true)); keyword_token != TokenKeywords.end()) {
-			if (!any_tokens_this_line || !keyword_token->second.second) {
-				this_token.token = keyword_token->second.first;
+			if (!any_tokens_this_line || !keyword_token->second.must_be_at_line_start) {
+				this_token.token = keyword_token->second.token;
 				current_text.clear();
 			}
 		}
@@ -312,6 +320,7 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 	start_knot.name = "_S";
 	start_knot.uuid = Uuid(current_uuid++);
 	result_knots.push_back(start_knot);
+	current_knot_index = 0;
 
 	token_index = 0;
 	while (token_index < token_stream.size()) {
@@ -320,19 +329,20 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 			bool add_this_object = true;
 			if (!this_token_object->has_any_contents(false)) {
 				add_this_object = false;
-			} else if (this_token_object->get_id() == ObjectId::LineBreak && result_knots.back().objects.empty()) {
+			} else if (this_token_object->get_id() == ObjectId::LineBreak && result_knots[current_knot_index].objects.empty()) {
 				add_this_object = false;
 			}
 
 			bool appended_text = false;
 			if (add_this_object) {
 				if (this_token_object->get_id() == ObjectId::Text && last_token_object && last_token_object->get_id() == ObjectId::Text) {
-					static_cast<InkObjectText*>(result_knots.back().objects.back())->append_text(static_cast<InkObjectText*>(this_token_object)->get_text_contents());
+					static_cast<InkObjectText*>(result_knots[current_knot_index].objects.back())->append_text(static_cast<InkObjectText*>(this_token_object)->get_text_contents());
 					delete this_token_object;
 					this_token_object = nullptr;
 					appended_text = true;
-				} else if (!(this_token_object->get_id() == ObjectId::LineBreak && (result_knots.back().objects.empty() || (last_token_object && last_token_object->get_id() == ObjectId::LineBreak)))) {
-					result_knots.back().objects.push_back(this_token_object);
+				} else if (!(this_token_object->get_id() == ObjectId::LineBreak && (result_knots[current_knot_index].objects.empty() || (last_token_object && last_token_object->get_id() == ObjectId::LineBreak)))) {
+					//result_knots.back().objects.push_back(this_token_object);
+					result_knots[current_knot_index].objects.push_back(this_token_object);
 				} else {
 					delete this_token_object;
 					this_token_object = nullptr;
@@ -355,7 +365,7 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 	return new InkStoryData(result_knots);
 }
 
-InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots)
+InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots)
 {
 	bool end_line = false;
 	InkObject* result_object = nullptr;
@@ -410,6 +420,19 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						//	declared_functions.insert(new_knot_name);
 						//}
 
+						bool is_new_knot = true;
+						std::size_t existing_index = 0;
+						for (std::size_t i = 0; i < story_knots.size(); ++i)
+						for (const Knot& knot : story_knots) {
+							if (knot.name == new_knot_name) {
+								is_new_knot = false;
+								break;
+							}
+
+							++existing_index;
+						}
+
+						
 						new_knot.name = new_knot_name;
 						new_knot.uuid = Uuid(current_uuid++);
 						new_knot.type = WeaveContentType::Knot;
@@ -451,7 +474,13 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 							new_knot.parameters = params;
 						}
 
-						story_knots.push_back(new_knot);
+						// TODO: don't force it to parse all the parameters if the knot already exists
+						if (is_new_knot) {
+							story_knots.push_back(new_knot);
+							++current_knot_index;
+						} else {
+							current_knot_index = existing_index;
+						}
 
 						while (all_tokens[token_index].token != InkToken::NewLine) {
 							++token_index;
@@ -464,12 +493,12 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 				} else if (next_token_is(all_tokens, token_index, InkToken::Text)) {
 					std::string new_stitch_name = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
 					
-					std::vector<Stitch>& stitches = story_knots.back().stitches;
+					std::vector<Stitch>& stitches = story_knots[current_knot_index].stitches;
 					Stitch new_stitch;
 					new_stitch.name = new_stitch_name;
 					new_stitch.uuid = Uuid(current_uuid++);
 					new_stitch.type = WeaveContentType::Stitch;
-					new_stitch.index = static_cast<std::uint16_t>(story_knots.back().objects.size());
+					new_stitch.index = static_cast<std::uint16_t>(story_knots[current_knot_index].objects.size());
 
 					// TODO: dry it
 					if (next_token_is(all_tokens, token_index + 1, InkToken::LeftParen)) {
@@ -552,15 +581,15 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 						label.name = all_tokens[token_index + 2].text_contents;
 						label.uuid = Uuid(current_uuid++);
 						label.type = WeaveContentType::GatherPoint;
-						label.index = static_cast<std::uint16_t>(story_knots.back().objects.size());
+						label.index = static_cast<std::uint16_t>(story_knots[current_knot_index].objects.size());
 						label.in_choice = true;
 						label.choice_index = static_cast<std::uint16_t>(choice_options.size());
 						choice_stack.back().label = label;
 
 						std::vector<GatherPoint>& gather_points = 
-						!story_knots.back().stitches.empty() && story_knots.back().objects.size() >= story_knots.back().stitches[0].index
-						? story_knots.back().stitches.back().gather_points
-						: story_knots.back().gather_points;
+						!story_knots[current_knot_index].stitches.empty() && story_knots[current_knot_index].objects.size() >= story_knots[current_knot_index].stitches[0].index
+						? story_knots[current_knot_index].stitches.back().gather_points
+						: story_knots[current_knot_index].gather_points;
 
 						gather_points.push_back(label);
 
@@ -1030,14 +1059,14 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 		case InkToken::Dash: {
 			if (at_line_start) {
 				std::vector<GatherPoint>& gather_points = 
-				!story_knots.back().stitches.empty() && story_knots.back().objects.size() >= story_knots.back().stitches[0].index
-				? story_knots.back().stitches.back().gather_points
-				: story_knots.back().gather_points;
+				!story_knots[current_knot_index].stitches.empty() && story_knots[current_knot_index].objects.size() >= story_knots[current_knot_index].stitches[0].index
+				? story_knots[current_knot_index].stitches.back().gather_points
+				: story_knots[current_knot_index].gather_points;
 				
 				GatherPoint new_gather_point;
 				new_gather_point.uuid = Uuid(current_uuid++);
 				new_gather_point.type = WeaveContentType::GatherPoint;
-				new_gather_point.index = static_cast<std::uint16_t>(story_knots.back().objects.size());
+				new_gather_point.index = static_cast<std::uint16_t>(story_knots[current_knot_index].objects.size());
 				new_gather_point.level = token.count;
 
 				if (next_token_is_sequence(all_tokens, token_index, {InkToken::LeftParen, InkToken::Text, InkToken::RightParen})) {
@@ -1045,7 +1074,7 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 					token_index += 3;
 				}
 
-				if (!story_knots.back().objects.empty() && story_knots.back().objects.back()->get_id() == ObjectId::Choice) {
+				if (!story_knots[current_knot_index].objects.empty() && story_knots[current_knot_index].objects.back()->get_id() == ObjectId::Choice) {
 					while (next_token_is(all_tokens, token_index, InkToken::NewLine)) {
 						++token_index;
 					}
@@ -1156,12 +1185,57 @@ InkObject* InkCompiler::compile_token(const std::vector<InkLexer::Token>& all_to
 			}
 		} break;
 
+		case InkToken::KeywordInclude: {
+			++token_index;
+			std::string path;
+			path.reserve(255);
+			while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::NewLine) {
+				path += all_tokens[token_index].get_text_contents();
+				++token_index;
+			}
+
+			/*std::ifstream infile{strip_string_edges(path, true, true, true)};
+			std::stringstream buffer;
+			buffer << infile.rdbuf();
+			std::string file_text = buffer.str();
+			infile.close();*/
+
+			/*InkLexer lexer;
+			std::vector<InkLexer::Token> token_stream = lexer.lex_script(file_text);
+			token_stream = remove_comments(token_stream);
+
+			all_tokens.insert(all_tokens.begin() + token_index, token_stream.begin(), token_stream.end());
+			--token_index;
+			end_line = true;*/
+
+			InkCompiler include_compiler;
+			include_compiler.set_current_uuid(current_uuid);
+			InkStory include_story = include_compiler.compile_file(strip_string_edges(path, true, true, true));
+			current_uuid = include_compiler.get_current_uuid();
+			//for (auto& knot : include_story.get_story_data()->)
+			for (const auto& included_knot : include_story.story_data->knots) {
+				bool already_exists = false;
+				for (Knot& existing_knot : story_knots) {
+					if (existing_knot.name == included_knot.second.name) {
+						existing_knot.append_knot(included_knot.second);
+						already_exists = true;
+						break;
+					}
+				}
+
+				if (!already_exists) {
+					story_knots.push_back(included_knot.second);
+				}
+			}
+
+			include_story.story_data->knots.clear();
+			end_line = true;
+		} break;
+
 		case InkToken::Text: {
 			std::string text_stripped = strip_string_edges(token.text_contents, true, true, true);
 			std::string text_notabs = strip_string_edges(token.text_contents);
-			//if (!text_notabs.empty() && (!text_stripped.empty() || !in_choice_line || !at_line_start)) {
-				result_object = new InkObjectText(token.text_contents);
-			//}
+			result_object = new InkObjectText(token.text_contents);
 		} break;
 
 		default: break;

@@ -166,7 +166,7 @@ Knot Deserializer<Knot>::operator()(const ByteVec& bytes, std::size_t& index) {
 	return result;
 }
 
-std::string Knot::divert_target_to_global(const std::string& target) {
+std::string Knot::divert_target_to_global(const std::string& target) const {
 	for (const Stitch& stitch : stitches) {
 		if (stitch.name == target) {
 			return std::format("{}.{}", name, stitch.name);
@@ -186,4 +186,18 @@ std::string Knot::divert_target_to_global(const std::string& target) {
 	}
 
 	return target;
+}
+
+void Knot::append_knot(const Knot& other) {
+	for (InkObject* object : other.objects) {
+		objects.push_back(object);
+	}
+
+	for (const Stitch& stitch : other.stitches) {
+		stitches.push_back(stitch);
+	}
+
+	for (const GatherPoint& gather_point : other.gather_points) {
+		gather_points.push_back(gather_point);
+	}
 }

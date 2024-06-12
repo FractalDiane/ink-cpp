@@ -16,6 +16,8 @@ private:
 	InkStoryData* story_data;
 	InkStoryState story_state;
 
+	friend class InkCompiler;
+
 private:
 	void init_story();
 	void bind_ink_functions();

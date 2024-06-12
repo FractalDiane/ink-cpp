@@ -1191,7 +1191,7 @@ TEST_F(FunctionTests, ComplexFunctions) {
 	STORY("17_functions/17h_complex_functions.ink");
 	EXPECT_TEXT("hello");
 	EXPECT_TEXT("there");
-	EXPECT_TEXT("x = 3.800000");
+	EXPECT_TEXT("x = 3.8000000");
 	EXPECT_TEXT("y = 2");
 	EXPECT_TEXT("hello");
 	EXPECT_TEXT("therehello");
@@ -1220,7 +1220,7 @@ TEST_F(ConstantTests, StringConstants) {
 TEST_F(ConstantTests, NumberConstants) {
 	STORY("18_constants/18b_number_constants.ink");
 	EXPECT_TEXT(
-		"The circumference of my pie divided by its diameter is approximately 3.140000",
+		"The circumference of my pie divided by its diameter is approximately 3.1400000",
 		"I paid 10 pounds for said pie, by the way.",
 	);
 }
@@ -1574,6 +1574,75 @@ TEST_F(InkProof, EndOfContent) {
 TEST_F(InkProof, EscapeCharacter) {
 	STORY("ink-proof/20_escape_character.ink");
 	EXPECT_TEXT("this is a '|' character");
+}
+
+TEST_F(InkProof, IdentifiersStartingWithNumbers) {
+	STORY("ink-proof/21_identifiers_start_with_numbers.ink");
+	EXPECT_TEXT("512x2 = 1024", "512x2p2 = 1026");
+}
+
+TEST_F(InkProof, QuoteSignificance) {
+	STORY("ink-proof/22_quote_significance.ink");
+	EXPECT_TEXT("My name is \"Joe\"");
+	EXPECT_TEXT("My name is \"Joe\"");
+}
+
+TEST_F(InkProof, Whitespace) {
+	STORY("ink-proof/23_whitespace.ink");
+	EXPECT_TEXT("Hello!", "World.");
+}
+
+TEST_F(InkProof, Includes) {
+	STORY("ink-proof/24_includes.ink");
+	EXPECT_TEXT("This is include 1.", "This is include 2.", "This is the main file.");
+}
+
+TEST_F(InkProof, NestedIncludes) {
+	STORY("ink-proof/25_nested_includes.ink");
+	EXPECT_TEXT("The value of a variable in test file 2 is 5.", "This is the main file", "The value when accessed from knot_in_2 is 5.");
+}
+
+TEST_F(InkProof, FloorCeilingCast) {
+	STORY("ink-proof/26_floor_ceiling_cast.ink");
+	EXPECT_TEXT(
+		"1",
+		"1",
+		"2",
+		"0.6666667",
+		"0",
+		"1",
+	);
+}
+
+TEST_F(InkProof, ReadCountAcrossCallStack) {
+	STORY("ink-proof/27_read_count_across_callstack.ink");
+	EXPECT_TEXT(
+		"1) Seen first 1 times.",
+		"In second.",
+		"2) Seen first 1 times.",
+	);
+}
+
+TEST_F(InkProof, ReadCountAcrossThreads) {
+	STORY("ink-proof/28_read_count_across_threads.ink");
+	EXPECT_TEXT("1", "1");
+}
+
+TEST_F(InkProof, ReadCountDotSeparatedPath) {
+	STORY("ink-proof/29_read_count_dot_separated_path.ink");
+	EXPECT_TEXT("hi", "hi", "hi", "3");
+}
+
+TEST_F(InkProof, NestedTurnsSince) {
+	STORY("ink-proof/30_nested_turns_since.ink");
+	EXPECT_TEXT("-1 = -1");
+	EXPECT_CHOICES("stuff");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("stuff", "0 = 0");
+
+	EXPECT_CHOICES("more stuff");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("more stuff", "1 = 1");
 }
 #pragma endregion
 ////////////////////////////////////////////////////////////////////////////////////////////////////

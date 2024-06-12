@@ -36,9 +36,10 @@ enum class InkToken : char {
 
 	KeywordVar,
 	KeywordConst,
-	KeywordList,
 	KeywordFunction,
 	KeywordInclude,
+	KeywordList,
+	KeywordExternal,
 };
 
 enum class InkObjectField : char {

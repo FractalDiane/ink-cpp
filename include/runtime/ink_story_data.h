@@ -34,6 +34,7 @@ private:
 	std::vector<std::string> knot_order;
 
 	friend class InkStory;
+	friend class InkCompiler;
 
 public:
 	InkStoryData(const std::vector<Knot>& story_knots);

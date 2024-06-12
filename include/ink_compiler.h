@@ -56,6 +56,7 @@ class InkCompiler {
 private:
 	std::size_t token_index = 0;
 	InkObject* last_token_object = nullptr;
+	std::size_t current_knot_index = 0;
 
 	std::size_t brace_level = 0;
 	bool in_choice_line = false;
@@ -84,11 +85,14 @@ public:
 	void compile_script_to_file(const std::string& script, const std::string& out_file_path);
 	void compile_file_to_file(const std::string& in_file_path, const std::string& out_file_path);
 
+	UuidValue get_current_uuid() const { return current_uuid; }
+	void set_current_uuid(UuidValue value) { current_uuid = value; }
+
 private:
 	void init_compiler();
 
 	InkStoryData* compile(const std::string& script);
-	InkObject* compile_token(const std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots);
+	InkObject* compile_token(std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots);
 
 	static std::vector<InkLexer::Token> remove_comments(const std::vector<InkLexer::Token>& tokens);
 	static InkLexer::Token next_token(const std::vector<InkLexer::Token>& tokens, std::size_t index);

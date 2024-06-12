@@ -58,7 +58,9 @@ struct Knot : public InkWeaveContent {
 	Knot() : objects{}, stitches{}, gather_points{} {}
 	Knot(const std::vector<class InkObject*> objects) : objects{objects}, stitches{{}}, gather_points{{}} {}
 
-	std::string divert_target_to_global(const std::string& target);
+	std::string divert_target_to_global(const std::string& target) const;
+
+	void append_knot(const Knot& other);
 };
 
 template <>
