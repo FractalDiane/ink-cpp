@@ -4,26 +4,28 @@
 #include <unordered_set>
 #include <cmath>
 #include <stack>
+#include <deque>
+#include <functional>
 #include <format>
 #include <stdexcept>
 
-using namespace ExpressionParser;
+using namespace ExpressionParserV2;
 
-#define O TokenOperator::Type
+#define O OperatorType
 #define C(i) static_cast<std::uint8_t>(i)
 
 namespace {
-	static const std::unordered_map<std::string, TokenOperator::Data> OperatorKeywords = {
+	static const std::unordered_map<std::string, std::pair<OperatorType, OperatorUnaryType>> OperatorKeywords = {
 		//{"temp", TokenKeyword::Type::Temp},
 		//{"true", TokenKeyword::Type::True},
 		//{"false", TokenKeyword::Type::False},
-		{"and", {TokenOperator::Type::And, TokenOperator::UnaryType::NotUnary}},
-		{"or", {TokenOperator::Type::Or, TokenOperator::UnaryType::NotUnary}},
-		{"not", {TokenOperator::Type::Not, TokenOperator::UnaryType::Prefix}},
-		{"mod", {TokenOperator::Type::Modulus, TokenOperator::UnaryType::NotUnary}},
+		{"and", {OperatorType::And, OperatorUnaryType::NotUnary}},
+		{"or", {OperatorType::Or, OperatorUnaryType::NotUnary}},
+		{"not", {OperatorType::Not, OperatorUnaryType::Prefix}},
+		{"mod", {OperatorType::Modulus, OperatorUnaryType::NotUnary}},
 	};
 
-	static const std::unordered_map<TokenOperator::Type, std::uint8_t> OperatorPrecedences = {
+	static const std::unordered_map<OperatorType, std::uint8_t> OperatorPrecedences = {
 		{O::Increment, C(2)},
 		{O::Decrement, C(2)},
 		{O::Negative, C(2)},
@@ -62,7 +64,7 @@ namespace {
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
-	Token* builtin_pow(TokenStack& stack, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) {
+	/*Token* builtin_pow(TokenStack& stack, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) {
 		Variant expo = stack.top(0)->get_variant_value(variables, constants, variable_redirects).value();
 		Variant base = stack.top(1)->get_variant_value(variables, constants, variable_redirects).value();
 
@@ -103,17 +105,17 @@ namespace {
 		
 		stack.pop();
 		return result;
-	}
+	}*/
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
-	static const std::unordered_map<std::string, PtrTokenFunc> BuiltinFunctions = {
+	/*static const std::unordered_map<std::string, PtrTokenFunc> BuiltinFunctions = {
 		{"POW", builtin_pow},
 		{"INT", builtin_int},
 		{"FLOAT", builtin_float},
 		{"FLOOR", builtin_floor},
 		{"CEILING", builtin_ceil},
-	};
+	};*/
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -126,7 +128,7 @@ namespace {
 #undef O
 #undef C
 
-ByteVec Serializer<Token*>::operator()(const Token* token) {
+/*ByteVec Serializer<Token*>::operator()(const Token* token) {
 	ByteVec result = {static_cast<std::uint8_t>(token->get_type())};
 	ByteVec result2 = token->to_serialized_bytes();
 	result.insert(result.end(), result2.begin(), result2.end());
@@ -973,36 +975,36 @@ ByteVec TokenOperator::to_serialized_bytes() const {
 ByteVec TokenParenComma::to_serialized_bytes() const {
 	Serializer<std::uint8_t> s;
 	return s(static_cast<std::uint8_t>(data));
-}
+}*/
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void try_add_word(const std::string& expression, std::size_t index, std::vector<Token*>& result, std::string& word, const FunctionMap& functions, bool in_knot_name, const std::unordered_set<std::string>& deferred_functions) {
+void try_add_word(const std::string& expression, std::size_t index, std::vector<Token>& result, std::string& word, const StoryVariableInfo& story_var_info, bool in_knot_name) {
 	if (!word.empty()) {
 		bool found_result = false;
 		if (auto keyword = OperatorKeywords.find(word); keyword != OperatorKeywords.end()) {
-			result.push_back(new TokenOperator(keyword->second.type, keyword->second.unary_type));
+			result.push_back(Token::operat(keyword->second.first, keyword->second.second));
 			found_result = true;
 		} else if (word == "true") {
-			result.push_back(new TokenBoolean(true));
+			result.push_back(Token::literal_int(1));
 			found_result = true;
 		} else if (word == "false") {
-			result.push_back(new TokenBoolean(false));
+			result.push_back(Token::literal_int(0));
 			found_result = true;
-		} else if (auto builtin_func = BuiltinFunctions.find(word); builtin_func != BuiltinFunctions.end()) {
-			result.push_back(new TokenFunction(builtin_func->first, builtin_func->second, TokenFunction::FetchMethod::Immediate));
+		//} else if (auto builtin_func = BuiltinFunctions.find(word); builtin_func != BuiltinFunctions.end()) {
+		//	result.push_back(new TokenFunction(builtin_func->first, builtin_func->second, TokenFunction::FetchMethod::Immediate));
+		//	found_result = true;
+		} else if (auto func = story_var_info.immediate_functions.find(word); func != story_var_info.immediate_functions.end()) {
+			result.push_back(Token::function_immediate(word, func->second));
 			found_result = true;
-		} else if (auto func = functions.find(word); func != functions.end()) {
-			result.push_back(new TokenFunction(func->first, func->second, TokenFunction::FetchMethod::Immediate));
-			found_result = true;
-		} else if (deferred_functions.contains(word)) {
-			result.push_back(new TokenFunction(word, nullptr, TokenFunction::FetchMethod::Defer));
+		} else if (story_var_info.deferred_functions.contains(word)) {
+			result.push_back(Token::function_deferred(word));
 			found_result = true;
 		} else if (word == "temp") {
-			result.push_back(new TokenKeyword(TokenKeyword::Type::Temp));
+			result.push_back(Token::keyword(KeywordType::Temp));
 			found_result = true;
 		} else if (word == "return") {
-			result.push_back(new TokenKeyword(TokenKeyword::Type::Return));
+			result.push_back(Token::keyword(KeywordType::Return));
 			found_result = true;
 		} else {
 			bool is_num = true;
@@ -1017,7 +1019,7 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 				if (word.contains(".")) {
 					try {
 						double word_float = std::stod(word);
-						result.push_back(new TokenNumberFloat(word_float));
+						result.push_back(Token::literal_float(word_float));
 						found_result = true;
 					} catch (...) {
 						
@@ -1025,7 +1027,7 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 				} else {
 					try {
 						std::int64_t word_int = std::stoll(word);
-						result.push_back(new TokenNumberInt(word_int));
+						result.push_back(Token::literal_int(word_int));
 						found_result = true;
 					} catch (...) {
 						
@@ -1036,7 +1038,7 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 
 		if (!found_result) {
 			if (index < expression.length() - 1 && expression[index] == '(') {
-				result.push_back(new TokenFunction(word, nullptr, TokenFunction::FetchMethod::StoryKnot));
+				result.push_back(Token::function_deferred(word));
 				found_result = true;
 			}
 		}
@@ -1044,9 +1046,9 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 
 		if (!found_result) {
 			if (in_knot_name) {
-				result.push_back(new TokenKnotName(word, true));
+				result.push_back(Token::literal_knotname(word, true));
 			} else {
-				result.push_back(new TokenVariable(word));
+				result.push_back(Token::variable(word));
 			}
 		}
 
@@ -1054,8 +1056,8 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 	}
 }
 
-std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
-	std::vector<Token*> result;
+std::vector<Token> tokenize_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info) {
+	std::vector<Token> result;
 	result.reserve(128);
 
 	std::string current_word;
@@ -1067,11 +1069,12 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 
 	bool in_knot_name = false;
 
-	#define TRY_ADD_WORD() try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions)
+	//#define TRY_ADD_WORD() try_add_word(expression, index, result, current_word, functions, in_knot_name, deferred_functions)
+	#define TRY_ADD_WORD() try_add_word(expression, index, result, current_word, story_variable_info, in_knot_name)
 
 	std::size_t index = 0;
 	while (index < expression.length()) {
-		using UnaryType = TokenOperator::UnaryType;
+		using UnaryType = OperatorUnaryType;
 		char this_char = expression[index];
 		if (!in_quotes) {
 			switch (this_char) {
@@ -1079,14 +1082,15 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 					if (next_char(expression, index) == '+') {
 						if (next_char(expression, index + 1) <= 32) {
 							TRY_ADD_WORD();
-							result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Postfix));
+							//result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Postfix));
+							result.push_back(Token::operat(OperatorType::Increment, UnaryType::Postfix));
 						} else {
-							result.push_back(new TokenOperator(TokenOperator::Type::Increment, UnaryType::Prefix));
+							result.push_back(Token::operat(OperatorType::Increment, UnaryType::Prefix));
 						}
 						
 						++index;
 					} else {
-						result.push_back(new TokenOperator(TokenOperator::Type::Plus, UnaryType::NotUnary));
+						result.push_back(Token::operat(OperatorType::Plus, UnaryType::NotUnary));
 					}
 				} break;
 
@@ -1094,9 +1098,9 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 					if (next_char(expression, index) == '-') {
 						if (next_char(expression, index + 1) <= 32) {
 							TRY_ADD_WORD();
-							result.push_back(new TokenOperator(TokenOperator::Type::Decrement, UnaryType::Postfix));
+							result.push_back(Token::operat(OperatorType::Decrement, UnaryType::Postfix));
 						} else {
-							result.push_back(new TokenOperator(TokenOperator::Type::Decrement, UnaryType::Prefix));
+							result.push_back(Token::operat(OperatorType::Decrement, UnaryType::Prefix));
 						}
 						
 						++index;
@@ -1104,10 +1108,10 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 						in_knot_name = true;
 						++index;
 					} else {
-						if (next_char(expression, index) > 32 && (result.empty() || result.back()->get_type() == TokenType::Operator)) {
-							result.push_back(new TokenOperator(TokenOperator::Type::Negative, UnaryType::Prefix));
+						if (next_char(expression, index) > 32 && (result.empty() || result.back().type == TokenType::Operator)) {
+							result.push_back(Token::operat(OperatorType::Negative, UnaryType::Prefix));
 						} else {
-							result.push_back(new TokenOperator(TokenOperator::Type::Minus, UnaryType::NotUnary));
+							result.push_back(Token::operat(OperatorType::Minus, UnaryType::NotUnary));
 						}
 					}
 				} break;
@@ -1115,110 +1119,112 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 				case '=': {
 					TRY_ADD_WORD();
 					if (next_char(expression, index) == '=') {
-						result.push_back(new TokenOperator(TokenOperator::Type::Equal, UnaryType::NotUnary));
+						result.push_back(Token::operat(OperatorType::Equal, UnaryType::NotUnary));
 						++index;
 					} else {
-						result.push_back(new TokenOperator(TokenOperator::Type::Assign, UnaryType::NotUnary));
+						result.push_back(Token::operat(OperatorType::Assign, UnaryType::NotUnary));
 					}
 				} break;
 
 				case '<': {
 					TRY_ADD_WORD();
 					if (next_char(expression, index) == '=') {
-						result.push_back(new TokenOperator(TokenOperator::Type::LessEqual, UnaryType::NotUnary));
+						result.push_back(Token::operat(OperatorType::LessEqual, UnaryType::NotUnary));
 						++index;
-					} else if (next_char(expression, index) == '<') {
-						result.push_back(new TokenOperator(TokenOperator::Type::ShiftLeft, UnaryType::NotUnary));
+					//} else if (next_char(expression, index) == '<') {
+					//	result.push_back(new TokenOperator(TokenOperator::Type::ShiftLeft, UnaryType::NotUnary));
 					} else {
-						result.push_back(new TokenOperator(TokenOperator::Type::Less, UnaryType::NotUnary));
+						result.push_back(Token::operat(OperatorType::Less, UnaryType::NotUnary));
 					}
 				} break;
 				
 				case '>': {
 					TRY_ADD_WORD();
 					if (next_char(expression, index) == '=') {
-						result.push_back(new TokenOperator(TokenOperator::Type::GreaterEqual, UnaryType::NotUnary));
+						result.push_back(Token::operat(OperatorType::GreaterEqual, UnaryType::NotUnary));
 						++index;
-					} else if (next_char(expression, index) == '>') {
-						result.push_back(new TokenOperator(TokenOperator::Type::ShiftRight, UnaryType::NotUnary));
+					//} else if (next_char(expression, index) == '>') {
+					//	result.push_back(new TokenOperator(TokenOperator::Type::ShiftRight, UnaryType::NotUnary));
 					} else {
-						result.push_back(new TokenOperator(TokenOperator::Type::Greater, UnaryType::NotUnary));
+						result.push_back(Token::operat(OperatorType::Greater, UnaryType::NotUnary));
 					}
 				} break;
 
 				case '*': {
 					TRY_ADD_WORD();
-					result.push_back(new TokenOperator(TokenOperator::Type::Multiply, UnaryType::NotUnary));
+					result.push_back(Token::operat(OperatorType::Multiply, UnaryType::NotUnary));
 				} break;
 
 				case '/': {
 					TRY_ADD_WORD();
-					result.push_back(new TokenOperator(TokenOperator::Type::Divide, UnaryType::NotUnary));
+					result.push_back(Token::operat(OperatorType::Divide, UnaryType::NotUnary));
 				} break;
 
 				case '%': {
 					TRY_ADD_WORD();
-					result.push_back(new TokenOperator(TokenOperator::Type::Modulus, UnaryType::NotUnary));
+					result.push_back(Token::operat(OperatorType::Modulus, UnaryType::NotUnary));
 				} break;
 
 				case '?': {
 					TRY_ADD_WORD();
-					result.push_back(new TokenOperator(TokenOperator::Type::Substring, UnaryType::NotUnary));
+					result.push_back(Token::operat(OperatorType::Substring, UnaryType::NotUnary));
 				} break;
 
 				case '!': {
 					if (next_char(expression, index) == '=') {
-						result.push_back(new TokenOperator(TokenOperator::Type::NotEqual, UnaryType::NotUnary));
+						result.push_back(Token::operat(OperatorType::NotEqual, UnaryType::NotUnary));
 						++index;
 					} else if (next_char(expression, index) > 32) {
-						result.push_back(new TokenOperator(TokenOperator::Type::Not, UnaryType::Prefix));
+						result.push_back(Token::operat(OperatorType::Not, UnaryType::Prefix));
 					}
 				} break;
 
 				case '&': {
 					TRY_ADD_WORD();
 					if (next_char(expression, index) == '&') {
-						result.push_back(new TokenOperator(TokenOperator::Type::And, UnaryType::NotUnary));
+						result.push_back(Token::operat(OperatorType::And, UnaryType::NotUnary));
 						++index;
-					} else {
-						result.push_back(new TokenOperator(TokenOperator::Type::BitAnd, UnaryType::NotUnary));
 					}
+					//} else {
+					//	result.push_back(new TokenOperator(TokenOperator::Type::BitAnd, UnaryType::NotUnary));
+					//}
 				} break;
 
 				case '|': {
 					TRY_ADD_WORD();
 					if (next_char(expression, index) == '|') {
-						result.push_back(new TokenOperator(TokenOperator::Type::Or, UnaryType::NotUnary));
+						result.push_back(Token::operat(OperatorType::Or, UnaryType::NotUnary));
 						++index;
-					} else {
-						result.push_back(new TokenOperator(TokenOperator::Type::BitOr, UnaryType::NotUnary));
 					}
+					//} else {
+					//	result.push_back(new TokenOperator(TokenOperator::Type::BitOr, UnaryType::NotUnary));
+					//}
 				} break;
 
 				case '^': {
 					TRY_ADD_WORD();
-					result.push_back(new TokenOperator(TokenOperator::Type::BitXor, UnaryType::NotUnary));
+					result.push_back(Token::operat(OperatorType::Intersect, UnaryType::NotUnary));
 				} break;
 
-				case '~': {
+				/*case '~': {
 					if (next_char(expression, index) > 32) {
 						result.push_back(new TokenOperator(TokenOperator::Type::BitNot, UnaryType::Prefix));
 					}
-				} break;
+				} break;*/
 
 				case '(': {
 					TRY_ADD_WORD();
-					result.push_back(new TokenParenComma(TokenParenComma::Type::LeftParen));
+					result.push_back(Token::paren_comma(ParenCommaType::LeftParen));
 				} break;
 
 				case ')': {
 					TRY_ADD_WORD();
-					result.push_back(new TokenParenComma(TokenParenComma::Type::RightParen));
+					result.push_back(Token::paren_comma(ParenCommaType::RightParen));
 				} break;
 
 				case ',': {
 					TRY_ADD_WORD();
-					result.push_back(new TokenParenComma(TokenParenComma::Type::Comma));
+					result.push_back(Token::paren_comma(ParenCommaType::Comma));
 				} break;
 
 				case '"': {
@@ -1239,7 +1245,7 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 			if (this_char != '"') {
 				current_string.push_back(this_char);
 			} else {
-				result.push_back(new TokenStringLiteral(current_string));
+				result.push_back(Token::literal_string(current_string));
 				current_string.clear();
 				in_quotes = false;
 			}
@@ -1250,26 +1256,26 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 
 	TRY_ADD_WORD();
 
-	std::vector<std::pair<TokenFunction*, std::uint8_t>> arg_count_stack;
-	for (Token* token : result) {
-		switch (token->get_type()) {
+	std::vector<std::pair<Token, std::uint8_t>> arg_count_stack;
+	for (Token& token : result) {
+		switch (token.type) {
 			case TokenType::Function: {
 				if (!arg_count_stack.empty() && arg_count_stack.back().second == 0) {
 					arg_count_stack.back().second = 1;
 				}
 				
-				arg_count_stack.emplace_back(static_cast<TokenFunction*>(token), static_cast<std::uint8_t>(0));
+				arg_count_stack.emplace_back(token, static_cast<std::uint8_t>(0));
 			} break;
 
 			case TokenType::ParenComma: {
-				switch (static_cast<TokenParenComma*>(token)->data) {
-					case TokenParenComma::Type::Comma: {
+				switch (token.paren_comma_type) {
+					case ParenCommaType::Comma: {
 						++arg_count_stack.back().second;
 					} break;
 
-					case TokenParenComma::Type::RightParen: {
+					case ParenCommaType::RightParen: {
 						if (!arg_count_stack.empty()) {
-							arg_count_stack.back().first->data.argument_count = arg_count_stack.back().second;
+							arg_count_stack.back().first.function_argument_count = arg_count_stack.back().second;
 							arg_count_stack.pop_back();
 						}
 					} break;
@@ -1291,29 +1297,30 @@ std::vector<Token*> ExpressionParser::tokenize_expression(const std::string& exp
 	return result;
 }
 
-std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, std::unordered_set<Token*>& tokens_shunted) {
-	std::vector<Token*> postfix;
-	std::stack<Token*> stack;
+std::vector<Token> shunt(const std::vector<Token>& infix, std::unordered_set<Token>& tokens_shunted) {
+	//std::vector<const Token&> postfix;
+	//std::stack<const Token&> stack;
+	std::vector<std::reference_wrapper<const Token>> postfix;
+	std::stack<std::reference_wrapper<const Token>> stack;
 
 	std::size_t index = 0;
 	while (index < infix.size()) {
-		Token* this_token = infix[index];
+		const Token& this_token = infix[index];
 
-		switch (this_token->get_type()) {
-			case TokenType::Boolean:
-			case TokenType::NumberInt:
-			case TokenType::NumberFloat:
-			case TokenType::StringLiteral:
-			case TokenType::Variable:
-			case TokenType::KnotName: {
+		switch (this_token.type) {
+			case TokenType::LiteralNumberInt:
+			case TokenType::LiteralNumberFloat:
+			case TokenType::LiteralString:
+			case TokenType::LiteralKnotName:
+			case TokenType::Variable: {
 				postfix.push_back(this_token);
 				tokens_shunted.insert(this_token);
 			} break;
 
 			case TokenType::Operator: {
-				TokenOperator::UnaryType unary_type = static_cast<TokenOperator*>(this_token)->data.unary_type;
-				if (unary_type != TokenOperator::UnaryType::NotUnary) {
-					if (unary_type == TokenOperator::UnaryType::Postfix) {
+				OperatorUnaryType unary_type = this_token.operator_unary_type;
+				if (unary_type != OperatorUnaryType::NotUnary) {
+					if (unary_type == OperatorUnaryType::Postfix) {
 						postfix.push_back(this_token);
 						tokens_shunted.insert(this_token);
 					} else {
@@ -1321,12 +1328,12 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 					}
 				} else {
 					while (!stack.empty()) {
-						Token* next_op = stack.top();
+						const Token& next_op = stack.top();
 
 						bool higher_precedence = false;
-						if (next_op->get_type() == TokenType::Operator) {
-							TokenOperator::Type this_type = static_cast<TokenOperator*>(this_token)->data.type;
-							TokenOperator::Type that_type = static_cast<TokenOperator*>(next_op)->data.type;
+						if (next_op.type == TokenType::Operator) {
+							OperatorType this_type = this_token.operator_type;
+							OperatorType that_type = next_op.operator_type;
 							higher_precedence = OperatorPrecedences.at(that_type) <= OperatorPrecedences.at(this_type);
 						} else {
 							break;
@@ -1346,16 +1353,16 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 			} break;
 
 			case TokenType::ParenComma: {
-				auto* paren_comma = static_cast<TokenParenComma*>(this_token);
-				switch (paren_comma->data) {
-					case TokenParenComma::Type::LeftParen: {
+				//auto* paren_comma = static_cast<TokenParenComma*>(this_token);
+				switch (this_token.paren_comma_type) {
+					case ParenCommaType::LeftParen: {
 						stack.push(this_token);
 					} break;
 
-					case TokenParenComma::Type::RightParen: {
+					case ParenCommaType::RightParen: {
 						while (!stack.empty()) {
-							Token* next = stack.top();
-							if (next->get_type() == TokenType::ParenComma && static_cast<TokenParenComma*>(next)->data == TokenParenComma::Type::LeftParen) {
+							const Token& next = stack.top();
+							if (next.type == TokenType::ParenComma && next.paren_comma_type == ParenCommaType::LeftParen) {
 								break;
 							} else {
 								stack.pop();
@@ -1370,8 +1377,8 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 
 						stack.pop();
 						if (!stack.empty()) {
-							Token* new_top = stack.top();
-							if (new_top->get_type() == TokenType::Function) {
+							const Token& new_top = stack.top();
+							if (new_top.type == TokenType::Function) {
 								postfix.push_back(new_top);
 								tokens_shunted.insert(new_top);
 								stack.pop();
@@ -1379,12 +1386,12 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 						}
 					} break;
 
-					case TokenParenComma::Type::Comma:
+					case ParenCommaType::Comma:
 					default: {
 						while (!stack.empty()) {
-							Token* next = stack.top();
-							if (next->get_type() == TokenType::ParenComma) {
-								if (static_cast<TokenParenComma*>(next)->data != TokenParenComma::Type::LeftParen) {
+							const Token& next = stack.top();
+							if (next.type == TokenType::ParenComma) {
+								if (next.paren_comma_type != ParenCommaType::LeftParen) {
 									postfix.push_back(next);
 									tokens_shunted.insert(next);
 									stack.pop();
@@ -1422,10 +1429,16 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 		stack.pop();
 	}
 
-	return postfix;
+	std::vector<Token> result;
+	result.reserve(postfix.size());
+	for (auto& token : postfix) {
+		result.push_back(token);
+	}
+
+	return result;
 }
 
-#define OP_UN_PRE(type, func) case Type::type: {\
+/*#define OP_UN_PRE(type, func) case Type::type: {\
 		Token::ValueResult operand = stack.top()->get_value(variables, constants, variable_redirects);\
 		stack.pop();\
 \
@@ -1457,70 +1470,82 @@ std::vector<Token*> ExpressionParser::shunt(const std::vector<Token*>& infix, st
 		}\
 \
 		stack.push(result);\
-	} break;
+	} break;*/
 
-ExecuteResult ExpressionParser::execute_expression_tokens(std::vector<Token*>& expression_tokens, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions, bool alter_input_tokens) {
-	TokenStack stack;
-	std::unordered_set<Token*> tokens_to_dealloc;
+#define OP_BIN(type, op) case OperatorType::type: {\
+	const Token& right = stack.back();\
+	const Token& left = stack[stack.size() - 2];\
+	stack.push_back(Token::from_variant(left.value op right.value));\
+	stack.pop_back();\
+	stack.pop_back();\
+} break;
+
+#define OP_UN_PRE(type, op) case OperatorType::type: {\
+	const Token& operand = stack.back();\
+	stack.push_back(Token::from_variant(op##operand.value));\
+	stack.pop_back();\
+} break;
+
+ExecuteResult execute_expression_tokens(std::vector<Token>& expression_tokens, StoryVariableInfo& story_variable_info) {
+	//TokenStack stack;
+	std::vector<Token> stack;
+	//std::unordered_set<Token*> tokens_to_dealloc;
 
 	std::size_t index = 0;
 	while (index < expression_tokens.size()) {
-		Token* this_token = expression_tokens[index];
+		Token& this_token = expression_tokens[index];
 
-		switch (this_token->get_type()) {
-			case TokenType::Boolean:
-			case TokenType::NumberInt:
-			case TokenType::NumberFloat:
-			case TokenType::StringLiteral:
-			case TokenType::Variable:
-			case TokenType::KnotName: {
-				stack.push(this_token);
+		switch (this_token.type) {
+			case TokenType::LiteralNumberInt:
+			case TokenType::LiteralNumberFloat:
+			case TokenType::LiteralString:
+			case TokenType::LiteralKnotName:
+			case TokenType::Variable: {
+				stack.push_back(this_token);
 			} break;
 
 			case TokenType::Operator: {
-				auto* op = static_cast<TokenOperator*>(this_token);
-				using Type = TokenOperator::Type;
-				switch (op->data.type) {
-					OP_BIN(Plus, plus);
-					OP_BIN(Minus, minus);
-					OP_BIN(Multiply, multiply);
-					OP_BIN(Divide, divide);
-					OP_BIN(Modulus, mod);
+				switch (this_token.operator_type) {
+					OP_BIN(Plus, +);
+					OP_BIN(Minus, -);
+					OP_BIN(Multiply, *);
+					OP_BIN(Divide, /);
+					OP_BIN(Modulus, %);
 
-					OP_BIN(Equal, equal);
-					OP_BIN(NotEqual, notequal);
-					OP_BIN(Less, less);
-					OP_BIN(Greater, greater);
-					OP_BIN(LessEqual, lessequal);
-					OP_BIN(GreaterEqual, greaterequal);
+					OP_BIN(Equal, ==);
+					OP_BIN(NotEqual, !=);
+					OP_BIN(Less, <);
+					OP_BIN(Greater, >);
+					OP_BIN(LessEqual, <=);
+					OP_BIN(GreaterEqual, >=);
 
-					OP_BIN(And, and);
-					OP_BIN(Or, or);
+					OP_BIN(And, &&);
+					OP_BIN(Or, ||);
 
-					OP_BIN(BitAnd, bitand);
-					OP_BIN(BitOr, bitor);
-					OP_BIN(BitXor, bitxor);
-					OP_BIN(ShiftLeft, shiftleft);
-					OP_BIN(ShiftRight, shiftright);
+					OP_UN_PRE(Negative, -);
+					OP_UN_PRE(Not, !);
 
-					OP_BIN(Substring, substring);
+					case OperatorType::Increment:
+					case OperatorType::Decrement: {
+						//Token::ValueResult operand = stack.top()->get_value(variables, constants, variable_redirects);
+						Token& operand = stack.back();
+						/*if (operand.operator_unary_type == OperatorUnaryType::Prefix) {
+							stack.push_back(Token::from_variant(operand.operator_type == OperatorType::Increment ? operand.increment(false, story_variable_info) : operand.decrement(false, story_variable_info)));
+						} else {
+							stack.push_back(Token::from_variant(operand.operator_type == OperatorType::Increment ? operand.increment(true, story_variable_info) : operand.decrement(false, story_variable_info)));
+						}*/
 
-					OP_UN_PRE(Negative, negative);
-					OP_UN_PRE(Not, not);
-					OP_UN_PRE(BitNot, bitnot);
+						bool postfix = operand.operator_unary_type == OperatorUnaryType::Prefix;
+						stack.push_back(Token::from_variant(operand.operator_type == OperatorType::Increment ? operand.increment(postfix, story_variable_info) : operand.decrement(postfix, story_variable_info)));
 
-					case Type::Increment:
-					case Type::Decrement: {
-						Token::ValueResult operand = stack.top()->get_value(variables, constants, variable_redirects);
-
-						Token* result = nullptr;
+						/*Token* result = nullptr;
 						if (op->data.unary_type == TokenOperator::UnaryType::Prefix) {
 							result = op->data.type == Type::Increment ? operand.token->operator_inc_pre() : operand.token->operator_dec_pre();
 						} else {
 							result = op->data.type == Type::Increment ? operand.token->operator_inc_post() : operand.token->operator_dec_post();
-						}
+						}*/
 
-						if (operand.from_variable && op->data.unary_type == TokenOperator::UnaryType::Postfix) {
+						/*if (operand.from_variable && op->data.unary_type == TokenOperator::UnaryType::Postfix) {
 							TokenNumberInt add{op->data.type == Type::Increment ? 1 : -1};
 							Token* new_result = result->operator_plus(&add);
 
@@ -1529,28 +1554,37 @@ ExecuteResult ExpressionParser::execute_expression_tokens(std::vector<Token*>& e
 							variables.flag_variable_changed(var_name);
 							delete operand.token;
 							delete new_result;
-						}
+						}*/
 
-						stack.pop();
-						stack.push(result);
+						//stack.pop();
+						//stack.push(result);
+						stack.erase(stack.end() - 2);
 
-						if (op->data.unary_type == TokenOperator::UnaryType::Postfix) {
+						/*if (op->data.unary_type == TokenOperator::UnaryType::Postfix) {
 							tokens_to_dealloc.insert(result);
-						}
+						}*/
 					} break;
 
-					case Type::Assign: {
-						Token* value = stack.top();
-						stack.pop();
-						Token* var = stack.top();
-						stack.pop();
-						if (var->get_type() != TokenType::Variable) {
+					case OperatorType::Assign: {
+						Token& value = stack.back();
+						//stack.pop();
+						Token& var = stack[stack.size() - 2];
+						//stack.pop();
+						if (var.type != TokenType::Variable) {
 							throw std::runtime_error("Invalid use of assignment operator");
 						}
 
-						std::string var_name = static_cast<TokenVariable*>(var)->data;
+						std::string var_name = var.variable_name;
+						if (value.type == TokenType::Variable && var.variable_name == value.variable_name) {
+							break;
+						}
 
-						if (value->get_type() == TokenType::Variable) {
+						var.assign_variable(value, story_variable_info);
+
+						stack.pop_back();
+						stack.pop_back();
+
+						/*if (value->get_type() == TokenType::Variable) {
 							std::string value_name = static_cast<TokenVariable*>(value)->data;
 							if (var_name == value_name) {
 								break;
@@ -1581,7 +1615,7 @@ ExecuteResult ExpressionParser::execute_expression_tokens(std::vector<Token*>& e
 							}
 						} else {
 							throw std::runtime_error("Variable being assigned has no value");
-						}
+						}*/
 					} break;
 
 					default: {

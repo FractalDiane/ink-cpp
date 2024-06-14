@@ -13,10 +13,12 @@
 #include <algorithm>
 #include <initializer_list>
 
+#include "expression_parser/token.h"
+
 #include "serialization.h"
 #include "uuid.h"
 
-namespace ExpressionParser {
+/*namespace ExpressionParser {
 	struct Token;
 }
 
@@ -501,26 +503,26 @@ struct TokenVariable : public Token {
 
 	virtual std::string to_printable_string() const override;
 	virtual ByteVec to_serialized_bytes() const override;
-};
+};*/
 
 struct ShuntedExpression {
 	Uuid uuid;
-	std::vector<Token*> tokens;
+	std::vector<ExpressionParserV2::Token> tokens;
 
 	struct StackEntry {
-		std::vector<Token*> function_prepared_tokens;
+		std::vector<ExpressionParserV2::Token> function_prepared_tokens;
 		std::size_t function_eval_index = SIZE_MAX;
 		std::size_t argument_count = 0;
 		bool preparation_finished = false;
 
-		std::unordered_set<Token*> tokens_to_dealloc;
+		//std::unordered_set<Token*> tokens_to_dealloc;
 	};
 
 	std::vector<StackEntry> preparation_stack;
 
 	ShuntedExpression() : tokens{}, preparation_stack{}, uuid{0} {}
-	explicit ShuntedExpression(const std::vector<Token*>& tokens) : tokens{tokens}, preparation_stack{}, uuid{0} {}
-	explicit ShuntedExpression(std::vector<Token*>&& tokens) : tokens{tokens}, preparation_stack{}, uuid{0} {}
+	explicit ShuntedExpression(const std::vector<ExpressionParserV2::Token>& tokens) : tokens{tokens}, preparation_stack{}, uuid{0} {}
+	explicit ShuntedExpression(std::vector<ExpressionParserV2::Token>&& tokens) : tokens{tokens}, preparation_stack{}, uuid{0} {}
 
 	void push_entry() {
 		StackEntry new_entry;
@@ -540,16 +542,16 @@ struct ShuntedExpression {
 		return preparation_stack.empty();
 	}
 
-	void dealloc_tokens() {
+	/*void dealloc_tokens() {
 		for (Token* token : tokens) {
 			delete token;
 		}
-	}
+	}*/
 };
 
-std::vector<Token*> tokenize_expression(const std::string& expression, const FunctionMap& all_functions, const std::unordered_set<std::string>& deferred_functions);
+std::vector<ExpressionParserV2::Token> tokenize_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 
-std::vector<Token*> shunt(const std::vector<Token*>& infix, std::unordered_set<Token*>& tokens_shunted);
+std::vector<ExpressionParserV2::Token> shunt(const std::vector<ExpressionParserV2::Token>& infix, std::unordered_set<Token*>& tokens_shunted);
 
 struct NulloptResult {
 	enum class Reason {
@@ -558,23 +560,23 @@ struct NulloptResult {
 		Failed,
 	} reason;
 
-	TokenFunction* function;
+	/*TokenFunction* function;
 	std::size_t function_index;
 	std::vector<Token*> arguments;
 	std::unordered_set<Token*> tokens_to_dealloc;
 
 	NulloptResult(Reason reason) : reason{reason}, function{nullptr}, function_index{0}, arguments{}, tokens_to_dealloc{} {}
-	NulloptResult(Reason reason, TokenFunction* function, std::size_t function_index, const std::vector<Token*>& arguments, const std::unordered_set<Token*>& tokens_to_dealloc) : reason{reason}, function{function}, function_index{function_index}, arguments{arguments}, tokens_to_dealloc{tokens_to_dealloc} {}
+	NulloptResult(Reason reason, TokenFunction* function, std::size_t function_index, const std::vector<Token*>& arguments, const std::unordered_set<Token*>& tokens_to_dealloc) : reason{reason}, function{function}, function_index{function_index}, arguments{arguments}, tokens_to_dealloc{tokens_to_dealloc} {}*/
 };
 
 
-typedef std::expected<Variant, NulloptResult> ExecuteResult;
+typedef std::expected<ExpressionParserV2::Variant, NulloptResult> ExecuteResult;
 
-ExecuteResult execute_expression_tokens(std::vector<Token*>& tokens, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& all_functions, bool alter_input_tokens = false);
+ExecuteResult execute_expression_tokens(std::vector<ExpressionParserV2::Token>& tokens, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 
-ExecuteResult execute_expression(const std::string& expression, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
-ExecuteResult execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions = {}, const std::unordered_set<std::string>& deferred_functions = {});
+ExecuteResult execute_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
+ExecuteResult execute_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 
-ShuntedExpression tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions);
+ShuntedExpression tokenize_and_shunt_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 
-}
+//}

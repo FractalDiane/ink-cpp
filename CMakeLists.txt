@@ -8,7 +8,11 @@ set(SRC_UTIL
 	src/ink_utils.cpp
 	src/serialization.cpp
 	src/uuid.cpp
+
 	src/expression_parser/expression_parser.cpp
+	src/expression_parser/token.cpp
+
+	src/types/ink_list.cpp
 )
 
 set(SRC_COMPILER src/ink_compiler.cpp)
