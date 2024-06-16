@@ -34,7 +34,7 @@ struct InkStoryState {
 		std::size_t choice_index = 0;
 		Knot* containing_knot = nullptr;
 		std::size_t index_in_knot = 0;
-		std::vector<std::pair<std::string, ExpressionParser::Variant>> arguments;
+		std::vector<std::pair<std::string, ExpressionParserV2::Variant>> arguments;
 
 		bool applied = false;
 	};
@@ -61,12 +61,12 @@ struct InkStoryState {
 	std::unordered_map<Knot*, std::unordered_map<class InkObject*, std::unordered_set<std::size_t>>> choices_taken;
 	std::size_t total_choices_taken = 0;
 
-	std::vector<std::vector<std::pair<std::string, ExpressionParser::Variant>>> arguments_stack;
+	std::vector<std::vector<std::pair<std::string, ExpressionParserV2::Variant>>> arguments_stack;
 	std::vector<Knot*> function_call_stack;
 
 	std::size_t current_thread_depth = 0;
 	std::vector<ThreadEntry> current_thread_entries;
-	std::vector<std::vector<std::pair<std::string, ExpressionParser::Variant>>> thread_arguments_stack;
+	std::vector<std::vector<std::pair<std::string, ExpressionParserV2::Variant>>> thread_arguments_stack;
 	bool should_wrap_up_thread = false;
 
 	InkStoryTracking story_tracking;
@@ -78,9 +78,10 @@ struct InkStoryState {
 	bool just_diverted_to_non_knot = false;
 	std::optional<std::size_t> choice_divert_index = std::nullopt;
 
-	ExpressionParser::VariableMap variables;
-	ExpressionParser::VariableMap constants;
-	ExpressionParser::FunctionMap functions;
+	//ExpressionParser::VariableMap variables;
+	//ExpressionParser::VariableMap constants;
+	//ExpressionParser::FunctionMap functions;
+	ExpressionParserV2::StoryVariableInfo variable_info;
 	//std::unordered_map<Uuid, ExpressionParser::VariableMap> local_variables;
 	std::unordered_map<Uuid, std::unordered_map<std::string, std::string>> variable_redirects;
 
@@ -93,7 +94,7 @@ struct InkStoryState {
 	inline std::size_t current_knot_size() const { return current_knots_stack.back().knot->objects.size(); }
 	KnotStatus& current_nonchoice_knot();
 
-	ExpressionParser::VariableMap get_story_constants();
+	//ExpressionParser::VariableMap get_story_constants();
 
 	void apply_thread_choices();
 };
@@ -110,7 +111,7 @@ struct InkStoryEvalResult {
 	
 	std::size_t argument_count = 0;
 	bool reached_function_return = false;
-	std::optional<ExpressionParser::Variant> return_value;
+	std::optional<ExpressionParserV2::Variant> return_value;
 
 	bool has_any_contents(bool strip);
 };

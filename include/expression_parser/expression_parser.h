@@ -551,7 +551,7 @@ struct ShuntedExpression {
 
 std::vector<ExpressionParserV2::Token> tokenize_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 
-std::vector<ExpressionParserV2::Token> shunt(const std::vector<ExpressionParserV2::Token>& infix, std::unordered_set<Token*>& tokens_shunted);
+std::vector<ExpressionParserV2::Token> shunt(const std::vector<ExpressionParserV2::Token>& infix);
 
 struct NulloptResult {
 	enum class Reason {
@@ -560,13 +560,13 @@ struct NulloptResult {
 		Failed,
 	} reason;
 
-	/*TokenFunction* function;
+	ExpressionParserV2::Token function;
 	std::size_t function_index;
-	std::vector<Token*> arguments;
-	std::unordered_set<Token*> tokens_to_dealloc;
+	std::vector<ExpressionParserV2::Token> arguments;
+	//std::unordered_set<Token*> tokens_to_dealloc;
 
-	NulloptResult(Reason reason) : reason{reason}, function{nullptr}, function_index{0}, arguments{}, tokens_to_dealloc{} {}
-	NulloptResult(Reason reason, TokenFunction* function, std::size_t function_index, const std::vector<Token*>& arguments, const std::unordered_set<Token*>& tokens_to_dealloc) : reason{reason}, function{function}, function_index{function_index}, arguments{arguments}, tokens_to_dealloc{tokens_to_dealloc} {}*/
+	NulloptResult(Reason reason) : reason{reason}, function{}, function_index{0}, arguments{} {}
+	NulloptResult(Reason reason, const ExpressionParserV2::Token& function, std::size_t function_index, const std::vector<ExpressionParserV2::Token>& arguments) : reason{reason}, function{function}, function_index{function_index}, arguments{arguments} {}
 };
 
 
@@ -575,7 +575,7 @@ typedef std::expected<ExpressionParserV2::Variant, NulloptResult> ExecuteResult;
 ExecuteResult execute_expression_tokens(std::vector<ExpressionParserV2::Token>& tokens, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 
 ExecuteResult execute_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
-ExecuteResult execute_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
+//ExecuteResult execute_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 
 ShuntedExpression tokenize_and_shunt_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 

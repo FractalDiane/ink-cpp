@@ -82,44 +82,46 @@ void InkStory::init_story() {
 }
 
 void InkStory::bind_ink_functions() {
-	using namespace ExpressionParser;
+	using namespace ExpressionParserV2;
 
-	#define EXP_FUNC(name, body) story_state.functions.insert({name, [this](TokenStack& stack, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects) body});
+	#define EXP_FUNC(name, body) story_state.variable_info.immediate_functions.insert({name, [this](const std::vector<ExpressionParserV2::Variant>& arguments) -> ExpressionParserV2::Variant body});
 
-	EXP_FUNC("CHOICE_COUNT", { return new TokenNumberInt(story_state.current_choices.size()); });
-	EXP_FUNC("TURNS", { return new TokenNumberInt(story_state.total_choices_taken); });
+	EXP_FUNC("CHOICE_COUNT", { return story_state.current_choices.size(); });
+	EXP_FUNC("TURNS", { return story_state.total_choices_taken; });
 
 	EXP_FUNC("TURNS_SINCE", {
-		std::string knot = as_string(stack.top()->get_variant_value(variables, constants, variable_redirects).value());
-		
+		//std::string knot = as_string(stack.top()->get_variant_value(variables, constants, variable_redirects).value());
+		std::string knot = arguments[0];
+
 		if (GetContentResult content = story_data->get_content(knot, story_state.current_knot().knot, story_state.current_stitch); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
 			if (story_state.story_tracking.get_content_stats(content.get_target(), stats)) {
-				stack.pop();
-				return new TokenNumberInt(stats.turns_since_visited);
+				//stack.pop();
+				return stats.turns_since_visited;
 			}
 		}
 		
-		stack.pop();
-		return new TokenNumberInt(-1);
+		//stack.pop();
+		return -1;
 	});
 
 	EXP_FUNC("SEED_RANDOM", {
-		std::int64_t seed = as_int(stack.top()->get_variant_value(variables, constants, variable_redirects).value());
-		stack.pop();
+		//std::int64_t seed = as_int(stack.top()->get_variant_value(variables, constants, variable_redirects).value());
+		//stack.pop();
+		std::int64_t seed = arguments[0];
 
 		story_state.rng.seed(static_cast<unsigned int>(seed));
-		return nullptr;
+		return Variant();
 	});
 
 	EXP_FUNC("RANDOM", {
-		std::int64_t to = as_int(stack.top()->get_variant_value(variables, constants, variable_redirects).value());
-		stack.pop();
-		std::int64_t from = as_int(stack.top()->get_variant_value(variables, constants, variable_redirects).value());
-		stack.pop();
+		std::int64_t from = arguments[0];
+		//stack.pop();
+		std::int64_t to = arguments[1];
+		//stack.pop();
 
 		std::int64_t result = randi_range(from, to, story_state.rng);
-		return new TokenNumberInt(result);
+		return result;
 	});
 
 	#undef EXP_FUNC
@@ -182,8 +184,12 @@ std::string InkStory::continue_story() {
 		if (!eval_result.target_knot.empty()) {
 			GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 			if (!target.found_any) {
-				if (auto target_var = story_state.variables.find(eval_result.target_knot); target_var != story_state.variables.end()) {
+				/*if (auto target_var = story_state.variables.find(eval_result.target_knot); target_var != story_state.variables.end()) {
 					target = story_data->get_content(std::get<std::string>(target_var->second), story_state.current_nonchoice_knot().knot, story_state.current_stitch);
+				}*/
+
+				if (std::optional<ExpressionParserV2::Variant> target_var = story_state.variable_info.get_variable_value(eval_result.target_knot); target_var.has_value()) {
+					target = story_data->get_content(*target_var, story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 				}
 			}
 
@@ -208,10 +214,10 @@ std::string InkStory::continue_story() {
 							}
 						}
 
-						std::vector<std::pair<std::string, ExpressionParser::Variant>> arguments = story_state.arguments_stack.back();
+						std::vector<std::pair<std::string, ExpressionParserV2::Variant>> arguments = story_state.arguments_stack.back();
 						for (auto& arg : arguments) {
-							if (arg.second.index() == ExpressionParser::Variant_String) {
-								arg.second = story_state.current_knot().knot->divert_target_to_global(ExpressionParser::as_string(arg.second));
+							if (arg.second.index() == ExpressionParserV2::Variant_String) {
+								arg.second = story_state.current_knot().knot->divert_target_to_global(arg.second);
 							}
 						}
 
@@ -482,30 +488,26 @@ void InkStory::choose_choice_index(std::size_t index) {
 	}
 }
 
-std::optional<ExpressionParser::Variant> InkStory::get_variable(const std::string& name) const {
-	if (auto variable = story_state.variables.find(name); variable != story_state.variables.end()) {
-		return variable->second;
-	}
-
-	return {};
+std::optional<ExpressionParserV2::Variant> InkStory::get_variable(const std::string& name) const {
+	return story_state.variable_info.get_variable_value(name);
 }
 
-void InkStory::set_variable(const std::string& name, ExpressionParser::Variant&& value) {
-	story_state.variables[name] = value;
+void InkStory::set_variable(const std::string& name, ExpressionParserV2::Variant&& value) {
+	story_state.variable_info.set_variable_value(name, value);
 }
 
-void InkStory::observe_variable(const std::string& variable_name, ExpressionParser::VariableObserverFunc callback) {
-	story_state.variables.observe_variable(variable_name, callback);
+void InkStory::observe_variable(const std::string& variable_name, ExpressionParserV2::VariableObserverFunc callback) {
+	story_state.variable_info.observe_variable(variable_name, callback);
 }
 
 void InkStory::unobserve_variable(const std::string& variable_name) {
-	story_state.variables.unobserve_variable(variable_name);
+	story_state.variable_info.unobserve_variable(variable_name);
 }
 
-void InkStory::unobserve_variable(ExpressionParser::VariableObserverFunc observer) {
-	story_state.variables.unobserve_variable(observer);
+void InkStory::unobserve_variable(ExpressionParserV2::VariableObserverFunc observer) {
+	story_state.variable_info.unobserve_variable(observer);
 }
 
-void InkStory::unobserve_variable(const std::string& variable_name, ExpressionParser::VariableObserverFunc observer) {
-	story_state.variables.unobserve_variable(variable_name, observer);
+void InkStory::unobserve_variable(const std::string& variable_name, ExpressionParserV2::VariableObserverFunc observer) {
+	story_state.variable_info.unobserve_variable(variable_name, observer);
 }

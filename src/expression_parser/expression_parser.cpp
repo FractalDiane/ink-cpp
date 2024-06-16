@@ -107,15 +107,37 @@ namespace {
 		return result;
 	}*/
 
+	Variant builtin_pow(const std::vector<Variant>& args) {
+		const Variant& base = args[0];
+		const Variant& exponent = args[1];
+		return std::pow(base, exponent);
+	}
+
+	Variant builtin_int(const std::vector<Variant>& args) {
+		return static_cast<std::int64_t>(args[0]);
+	}
+
+	Variant builtin_float(const std::vector<Variant>& args) {
+		return static_cast<double>(args[0]);
+	}
+
+	Variant builtin_floor(const std::vector<Variant>& args) {
+		return std::floor(args[0]);
+	}
+
+	Variant builtin_ceil(const std::vector<Variant>& args) {
+		return std::ceil(args[0]);
+	}
+
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
-	/*static const std::unordered_map<std::string, PtrTokenFunc> BuiltinFunctions = {
+	static const std::unordered_map<std::string, InkFunction> BuiltinFunctions = {
 		{"POW", builtin_pow},
 		{"INT", builtin_int},
 		{"FLOAT", builtin_float},
 		{"FLOOR", builtin_floor},
 		{"CEILING", builtin_ceil},
-	};*/
+	};
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -991,9 +1013,9 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 		} else if (word == "false") {
 			result.push_back(Token::literal_int(0));
 			found_result = true;
-		//} else if (auto builtin_func = BuiltinFunctions.find(word); builtin_func != BuiltinFunctions.end()) {
-		//	result.push_back(new TokenFunction(builtin_func->first, builtin_func->second, TokenFunction::FetchMethod::Immediate));
-		//	found_result = true;
+		} else if (auto builtin_func = BuiltinFunctions.find(word); builtin_func != BuiltinFunctions.end()) {
+			result.push_back(Token::function_immediate(word, builtin_func->second));
+			found_result = true;
 		} else if (auto func = story_var_info.immediate_functions.find(word); func != story_var_info.immediate_functions.end()) {
 			result.push_back(Token::function_immediate(word, func->second));
 			found_result = true;
@@ -1038,7 +1060,7 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 
 		if (!found_result) {
 			if (index < expression.length() - 1 && expression[index] == '(') {
-				result.push_back(Token::function_deferred(word));
+				result.push_back(Token::function_story_knot(word));
 				found_result = true;
 			}
 		}
@@ -1297,7 +1319,7 @@ std::vector<Token> tokenize_expression(const std::string& expression, Expression
 	return result;
 }
 
-std::vector<Token> shunt(const std::vector<Token>& infix, std::unordered_set<Token>& tokens_shunted) {
+std::vector<Token> shunt(const std::vector<Token>& infix) {
 	//std::vector<const Token&> postfix;
 	//std::stack<const Token&> stack;
 	std::vector<std::reference_wrapper<const Token>> postfix;
@@ -1314,7 +1336,6 @@ std::vector<Token> shunt(const std::vector<Token>& infix, std::unordered_set<Tok
 			case TokenType::LiteralKnotName:
 			case TokenType::Variable: {
 				postfix.push_back(this_token);
-				tokens_shunted.insert(this_token);
 			} break;
 
 			case TokenType::Operator: {
@@ -1322,7 +1343,6 @@ std::vector<Token> shunt(const std::vector<Token>& infix, std::unordered_set<Tok
 				if (unary_type != OperatorUnaryType::NotUnary) {
 					if (unary_type == OperatorUnaryType::Postfix) {
 						postfix.push_back(this_token);
-						tokens_shunted.insert(this_token);
 					} else {
 						stack.push(this_token);
 					}
@@ -1341,7 +1361,6 @@ std::vector<Token> shunt(const std::vector<Token>& infix, std::unordered_set<Tok
 
 						if (higher_precedence) {
 							postfix.push_back(next_op);
-							tokens_shunted.insert(next_op);
 							stack.pop();
 						} else {
 							break;
@@ -1367,7 +1386,6 @@ std::vector<Token> shunt(const std::vector<Token>& infix, std::unordered_set<Tok
 							} else {
 								stack.pop();
 								postfix.push_back(next);
-								tokens_shunted.insert(next);
 							}
 						}
 
@@ -1380,7 +1398,6 @@ std::vector<Token> shunt(const std::vector<Token>& infix, std::unordered_set<Tok
 							const Token& new_top = stack.top();
 							if (new_top.type == TokenType::Function) {
 								postfix.push_back(new_top);
-								tokens_shunted.insert(new_top);
 								stack.pop();
 							}
 						}
@@ -1393,7 +1410,6 @@ std::vector<Token> shunt(const std::vector<Token>& infix, std::unordered_set<Tok
 							if (next.type == TokenType::ParenComma) {
 								if (next.paren_comma_type != ParenCommaType::LeftParen) {
 									postfix.push_back(next);
-									tokens_shunted.insert(next);
 									stack.pop();
 								} else {
 									break;
@@ -1412,7 +1428,6 @@ std::vector<Token> shunt(const std::vector<Token>& infix, std::unordered_set<Tok
 			
 			case TokenType::Keyword: {
 				postfix.push_back(this_token);
-				tokens_shunted.insert(this_token);
 			} break;
 
 			default: {
@@ -1425,7 +1440,6 @@ std::vector<Token> shunt(const std::vector<Token>& infix, std::unordered_set<Tok
 
 	while (!stack.empty()) {
 		postfix.push_back(stack.top());
-		tokens_shunted.insert(stack.top());
 		stack.pop();
 	}
 
@@ -1625,7 +1639,7 @@ ExecuteResult execute_expression_tokens(std::vector<Token>& expression_tokens, S
 			} break;
 
 			case TokenType::Function: {
-				auto* token_func = static_cast<TokenFunction*>(this_token);
+				/*auto* token_func = static_cast<TokenFunction*>(this_token);
 				if (token_func->data.fetch_method == TokenFunction::FetchMethod::StoryKnot) {
 					std::vector<Token*> func_args;
 					for (std::uint8_t i = 0; i < token_func->data.argument_count; ++i) {
@@ -1638,6 +1652,24 @@ ExecuteResult execute_expression_tokens(std::vector<Token>& expression_tokens, S
 				if (Token* result = token_func->call(stack, functions, variables, constants, variable_redirects)) {
 					stack.push(result);
 					tokens_to_dealloc.insert(result);
+				}*/
+
+				std::vector<Token> func_args;
+				for (std::uint8_t i = 0; i < this_token.function_argument_count; ++i) {
+					func_args.push_back(stack[stack.size() - this_token.function_argument_count - i - 2]);
+				}
+
+				if (this_token.function_fetch_type == FunctionFetchType::StoryKnot) {
+					return std::unexpected(NulloptResult(NulloptResult::Reason::FoundKnotFunction, this_token, index, func_args));
+				}
+
+				std::vector<Variant> arg_values;
+				for (const Token& token : func_args) {
+					arg_values.push_back(token.value);
+				}
+
+				if (Variant result = this_token.call_function(arg_values); result.has_value()) {
+					stack.push_back(Token::from_variant(result));
 				}
 			} break;
 
@@ -1649,42 +1681,41 @@ ExecuteResult execute_expression_tokens(std::vector<Token>& expression_tokens, S
 		++index;
 	}
 
-	std::optional<Variant> result{};
+	/*std::optional<Variant> result{};
 	if (!stack.empty()) {
 		result = stack.top()->get_variant_value(variables, constants, variable_redirects);
+	}*/
+
+	if (!stack.empty() && stack.back().value.has_value()) {
+		return stack.back().value;
 	}
 
-	for (Token* token : tokens_to_dealloc) {
+	return std::unexpected(NulloptResult(NulloptResult::Reason::NoReturnValue));
+
+	/*for (Token* token : tokens_to_dealloc) {
 		delete token;
-	}
+	}*/
 
-	if (result.has_value()) {
+	/*if (result.has_value()) {
 		return *result;
 	} else {
 		return std::unexpected(NulloptResult(NulloptResult::Reason::NoReturnValue));
-	}
+	}*/
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ExecuteResult ExpressionParser::execute_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
-	std::unordered_set<Token*> dummy;
-	std::vector<Token*> tokenized = tokenize_expression(expression, functions, deferred_functions);
-	std::vector<Token*> shunted = shunt(tokenized, dummy);
+ExecuteResult execute_expression(const std::string& expression, StoryVariableInfo& story_variable_info) {
+	//std::unordered_set<Token*> dummy;
+	std::vector<Token> tokenized = tokenize_expression(expression, story_variable_info);
+	std::vector<Token> shunted = shunt(tokenized);
 
-	VariableMap no_vars;
-	VariableMap no_consts;
-	RedirectMap no_redirects;
-	ExecuteResult result = execute_expression_tokens(shunted, no_vars, no_consts, no_redirects, functions);
-
-	for (Token* token : tokenized) {
-		delete token;
-	}
+	ExecuteResult result = execute_expression_tokens(shunted, story_variable_info);
 
 	return result;
 }
 
-ExecuteResult ExpressionParser::execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
+/*ExecuteResult execute_expression(const std::string& expression, VariableMap& variables, const VariableMap& constants, RedirectMap& variable_redirects, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
 	std::unordered_set<Token*> dummy;
 	std::vector<Token*> tokenized = tokenize_expression(expression, functions, deferred_functions);
 	std::vector<Token*> shunted = shunt(tokenized, dummy);
@@ -1696,18 +1727,11 @@ ExecuteResult ExpressionParser::execute_expression(const std::string& expression
 	}
 
 	return result;
-}
+}*/
 
-ShuntedExpression ExpressionParser::tokenize_and_shunt_expression(const std::string& expression, const FunctionMap& functions, const std::unordered_set<std::string>& deferred_functions) {
-	std::unordered_set<Token*> tokens_shunted;
-	std::vector<Token*> tokenized = tokenize_expression(expression, functions, deferred_functions);
-	std::vector<Token*> shunted = shunt(tokenized, tokens_shunted);
-
-	for (Token* token : tokenized) {
-		if (!tokens_shunted.contains(token)) {
-			delete token;
-		}
-	}
+ShuntedExpression tokenize_and_shunt_expression(const std::string& expression, StoryVariableInfo& story_variable_info) {
+	std::vector<Token> tokenized = tokenize_expression(expression, story_variable_info);
+	std::vector<Token> shunted = shunt(tokenized);
 
 	return ShuntedExpression(shunted);
 }

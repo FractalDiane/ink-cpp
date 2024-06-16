@@ -3,6 +3,7 @@
 #include "runtime/ink_story_data.h"
 #include "runtime/ink_story_state.h"
 
+#include "expression_parser/token.h"
 #include "expression_parser/expression_parser.h"
 
 #include <string>
@@ -61,11 +62,11 @@ public:
 
 	void choose_choice_index(std::size_t index);
 
-	std::optional<ExpressionParser::Variant> get_variable(const std::string& name) const;
-	void set_variable(const std::string& name, ExpressionParser::Variant&& value);
+	std::optional<ExpressionParserV2::Variant> get_variable(const std::string& name) const;
+	void set_variable(const std::string& name, ExpressionParserV2::Variant&& value);
 
-	void observe_variable(const std::string& variable_name, ExpressionParser::VariableObserverFunc callback);
+	void observe_variable(const std::string& variable_name, ExpressionParserV2::VariableObserverFunc callback);
 	void unobserve_variable(const std::string& variable_name);
-	void unobserve_variable(ExpressionParser::VariableObserverFunc observer);
-	void unobserve_variable(const std::string& variable_name, ExpressionParser::VariableObserverFunc observer);
+	void unobserve_variable(ExpressionParserV2::VariableObserverFunc observer);
+	void unobserve_variable(const std::string& variable_name, ExpressionParserV2::VariableObserverFunc observer);
 };

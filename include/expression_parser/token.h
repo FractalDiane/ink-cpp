@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types/ink_list.h"
+#include "serialization.h"
 
 #include <variant>
 #include <cstdint>
@@ -26,15 +27,20 @@ using VariantValue = std::variant<i64, double, std::string, InkList>;
 class Variant {
 private:
 	VariantValue value;
-	bool has_value;
+	bool _has_value;
 
 public:
 	Variant();
 	Variant(bool val);
+	Variant(int val);
 	Variant(i64 val);
+	Variant(unsigned long long val);
+	Variant(float val);
 	Variant(double val);
 	Variant(const std::string& val);
 	//Variant(const VariantValue& val);
+
+	const bool has_value() const { return _has_value; }
 	
 	Variant(const Variant& from);
 	Variant& operator=(const Variant& from);
@@ -180,6 +186,12 @@ enum class ParenCommaType {
 	Comma,
 };
 
+enum class FunctionFetchType {
+	Immediate,
+	Defer,
+	StoryKnot,
+};
+
 //using TokenValue = std::variant<KeywordType, i64, double, std::string, OperatorType, ParenCommaType>;
 
 struct Token {
@@ -194,7 +206,7 @@ struct Token {
 	ParenCommaType paren_comma_type = ParenCommaType::LeftParen;
 
 	InkFunction function;
-	bool is_function_deferred = false;
+	FunctionFetchType function_fetch_type = FunctionFetchType::StoryKnot;
 	std::uint8_t function_argument_count = 0;
 
 	std::string variable_name;
@@ -265,11 +277,15 @@ struct Token {
 	}
 
 	static Token function_immediate(const std::string& function_name, InkFunction function) {
-		return {.type = TokenType::Function, .value = function_name, .function = function, .is_function_deferred = false};
+		return {.type = TokenType::Function, .value = function_name, .function = function, .function_fetch_type = FunctionFetchType::Immediate};
 	}
 
 	static Token function_deferred(const std::string& function_name) {
-		return {.type = TokenType::Function, .value = function_name, .is_function_deferred = true};
+		return {.type = TokenType::Function, .value = function_name, .function_fetch_type = FunctionFetchType::Defer};
+	}
+
+	static Token function_story_knot(const std::string& function_name) {
+		return {.type = TokenType::Function, .value = function_name, .function_fetch_type = FunctionFetchType::StoryKnot};
 	}
 
 	static Token variable(const std::string& var_name) {
@@ -301,8 +317,30 @@ struct Token {
 	Variant decrement(bool post, StoryVariableInfo& story_vars);
 
 	void assign_variable(const Token& other, StoryVariableInfo& story_vars);
+
+	Variant call_function(const std::vector<Variant>& arguments);
+};
+
+}
+
+template <>
+struct Serializer<ExpressionParserV2::Variant> {
+	ByteVec operator()(const ExpressionParserV2::Variant& token);
+};
+
+template <>
+struct Deserializer<ExpressionParserV2::Variant> {
+	ExpressionParserV2::Variant operator()(const ByteVec& bytes, std::size_t& index);
+};
+
+template <>
+struct Serializer<ExpressionParserV2::Token> {
+	ByteVec operator()(const ExpressionParserV2::Token& token);
+};
+
+template <>
+struct Deserializer<ExpressionParserV2::Token> {
+	ExpressionParserV2::Token operator()(const ByteVec& bytes, std::size_t& index);
 };
 
 #undef i64
-
-}
