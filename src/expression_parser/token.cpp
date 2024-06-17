@@ -144,15 +144,26 @@ Variant Token::call_function(const std::vector<Variant>& arguments) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+#define VCON(type) Variant::Variant(type val) : value(static_cast<i64>(val)), _has_value(true) {}
+
 Variant::Variant() : value(0i64), _has_value(false) {}
-Variant::Variant(bool val) : value(static_cast<i64>(val)), _has_value(true) {}
-Variant::Variant(int val) : value(static_cast<i64>(val)), _has_value(true) {}
-Variant::Variant(i64 val) : value(val), _has_value(true) {}
-Variant::Variant(unsigned long long val) : value(static_cast<i64>(val)), _has_value(true) {}
+VCON(bool)
+VCON(signed char)
+VCON(unsigned char)
+VCON(signed short)
+VCON(unsigned short)
+VCON(signed int)
+VCON(unsigned int)
+VCON(signed long)
+VCON(unsigned long)
+VCON(signed long long)
+VCON(unsigned long long)
 Variant::Variant(float val) : value(static_cast<double>(val)), _has_value(true) {}
 Variant::Variant(double val) : value(val), _has_value(true) {}
 Variant::Variant(const std::string& val) : value(val), _has_value(true) {}
 //Variant::Variant(const VariantValue& val) : value(val), has_value(true) {}
+
+#undef VCON
 
 Variant::Variant(const Variant& from) : value(from.value) {}
 
@@ -162,6 +173,23 @@ Variant& Variant::operator=(const Variant& from) {
 	}
 
 	return *this;
+}
+
+std::string Variant::to_printable_string() const {
+	if (_has_value) {
+		switch (value.index()) {
+			case Variant_Int:
+				return std::to_string(v<i64>(value));
+			case Variant_Float:
+				return std::to_string(v<double>(value));
+			case Variant_String:
+				return v<std::string>(value);
+			default:
+				return std::string();
+		}
+	} else {
+		return std::string();
+	}
 }
 
 Variant Variant::operator+(const Variant& rhs) const {
@@ -403,6 +431,14 @@ Variant Variant::operator==(const Variant& rhs) const {
 				default: {
 					return Variant();
 				} break;
+			}
+		} break;
+
+		case Variant_String: {
+			if (rhs.value.index() == Variant_String) {
+				return static_cast<i64>(v<std::string>(value) == v<std::string>(rhs.value));
+			} else {
+				return Variant();
 			}
 		} break;
 
@@ -934,7 +970,6 @@ ByteVec Serializer<Token>::operator()(const Token& token) {
 		} break;
 
 		case TokenType::Operator: {
-			Serializer<std::uint8_t> s;
 			result2.push_back(static_cast<std::uint8_t>(token.operator_type));
 			result2.push_back(static_cast<std::uint8_t>(token.operator_unary_type));
 		} break;
@@ -997,9 +1032,9 @@ Token Deserializer<Token>::operator()(const ByteVec& bytes, std::size_t& index) 
 		} break;
 
 		case TokenType::Operator: {
-			OperatorType type = static_cast<OperatorType>(ds8(bytes, index));
+			OperatorType op_type = static_cast<OperatorType>(ds8(bytes, index));
 			OperatorUnaryType unary_type = static_cast<OperatorUnaryType>(ds8(bytes, index));
-			return Token::operat(type, unary_type);
+			return Token::operat(op_type, unary_type);
 		} break;
 
 		
@@ -1016,11 +1051,12 @@ Token Deserializer<Token>::operator()(const ByteVec& bytes, std::size_t& index) 
 			std::uint8_t args = ds8(bytes, index);
 			switch (fetch_type) {
 				case FunctionFetchType::Immediate:
-					return Token::function_immediate(name, nullptr);
+					return Token::function_immediate(name, nullptr, args);
 				case FunctionFetchType::Defer:
-					return Token::function_deferred(name);
+					return Token::function_deferred(name, args);
 				case FunctionFetchType::StoryKnot:
-					return Token::function_story_knot(name);
+				default:
+					return Token::function_story_knot(name, args);
 			}
 		} break;
 

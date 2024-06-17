@@ -32,20 +32,28 @@ private:
 public:
 	Variant();
 	Variant(bool val);
-	Variant(int val);
-	Variant(i64 val);
+	Variant(signed char val);
+	Variant(unsigned char val);
+	Variant(signed short val);
+	Variant(unsigned short val);
+	Variant(signed int val);
+	Variant(unsigned int val);
+	Variant(signed long val);
+	Variant(unsigned long val);
+	Variant(signed long long val);
 	Variant(unsigned long long val);
 	Variant(float val);
 	Variant(double val);
+
 	Variant(const std::string& val);
 	//Variant(const VariantValue& val);
-
-	const bool has_value() const { return _has_value; }
 	
 	Variant(const Variant& from);
 	Variant& operator=(const Variant& from);
 
+	inline bool has_value() const { return _has_value; }
 	inline std::size_t index() const { return value.index(); }
+	std::string to_printable_string() const;
 
 	Variant operator+(const Variant& rhs) const;
 	Variant operator-(const Variant& rhs) const;
@@ -276,16 +284,16 @@ struct Token {
 		return {.type = TokenType::ParenComma, .paren_comma_type = paren_comma_type};
 	}
 
-	static Token function_immediate(const std::string& function_name, InkFunction function) {
-		return {.type = TokenType::Function, .value = function_name, .function = function, .function_fetch_type = FunctionFetchType::Immediate};
+	static Token function_immediate(const std::string& function_name, InkFunction function, std::uint8_t arg_count = 0) {
+		return {.type = TokenType::Function, .value = function_name, .function = function, .function_fetch_type = FunctionFetchType::Immediate, .function_argument_count = arg_count};
 	}
 
-	static Token function_deferred(const std::string& function_name) {
-		return {.type = TokenType::Function, .value = function_name, .function_fetch_type = FunctionFetchType::Defer};
+	static Token function_deferred(const std::string& function_name, std::uint8_t arg_count = 0) {
+		return {.type = TokenType::Function, .value = function_name, .function_fetch_type = FunctionFetchType::Defer, .function_argument_count = arg_count};
 	}
 
-	static Token function_story_knot(const std::string& function_name) {
-		return {.type = TokenType::Function, .value = function_name, .function_fetch_type = FunctionFetchType::StoryKnot};
+	static Token function_story_knot(const std::string& function_name, std::uint8_t arg_count = 0) {
+		return {.type = TokenType::Function, .value = function_name, .function_fetch_type = FunctionFetchType::StoryKnot, .function_argument_count = arg_count};
 	}
 
 	static Token variable(const std::string& var_name) {

@@ -3,7 +3,7 @@
 #include "ink_utils.h"
 
 ByteVec Serializer<InkObjectConditional::Entry>::operator()(const InkObjectConditional::Entry& entry) {
-	VectorSerializer<ExpressionParser::Token*> stokens;
+	VectorSerializer<ExpressionParserV2::Token> stokens;
 	Serializer<Knot> sknot;
 
 	ByteVec result = stokens(entry.first.tokens);
@@ -14,11 +14,11 @@ ByteVec Serializer<InkObjectConditional::Entry>::operator()(const InkObjectCondi
 }
 
 InkObjectConditional::Entry Deserializer<InkObjectConditional::Entry>::operator()(const ByteVec& bytes, std::size_t& index) {
-	VectorDeserializer<ExpressionParser::Token*> dstokens;
+	VectorDeserializer<ExpressionParserV2::Token> dstokens;
 	Deserializer<Knot> dsknot;
 	
 	InkObjectConditional::Entry result;
-	result.first = ExpressionParser::ShuntedExpression(dstokens(bytes, index));
+	result.first = ExpressionParserV2::ShuntedExpression(dstokens(bytes, index));
 	result.second = dsknot(bytes, index);
 
 	return result;
@@ -28,7 +28,7 @@ ByteVec InkObjectConditional::to_bytes() const {
 	Serializer<std::uint8_t> s8;
 	VectorSerializer<Entry> sentries;
 	Serializer<Knot> sknot;
-	VectorSerializer<ExpressionParser::Token*> stokens;
+	VectorSerializer<ExpressionParserV2::Token> stokens;
 
 	ByteVec result = s8(static_cast<std::uint8_t>(is_switch));
 	if (is_switch) {
@@ -49,11 +49,11 @@ InkObject* InkObjectConditional::populate_from_bytes(const ByteVec& bytes, std::
 	Deserializer<std::uint8_t> ds8;
 	VectorDeserializer<Entry> dsentries;
 	Deserializer<Knot> dsknot;
-	VectorDeserializer<ExpressionParser::Token*> dstokens;
+	VectorDeserializer<ExpressionParserV2::Token> dstokens;
 
 	is_switch = static_cast<bool>(ds8(bytes, index));
 	if (is_switch) {
-		switch_expression = ExpressionParser::ShuntedExpression(dstokens(bytes, index));
+		switch_expression = ExpressionParserV2::ShuntedExpression(dstokens(bytes, index));
 	}
 
 	branches = dsentries(bytes, index);
@@ -64,7 +64,7 @@ InkObject* InkObjectConditional::populate_from_bytes(const ByteVec& bytes, std::
 
 InkObjectConditional::~InkObjectConditional() {
 	for (auto& entry : branches) {
-		entry.first.dealloc_tokens();
+		//entry.first.dealloc_tokens();
 
 		for (InkObject* object : entry.second.objects) {
 			delete object;
@@ -75,34 +75,35 @@ InkObjectConditional::~InkObjectConditional() {
 		delete object;
 	}
 
-	switch_expression.dealloc_tokens();
+	//switch_expression.dealloc_tokens();
 }
 
 void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
+	//ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
+	story_state.update_local_knot_variables();
 	
 	if (!is_switch) {
 		for (Entry& entry : branches) {
-			ExpressionParser::ExecuteResult condition_result = prepare_next_function_call(entry.first, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
-			if (!condition_result.has_value() && condition_result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
+			ExpressionParserV2::ExecuteResult condition_result = prepare_next_function_call(entry.first, story_state, eval_result, story_state.variable_info);
+			if (!condition_result.has_value() && condition_result.error().reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
 				return;
 			}
 			
-			if (condition_result.has_value() && ExpressionParser::as_bool(*condition_result)) {
+			if (condition_result.has_value() && (*condition_result)) {
 				story_state.current_knots_stack.push_back({&(entry.second), 0});
 				return;
 			}
 		}
 	} else {
 		// TODO: this might be redundant and strictly worse performance than the above version
-		ExpressionParser::ExecuteResult result = prepare_next_function_call(switch_expression, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
-		if (!result.has_value() && result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
+		ExpressionParserV2::ExecuteResult result = prepare_next_function_call(switch_expression, story_state, eval_result, story_state.variable_info);
+		if (!result.has_value() && result.error().reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
 			return;
 		}
 
 		for (auto& entry : branches) {
-			ExpressionParser::ExecuteResult condition_result = prepare_next_function_call(entry.first, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
-			if (!condition_result.has_value() && condition_result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
+			ExpressionParserV2::ExecuteResult condition_result = prepare_next_function_call(entry.first, story_state, eval_result, story_state.variable_info);
+			if (!condition_result.has_value() && condition_result.error().reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
 				return;
 			}
 

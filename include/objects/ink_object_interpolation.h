@@ -6,10 +6,10 @@
 
 class InkObjectInterpolation : public InkObject {
 private:
-	struct ExpressionParser::ShuntedExpression what_to_interpolate;
+	struct ExpressionParserV2::ShuntedExpression what_to_interpolate;
 
 public:
-	InkObjectInterpolation(const struct ExpressionParser::ShuntedExpression& interpolation) : what_to_interpolate{interpolation} {}
+	InkObjectInterpolation(const struct ExpressionParserV2::ShuntedExpression& interpolation) : what_to_interpolate{interpolation} {}
  
 	virtual ~InkObjectInterpolation() override;
 

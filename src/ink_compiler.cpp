@@ -368,6 +368,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 {
 	bool end_line = false;
 	InkObject* result_object = nullptr;
+	ExpressionParserV2::StoryVariableInfo blank_variable_info;
 
 	switch (token.token) {
 		case InkToken::NewLine: {
@@ -731,10 +732,10 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			}
 
 			std::vector<std::vector<InkObject*>> items = {{}};
-			std::vector<std::pair<ExpressionParser::ShuntedExpression, Knot>> items_conditions = {{{}, Knot()}};
+			std::vector<std::pair<ExpressionParserV2::ShuntedExpression, Knot>> items_conditions = {{{}, Knot()}};
 			Knot items_else;
 			std::vector<std::string> text_items;
-			ExpressionParser::ShuntedExpression switch_expression;
+			ExpressionParserV2::ShuntedExpression switch_expression;
 			switch_expression.uuid = current_uuid++;
 
 			bool is_conditional = false;
@@ -775,7 +776,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 								}
 
 								try {
-									current_condition = ExpressionParser::tokenize_and_shunt_expression(condition_string, {}, declared_functions);
+									current_condition = ExpressionParserV2::tokenize_and_shunt_expression(condition_string, blank_variable_info);
 								} catch (...) {
 									throw std::runtime_error("Malformed condition in conditional");
 								}
@@ -856,7 +857,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 										}
 
 										try {
-											ExpressionParser::ShuntedExpression shunted = ExpressionParser::tokenize_and_shunt_expression(this_condition, {}, declared_functions);
+											ExpressionParserV2::ShuntedExpression shunted = ExpressionParserV2::tokenize_and_shunt_expression(this_condition, blank_variable_info);
 											shunted.uuid = current_uuid++;
 											if (items_conditions.back().first.tokens.empty()) {
 												items_conditions.back().first = shunted;
@@ -913,7 +914,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				}
 
 				try {
-					ExpressionParser::ShuntedExpression condition_shunted = ExpressionParser::tokenize_and_shunt_expression(condition, {}, declared_functions);
+					ExpressionParserV2::ShuntedExpression condition_shunted = ExpressionParserV2::tokenize_and_shunt_expression(condition, blank_variable_info);
 					condition_shunted.uuid = current_uuid++;
 					choice_stack.back().conditions.push_back(condition_shunted);
 				} catch (...) {
@@ -932,7 +933,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				} else if (!text_items.empty()) {
 					std::string all_text = join_string_vector(text_items, std::string());
 					try {
-						ExpressionParser::ShuntedExpression shunted = ExpressionParser::tokenize_and_shunt_expression(all_text, {}, declared_functions);
+						ExpressionParserV2::ShuntedExpression shunted = ExpressionParserV2::tokenize_and_shunt_expression(all_text, blank_variable_info);
 						shunted.uuid = current_uuid++;
 						result_object = new InkObjectInterpolation(shunted);
 					} catch (...) {
@@ -961,15 +962,15 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			if (next_token_is(all_tokens, token_index, InkToken::Text) && !strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true).empty()) {
 				if (!in_parens) {
 					std::string target = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
-					ExpressionParser::ShuntedExpression target_tokens;
+					ExpressionParserV2::ShuntedExpression target_tokens;
 					target_tokens.uuid = current_uuid++;
 					try {
-						target_tokens = ExpressionParser::tokenize_and_shunt_expression(target, {}, declared_functions);
+						target_tokens = ExpressionParserV2::tokenize_and_shunt_expression(target, blank_variable_info);
 					} catch (...) {
 						throw std::runtime_error("Illegal value in divert target");
 					}
 		
-					std::vector<ExpressionParser::ShuntedExpression> arguments;
+					std::vector<ExpressionParserV2::ShuntedExpression> arguments;
 					if (next_token_is(all_tokens, token_index + 1, InkToken::LeftParen)) {
 						token_index += 3;
 
@@ -993,7 +994,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						std::vector<std::string> split = split_string(all_args, ',', true, true);
 						for (const std::string& arg : split) {
 							try {
-								ExpressionParser::ShuntedExpression tokenized = ExpressionParser::tokenize_and_shunt_expression(arg, {}, declared_functions);
+								ExpressionParserV2::ShuntedExpression tokenized = ExpressionParserV2::tokenize_and_shunt_expression(arg, blank_variable_info);
 								tokenized.uuid = current_uuid++;
 								arguments.push_back(tokenized);
 							} catch (...) {
@@ -1029,12 +1030,12 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					result_object = new InkObjectText("->");
 				}
 			} else if (next_token_is(all_tokens, token_index, InkToken::Arrow)) {
-				ExpressionParser::ShuntedExpression target_tokens;
+				ExpressionParserV2::ShuntedExpression target_tokens;
 				target_tokens.uuid = current_uuid++;
 				if (next_token_is(all_tokens, token_index + 1, InkToken::Text)) {
 					std::string target = strip_string_edges(all_tokens[token_index + 2].text_contents, true, true, true);
 					try {
-						target_tokens = ExpressionParser::tokenize_and_shunt_expression(target, {}, declared_functions);
+						target_tokens = ExpressionParserV2::tokenize_and_shunt_expression(target, blank_variable_info);
 					} catch (...) {
 						throw std::runtime_error("Illegal value in tunnel divert target");
 					}
@@ -1097,7 +1098,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				}
 
 				try {
-					ExpressionParser::ShuntedExpression expression_shunted = ExpressionParser::tokenize_and_shunt_expression(expression, {}, declared_functions);
+					ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, blank_variable_info);
 					expression_shunted.uuid = current_uuid++;
 					result_object = new InkObjectLogic(expression_shunted);
 				} catch (...) {
@@ -1170,7 +1171,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					--token_index;
 
 					try {
-						ExpressionParser::ShuntedExpression expression_shunted = ExpressionParser::tokenize_and_shunt_expression(expression, {}, declared_functions);
+						ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, blank_variable_info);
 						expression_shunted.uuid = current_uuid++;
 						result_object = new InkObjectGlobalVariable(identifier, token.token == InkToken::KeywordConst, expression_shunted);
 					} catch (...) {

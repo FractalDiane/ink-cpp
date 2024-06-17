@@ -245,13 +245,14 @@ std::string InkStory::continue_story() {
 								}
 
 								for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
-									story_state.variables[target.knot->parameters[i].name] = story_state.arguments_stack.back()[i].second;
-									if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
+									//story_state.variables[target.knot->parameters[i].name] = story_state.arguments_stack.back()[i].second;
+									story_state.variable_info.set_variable_value(target.knot->parameters[i].name, story_state.arguments_stack.back()[i].second);
+									/*if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
 										story_state.variable_redirects[target.knot->uuid].insert({
 											target.knot->parameters[i].name,
 											story_state.arguments_stack.back()[i].first,
 										});
-									}
+									}*/
 								}
 
 								story_state.current_stitch = nullptr;
@@ -277,13 +278,14 @@ std::string InkStory::continue_story() {
 								}
 
 								for (std::size_t i = 0; i < target.stitch->parameters.size(); ++i) {
-									story_state.variables[target.stitch->parameters[i].name] = story_state.arguments_stack.back()[i].second;
-									if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
+									//story_state.variables[target.stitch->parameters[i].name] = story_state.arguments_stack.back()[i].second;
+									story_state.variable_info.set_variable_value(target.knot->parameters[i].name, story_state.arguments_stack.back()[i].second);
+									/*if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
 										story_state.variable_redirects[target.knot->uuid].insert({
 											target.knot->parameters[i].name,
 											story_state.arguments_stack.back()[i].first,
 										});
-									}
+									}*/
 								}
 
 								story_state.just_diverted_to_non_knot = true;
@@ -323,13 +325,14 @@ std::string InkStory::continue_story() {
 						story_state.story_tracking.increment_visit_count(target.knot);
 
 						for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
-							story_state.variables[target.knot->parameters[i].name] = story_state.arguments_stack.back()[i].second;
-							if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
+							//story_state.variables[target.knot->parameters[i].name] = story_state.arguments_stack.back()[i].second;
+							story_state.variable_info.set_variable_value(target.knot->parameters[i].name, story_state.arguments_stack.back()[i].second);
+							/*if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
 								story_state.variable_redirects[target.knot->uuid].insert({
 									target.knot->parameters[i].name,
 									story_state.arguments_stack.back()[i].first,
 								});
-							}
+							}*/
 						}
 
 						story_state.function_call_stack.push_back(target.knot);
@@ -474,13 +477,14 @@ void InkStory::choose_choice_index(std::size_t index) {
 			//story_state.arguments_stack.push_back(thread_entry.arguments);
 
 			for (std::size_t i = 0; i < thread_entry.containing_knot->parameters.size(); ++i) {
-				story_state.variables[thread_entry.containing_knot->parameters[i].name] = thread_entry.arguments[i].second;
-				if (thread_entry.containing_knot->parameters[i].by_ref && thread_entry.containing_knot->parameters[i].name != thread_entry.arguments[i].first) {
+				//story_state.variables[thread_entry.containing_knot->parameters[i].name] = thread_entry.arguments[i].second;
+				story_state.variable_info.set_variable_value(thread_entry.containing_knot->parameters[i].name, thread_entry.arguments[i].second);
+				/*if (thread_entry.containing_knot->parameters[i].by_ref && thread_entry.containing_knot->parameters[i].name != thread_entry.arguments[i].first) {
 					story_state.variable_redirects[thread_entry.containing_knot->uuid].insert({
 						thread_entry.containing_knot->parameters[i].name,
 						thread_entry.arguments[i].first,
 					});
-				}
+				}*/
 			}
 		} else {
 			--story_state.current_knots_stack.back().index;

@@ -6,20 +6,20 @@
 
 class InkObjectConditional : public InkObject {
 public:
-	using Entry = std::pair<struct ExpressionParser::ShuntedExpression, Knot>;
+	using Entry = std::pair<struct ExpressionParserV2::ShuntedExpression, Knot>;
 	
 private:
 	bool is_switch;
 	std::vector<Entry> branches;
 	Knot branch_else;
 
-	ExpressionParser::ShuntedExpression switch_expression;
+	ExpressionParserV2::ShuntedExpression switch_expression;
 
 public:
-	InkObjectConditional(const std::vector<std::pair<struct ExpressionParser::ShuntedExpression, Knot>>& branches, const Knot& objects_else)
+	InkObjectConditional(const std::vector<std::pair<struct ExpressionParserV2::ShuntedExpression, Knot>>& branches, const Knot& objects_else)
 		: branches{branches}, branch_else{objects_else}, is_switch{false} {}
 
-	InkObjectConditional(const ExpressionParser::ShuntedExpression& switch_expression, const std::vector<std::pair<struct ExpressionParser::ShuntedExpression, Knot>>& branches, const Knot& objects_else)
+	InkObjectConditional(const ExpressionParserV2::ShuntedExpression& switch_expression, const std::vector<std::pair<struct ExpressionParserV2::ShuntedExpression, Knot>>& branches, const Knot& objects_else)
 		: switch_expression{switch_expression}, branches{branches}, branch_else{objects_else}, is_switch{true} {}
  
 	virtual ~InkObjectConditional() override;

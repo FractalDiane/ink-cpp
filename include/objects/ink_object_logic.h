@@ -6,10 +6,10 @@
 
 class InkObjectLogic : public InkObject {
 private:
-	struct ExpressionParser::ShuntedExpression contents_shunted_tokens;
+	struct ExpressionParserV2::ShuntedExpression contents_shunted_tokens;
 
 public:
-	InkObjectLogic(const struct ExpressionParser::ShuntedExpression& contents_shunted_tokens) : contents_shunted_tokens{contents_shunted_tokens} {}
+	InkObjectLogic(const struct ExpressionParserV2::ShuntedExpression& contents_shunted_tokens) : contents_shunted_tokens{contents_shunted_tokens} {}
 
 	virtual ~InkObjectLogic() override;
 

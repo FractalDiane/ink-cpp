@@ -12,7 +12,7 @@ ByteVec Serializer<InkChoiceEntry>::operator()(const InkChoiceEntry& entry) {
 	Serializer<Knot> sknot;
 	Serializer<GatherPoint> sgatherpoint;
 	VectorSerializer<InkObject*> sobjects;
-	VectorSerializer<ExpressionParser::Token*> stokens;
+	VectorSerializer<ExpressionParserV2::Token> stokens;
 
 	ByteVec result = sobjects(entry.text);
 	ByteVec result2 = sknot(entry.result);
@@ -44,7 +44,7 @@ InkChoiceEntry Deserializer<InkChoiceEntry>::operator()(const ByteVec& bytes, st
 	Deserializer<Knot> dsknot;
 	Deserializer<GatherPoint> dsgatherpoint;
 	VectorDeserializer<InkObject*> dsobjects;
-	VectorDeserializer<ExpressionParser::Token*> dstokens;
+	VectorDeserializer<ExpressionParserV2::Token> dstokens;
 
 	InkChoiceEntry result;
 	result.text = dsobjects(bytes, index);
@@ -56,7 +56,7 @@ InkChoiceEntry Deserializer<InkChoiceEntry>::operator()(const ByteVec& bytes, st
 
 	std::uint16_t conditions_size = ds16(bytes, index);
 	for (std::uint16_t i = 0; i < conditions_size; ++i) {
-		result.conditions.push_back(ExpressionParser::ShuntedExpression(dstokens(bytes, index)));
+		result.conditions.push_back(ExpressionParserV2::ShuntedExpression(dstokens(bytes, index)));
 	}
 
 	return result;
@@ -83,9 +83,9 @@ InkObjectChoice::~InkObjectChoice() {
 			delete object;
 		}
 		
-		for (ExpressionParser::ShuntedExpression& condition : choice.conditions) {
+		/*for (ExpressionParserV2::ShuntedExpression& condition : choice.conditions) {
 			condition.dealloc_tokens();
-		}
+		}*/
 	}
 }
 
@@ -114,7 +114,8 @@ std::string InkObjectChoice::to_string() const {
 
 InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	GetChoicesResult choices_result;
-	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
+	//ExpressionParserV2::VariableMap story_constants = story_state.get_story_constants();
+	story_state.update_local_knot_variables();
 
 	if (!story_state.current_knot().returning_from_function) {
 		conditions_fully_prepared.clear();
@@ -126,12 +127,12 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 		if (this_choice.sticky || !story_state.has_choice_been_taken(this, i)) {
 			if (!this_choice.fallback) {
 				bool include_choice = true;
-				std::vector<ExpressionParser::ShuntedExpression>& conditions = this_choice.conditions;
+				std::vector<ExpressionParserV2::ShuntedExpression>& conditions = this_choice.conditions;
 				if (!conditions.empty()) {
-					for (ExpressionParser::ShuntedExpression& condition : conditions) {
+					for (ExpressionParserV2::ShuntedExpression& condition : conditions) {
 						if (!conditions_fully_prepared.contains(condition.uuid)) {
-							ExpressionParser::ExecuteResult condition_result = prepare_next_function_call(condition, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
-							if (!condition_result.has_value() && condition_result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
+							ExpressionParserV2::ExecuteResult condition_result = prepare_next_function_call(condition, story_state, eval_result, story_state.variable_info);
+							if (!condition_result.has_value() && condition_result.error().reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
 								choices_result.need_to_prepare_function = true;
 
 								for (std::size_t j = 0; j < choices_result.choices.size(); ++j) {
@@ -143,7 +144,7 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 								conditions_fully_prepared.insert(condition.uuid);
 							}
 
-							if (!ExpressionParser::as_bool(*condition_result)) {
+							if (!*condition_result) {
 								include_choice = false;
 								break;
 							}

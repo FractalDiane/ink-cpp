@@ -505,7 +505,8 @@ struct TokenVariable : public Token {
 	virtual ByteVec to_serialized_bytes() const override;
 };*/
 
-struct ShuntedExpression {
+namespace ExpressionParserV2 {
+	struct ShuntedExpression {
 	Uuid uuid;
 	std::vector<ExpressionParserV2::Token> tokens;
 
@@ -570,13 +571,15 @@ struct NulloptResult {
 };
 
 
-typedef std::expected<ExpressionParserV2::Variant, NulloptResult> ExecuteResult;
+typedef std::expected<Variant, NulloptResult> ExecuteResult;
 
-ExecuteResult execute_expression_tokens(std::vector<ExpressionParserV2::Token>& tokens, ExpressionParserV2::StoryVariableInfo& story_variable_info);
+ExpressionParserV2::ExecuteResult execute_expression_tokens(std::vector<ExpressionParserV2::Token>& tokens, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 
-ExecuteResult execute_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
+ExpressionParserV2::ExecuteResult execute_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 //ExecuteResult execute_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 
 ShuntedExpression tokenize_and_shunt_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 
 //}
+
+}

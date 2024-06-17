@@ -1496,11 +1496,11 @@ std::vector<Token> shunt(const std::vector<Token>& infix) {
 
 #define OP_UN_PRE(type, op) case OperatorType::type: {\
 	const Token& operand = stack.back();\
-	stack.push_back(Token::from_variant(op##operand.value));\
+	stack.push_back(Token::from_variant(op operand.value));\
 	stack.pop_back();\
 } break;
 
-ExecuteResult execute_expression_tokens(std::vector<Token>& expression_tokens, StoryVariableInfo& story_variable_info) {
+ExpressionParserV2::ExecuteResult execute_expression_tokens(std::vector<Token>& expression_tokens, StoryVariableInfo& story_variable_info) {
 	//TokenStack stack;
 	std::vector<Token> stack;
 	//std::unordered_set<Token*> tokens_to_dealloc;
@@ -1705,12 +1705,12 @@ ExecuteResult execute_expression_tokens(std::vector<Token>& expression_tokens, S
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ExecuteResult execute_expression(const std::string& expression, StoryVariableInfo& story_variable_info) {
+ExpressionParserV2::ExecuteResult execute_expression(const std::string& expression, StoryVariableInfo& story_variable_info) {
 	//std::unordered_set<Token*> dummy;
-	std::vector<Token> tokenized = tokenize_expression(expression, story_variable_info);
-	std::vector<Token> shunted = shunt(tokenized);
+	std::vector<Token> tokenized = ExpressionParserV2::tokenize_expression(expression, story_variable_info);
+	std::vector<Token> shunted = ExpressionParserV2::shunt(tokenized);
 
-	ExecuteResult result = execute_expression_tokens(shunted, story_variable_info);
+	ExecuteResult result = ExpressionParserV2::execute_expression_tokens(shunted, story_variable_info);
 
 	return result;
 }
@@ -1730,8 +1730,8 @@ ExecuteResult execute_expression(const std::string& expression, StoryVariableInf
 }*/
 
 ShuntedExpression tokenize_and_shunt_expression(const std::string& expression, StoryVariableInfo& story_variable_info) {
-	std::vector<Token> tokenized = tokenize_expression(expression, story_variable_info);
-	std::vector<Token> shunted = shunt(tokenized);
+	std::vector<Token> tokenized = ExpressionParserV2::tokenize_expression(expression, story_variable_info);
+	std::vector<Token> shunted = ExpressionParserV2::shunt(tokenized);
 
 	return ShuntedExpression(shunted);
 }

@@ -32,7 +32,7 @@ void InkStoryTracking::increment_turns_since() {
 	}
 }
 
-ExpressionParser::VariableMap InkStoryTracking::get_visit_count_variables(Knot* current_knot, Stitch* current_stitch) {
+/*ExpressionParser::VariableMap InkStoryTracking::get_visit_count_variables(Knot* current_knot, Stitch* current_stitch) {
 	ExpressionParser::VariableMap result;
 	#define TK(what) static_cast<std::int64_t>(what)
 
@@ -76,6 +76,50 @@ ExpressionParser::VariableMap InkStoryTracking::get_visit_count_variables(Knot* 
 
 	#undef TK
 	return result;
+}*/
+
+void InkStoryTracking::update_visit_count_variables(Knot* current_knot, Stitch* current_stitch, ExpressionParserV2::StoryVariableInfo& story_variable_info) {
+	#define TK(what) static_cast<std::int64_t>(what)
+
+	for (auto& knot : knot_stats) {
+		story_variable_info.constants[knot.second.name] = TK(knot.second.times_visited);
+		for (Uuid stitch_id : knot.second.stitches) {
+			StitchStats& stitch = stitch_stats[stitch_id];
+			std::string stitch_name = std::format("{}.{}", knot.second.name, stitch.name);
+			story_variable_info.constants[stitch_name] = TK(stitch.times_visited);
+
+			if (current_knot->uuid == knot.first) {
+				story_variable_info.constants[stitch.name] = TK(stitch.times_visited);
+			}
+
+			for (Uuid gather_id : stitch.gather_points) {
+				SubKnotStats& gather_point = gather_point_stats[gather_id];
+				std::string gather_point_name = std::format("{}.{}.{}", knot.second.name, stitch.name, gather_point.name);
+				story_variable_info.constants[gather_point_name] = TK(gather_point.times_visited);
+
+				if (current_knot->uuid == knot.first) {
+					std::string gather_point_name_2 = std::format("{}.{}", stitch.name, gather_point.name);
+					story_variable_info.constants[gather_point_name_2] = TK(gather_point.times_visited);
+				}
+
+				if (current_stitch && current_stitch->uuid == stitch_id) {
+					story_variable_info.constants[gather_point.name] = TK(gather_point.times_visited);
+				}
+			}
+		}
+
+		for (Uuid gather_id : knot.second.gather_points) {
+			SubKnotStats& gather_point = gather_point_stats[gather_id];
+			std::string gather_point_name = std::format("{}.{}", knot.second.name, gather_point.name);
+			story_variable_info.constants[gather_point_name] = TK(gather_point.times_visited);
+
+			if (current_knot->uuid == knot.first) {
+				story_variable_info.constants[gather_point.name] = TK(gather_point.times_visited);
+			}
+		}
+	}
+
+	#undef TK
 }
 
 bool InkStoryTracking::get_content_stats(InkWeaveContent* content, InkStoryTracking::SubKnotStats& result) {
