@@ -9,8 +9,8 @@ set(SRC_UTIL
 	src/serialization.cpp
 	src/uuid.cpp
 
-	src/expression_parser/expression_parser.cpp
 	src/expression_parser/token.cpp
+	src/expression_parser/expression_parser.cpp
 
 	src/types/ink_list.cpp
 )
@@ -57,7 +57,7 @@ endif()
 FetchContent_MakeAvailable(googletest)
 ################ GOOGLE TEST
 
-add_library(ink_backend STATIC ${SRC_OBJECTS} ${SRC_RUNTIME} ${SRC_UTIL})
+add_library(ink_backend STATIC ${SRC_UTIL} ${SRC_OBJECTS} ${SRC_RUNTIME})
 
 add_executable(inkc main_compiler.cpp ${SRC_COMPILER} ${SRC_UTIL})
 add_dependencies(inkc ink_backend)

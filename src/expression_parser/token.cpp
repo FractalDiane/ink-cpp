@@ -146,7 +146,7 @@ Variant Token::call_function(const std::vector<Variant>& arguments) {
 
 #define VCON(type) Variant::Variant(type val) : value(static_cast<i64>(val)), _has_value(true) {}
 
-Variant::Variant() : value(0i64), _has_value(false) {}
+Variant::Variant() : value((std::int64_t)0), _has_value(false) {}
 VCON(bool)
 VCON(signed char)
 VCON(unsigned char)
@@ -836,7 +836,7 @@ Variant Variant::operator--(int) {
 	}
 }
 
-Variant Variant::operator_contains(const Variant& rhs) {
+Variant Variant::operator_contains(const Variant& rhs) const {
 	if (value.index() == Variant_String && rhs.value.index() == Variant_String) {
 		return static_cast<i64>(v<std::string>(value).contains(v<std::string>(rhs.value)));
 	} else {
@@ -844,7 +844,7 @@ Variant Variant::operator_contains(const Variant& rhs) {
 	}
 }
 
-Variant Variant::operator_intersect(const Variant& rhs) {
+Variant Variant::operator_intersect(const Variant& rhs) const {
 	return Variant();
 }
 

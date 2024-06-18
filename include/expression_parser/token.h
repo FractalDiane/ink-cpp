@@ -79,8 +79,8 @@ public:
 	Variant& operator--();
 	Variant operator--(int);
 
-	Variant operator_contains(const Variant& rhs);
-	Variant operator_intersect(const Variant& rhs);
+	Variant operator_contains(const Variant& rhs) const;
+	Variant operator_intersect(const Variant& rhs) const;
 
 	operator bool() const;
 	operator i64() const;
@@ -204,7 +204,7 @@ enum class FunctionFetchType {
 
 struct Token {
 	TokenType type;
-	Variant value = 0i64;
+	Variant value = (std::int64_t)0;
 
 	bool knot_name_has_arrow = false;
 
@@ -253,7 +253,7 @@ struct Token {
 	}
 
 	static Token nil() {
-		return {.type = TokenType::Nil, .value = 0i64};
+		return {.type = TokenType::Nil, .value = (std::int64_t)0};
 	}
 
 	static Token keyword(KeywordType keyword_type) {

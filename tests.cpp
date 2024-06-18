@@ -113,13 +113,13 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 	//std::unordered_set<ExpressionParser::Token*> dummy;
 	std::vector<ExpressionParser::Token> result_postfix = ExpressionParser::shunt(result);
 	EXPECT_EQ(result.size(), result_postfix.size());
-
+	
 	//ExpressionParser::VariableMap variables;
 	//ExpressionParser::VariableMap constants;
 	//ExpressionParser::RedirectMap redirects;
 	ExpressionParser::ExecuteResult result_token = ExpressionParser::execute_expression_tokens(result_postfix, blank_variable_info);
 	EXPECT_FALSE(result_token.has_value());
-	EXPECT_EQ(blank_variable_info.variables["test"], 12);
+	EXPECT_EQ(static_cast<std::int64_t>(blank_variable_info.variables["test"]), 12);
 
 	/*for (ExpressionParser::Token* token : result) {
 		delete token;
@@ -134,71 +134,71 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	ExpressionParser::StoryVariableInfo blank_variable_info;
 
 	Variant t1 = execute_expression("5 + 7", blank_variable_info).value();
-	EXPECT_EQ(t1, 12);
+	EXPECT_EQ(static_cast<std::int64_t>(t1), 12);
 
 	Variant t2 = execute_expression("5 + 7 * 52 - 8", blank_variable_info).value();
-	EXPECT_EQ(t2, 361);
+	EXPECT_EQ(static_cast<std::int64_t>(t2), 361);
 
 	Variant t3 = execute_expression("5.0 * 4.2", blank_variable_info).value();
-	EXPECT_EQ(t3, 21.0);
+	EXPECT_EQ(static_cast<double>(t3), 21.0);
 
 	Variant t4 = execute_expression("5.0 - 4.2 - 3.7 / 2.5", blank_variable_info).value();
 	EXPECT_TRUE(std::abs(static_cast<double>(t4) - -0.68) < 0.0001);
 
 	Variant t5 = execute_expression("5 == 2", blank_variable_info).value();
-	EXPECT_EQ(t5, false);
+	EXPECT_EQ(static_cast<bool>(t5), false);
 
 	Variant t6 = execute_expression("3 != 6", blank_variable_info).value();
-	EXPECT_EQ(t6, true);
+	EXPECT_EQ(static_cast<bool>(t6), true);
 
 	Variant t7 = execute_expression("7 < 12", blank_variable_info).value();
-	EXPECT_EQ(t7, true);
+	EXPECT_EQ(static_cast<bool>(t7), true);
 
 	Variant t8 = execute_expression(R"("hello" + " " + "there")", blank_variable_info).value();
-	EXPECT_EQ(t8, "hello there");
+	EXPECT_EQ(static_cast<std::string>(t8), "hello there");
 
 	Variant t9 = execute_expression("++5", blank_variable_info).value();
-	EXPECT_EQ(t9, 6);
+	EXPECT_EQ(static_cast<std::int64_t>(t9), 6);
 
 	Variant t10 = execute_expression("5++", blank_variable_info).value();
-	EXPECT_EQ(t10, 5);
+	EXPECT_EQ(static_cast<std::int64_t>(t10), 5);
 
 	Variant t11 = execute_expression(R"("hello" ? "llo")", blank_variable_info).value();
-	EXPECT_EQ(t11, true);
+	EXPECT_EQ(static_cast<bool>(t11), true);
 
 	Variant t12 = execute_expression(R"("hello" ? "blah")", blank_variable_info).value();
-	EXPECT_EQ(t12, false);
+	EXPECT_EQ(static_cast<bool>(t12), false);
 
 	Variant t13 = execute_expression("5 * (3 + 4)", blank_variable_info).value();
-	EXPECT_EQ(t13, 35);
+	EXPECT_EQ(static_cast<std::int64_t>(t13), 35);
 
 	Variant t14 = execute_expression("POW(3, 2)", blank_variable_info).value();
-	EXPECT_EQ(t14, 9);
+	EXPECT_EQ(static_cast<double>(t14), 9);
 
 	Variant t15 = execute_expression("-> my_knot", blank_variable_info).value();
-	EXPECT_EQ(t15, "my_knot");
+	EXPECT_EQ(static_cast<std::string>(t15), "my_knot");
 
 	Variant t16 = execute_expression("POW(FLOOR(3.5), FLOOR(2.9)", blank_variable_info).value();
-	EXPECT_EQ(t16, 9);
+	EXPECT_EQ(static_cast<double>(t16), 9);
 
 	Variant t17 = execute_expression("(5 * 5) - (3 * 3) + 3", blank_variable_info).value();
-	EXPECT_EQ(t17, 19);
+	EXPECT_EQ(static_cast<std::int64_t>(t17), 19);
 
 	//ExpressionParser::RedirectMap redirects;
 	ExpressionParser::StoryVariableInfo vars;
 	vars.variables = {{"x", 5}, {"y", 3}, {"c", 3}};
 	execute_expression("x = (x * x) - (y * y) + c", vars);
-	EXPECT_EQ(vars.variables["x"], 19);
+	EXPECT_EQ(static_cast<std::int64_t>(vars.variables["x"]), 19);
 
 	ExpressionParser::StoryVariableInfo vars2;
 	vars2.variables = {{"test", 6}};
 	Variant t19 = execute_expression("POW(test, 2)", vars2).value();
-	EXPECT_EQ(t19, 36);
+	EXPECT_EQ(static_cast<double>(t19), 36);
 
 	ExpressionParser::StoryVariableInfo vars3;
 	vars3.variables = {{"visited_snakes", true}, {"dream_about_snakes", false}};
 	Variant t20 = execute_expression("visited_snakes && not dream_about_snakes", vars3).value();
-	EXPECT_EQ(t20, true);
+	EXPECT_EQ(static_cast<bool>(t20), true);
 }
 #pragma endregion
 
@@ -1025,7 +1025,7 @@ TEST_F(ConditionalBlockTests, ReadCountCondition) {
 		story.set_variable("visited_poland",std::get<2>(inputs[i]));
 
 		EXPECT_TEXT(expected_result[i]);
-		EXPECT_EQ(story.get_variable("fear").value(), expected_fear[i]);
+		EXPECT_EQ(static_cast<std::int64_t>(story.get_variable("fear").value()), expected_fear[i]);
 	}
 }
 
@@ -1242,7 +1242,7 @@ TEST_F(ConstantTests, LogicWithConstants) {
 		"The secret agent grabs the suitcase!",
 	);
 
-	EXPECT_EQ(story.get_variable("suitcase_location").value(), -1);
+	EXPECT_EQ(static_cast<std::int64_t>(story.get_variable("suitcase_location").value()), -1);
 }
 #pragma endregion
 
@@ -1453,7 +1453,7 @@ TEST_F(MiscellaneousTests, VariableObservation) {
 	
 	story.continue_story();
 	story.continue_story();
-	EXPECT_EQ(observer_test, 1);
+	EXPECT_EQ(static_cast<std::int64_t>(observer_test), 1);
 }
 #pragma endregion
 
