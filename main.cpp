@@ -55,6 +55,10 @@ int main(int argc, char* argv[]) {
 
 	//std::cout << "test" << std::endl;
 
+	ExpressionParserV2::Token test = ExpressionParserV2::Token::function_story_knot("test", 3);
+	[[maybe_unused]]
+	ExpressionParserV2::Token test2 = test;
+
 	InkCompiler compiler;
 	InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
 	std::cout << story.continue_story() << std::endl;

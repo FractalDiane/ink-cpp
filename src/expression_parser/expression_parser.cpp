@@ -377,7 +377,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 
 	TRY_ADD_WORD();
 
-	std::vector<std::pair<Token, std::uint8_t>> arg_count_stack;
+	std::vector<std::pair<std::reference_wrapper<Token>, std::uint8_t>> arg_count_stack;
 	for (Token& token : result) {
 		switch (token.type) {
 			case TokenType::Function: {
@@ -396,7 +396,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 
 					case ParenCommaType::RightParen: {
 						if (!arg_count_stack.empty()) {
-							arg_count_stack.back().first.function_argument_count = arg_count_stack.back().second;
+							arg_count_stack.back().first.get().function_argument_count = arg_count_stack.back().second;
 							arg_count_stack.pop_back();
 						}
 					} break;

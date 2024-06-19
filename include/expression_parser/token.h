@@ -241,6 +241,9 @@ struct Token {
 	static Token from_variant(const Variant& var) {
 		Token result = {.value = var};
 		switch (var.index()) {
+			case Variant_Bool:
+				result.type = TokenType::LiteralBool;
+				break;
 			case Variant_Int:
 				result.type = TokenType::LiteralNumberInt;
 				break;

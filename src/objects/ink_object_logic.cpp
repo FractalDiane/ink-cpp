@@ -21,12 +21,8 @@ InkObjectLogic::~InkObjectLogic() {
 }
 
 void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	//using namespace ExpressionParser;
-
-	//ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
 	story_state.update_local_knot_variables();
 
-	//ExpressionParser::ExecuteResult logic_result = prepare_next_function_call(contents_shunted_tokens, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
 	ExpressionParserV2::ExecuteResult logic_result = prepare_next_function_call(contents_shunted_tokens, story_state, eval_result, story_state.variable_info);
 	if (!logic_result.has_value() && logic_result.error().reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
 		return;
@@ -41,12 +37,7 @@ void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eva
 		}
 	}
 
-	//ExpressionParser::ExecuteResult result = ExpressionParser::execute_expression_tokens(contents_shunted_tokens.function_prepared_tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
 	if (is_return) {
-		//if (result.has_value()) {
-		//	eval_result.result += ExpressionParser::to_printable_string(*result);
-		//}
-
 		if (logic_result.has_value()) {
 			eval_result.return_value = *logic_result;
 		} else {
