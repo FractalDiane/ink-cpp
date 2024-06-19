@@ -1,5 +1,6 @@
 #include "expression_parser/token.h"
 
+#include <cmath>
 #include <algorithm>
 #include <format>
 
