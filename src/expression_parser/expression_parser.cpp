@@ -427,6 +427,7 @@ std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix) {
 		const Token& this_token = infix[index];
 
 		switch (this_token.type) {
+			case TokenType::LiteralBool:
 			case TokenType::LiteralNumberInt:
 			case TokenType::LiteralNumberFloat:
 			case TokenType::LiteralString:
@@ -584,6 +585,7 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(
 				this_token.fetch_variable_value(story_variable_info);
 				[[fallthrough]];
 			}
+			case TokenType::LiteralBool:
 			case TokenType::LiteralNumberInt:
 			case TokenType::LiteralNumberFloat:
 			case TokenType::LiteralString:

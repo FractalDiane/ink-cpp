@@ -15,6 +15,7 @@
 namespace ExpressionParserV2 {
 
 enum {
+	Variant_Bool,
 	Variant_Int,
 	Variant_Float,
 	Variant_String,
@@ -22,13 +23,12 @@ enum {
 };
 
 #define i64 std::int64_t
-using VariantValue = std::variant<i64, double, std::string, InkList>;
+using VariantValue = std::variant<bool, i64, double, std::string, InkList>;
 
 class Variant {
 private:
 	VariantValue value;
 	bool _has_value;
-	bool _is_bool;
 
 public:
 	Variant();
@@ -127,6 +127,7 @@ private:
 enum class TokenType {
 	Nil,
 	Keyword,
+	LiteralBool,
 	LiteralNumberInt,
 	LiteralNumberFloat,
 	LiteralString,
@@ -264,7 +265,7 @@ struct Token {
 	}
 
 	static Token literal_bool(bool val) {
-		return {.type = TokenType::LiteralNumberInt, .value = val};
+		return {.type = TokenType::LiteralBool, .value = val};
 	}
 
 	static Token literal_int(i64 val) {
@@ -305,24 +306,6 @@ struct Token {
 
 	static Token variable(const std::string& var_name) {
 		return {.type = TokenType::Variable, .variable_name = var_name};
-	}
-
-	std::optional<Variant> get_variant_value() {
-		switch (type) {
-			case TokenType::Nil:
-				return std::nullopt;
-			case TokenType::LiteralNumberInt:
-				return value;
-			case TokenType::LiteralNumberFloat:
-				return value;
-			case TokenType::LiteralString:
-			case TokenType::LiteralKnotName:
-				return value;
-			case TokenType::Variable:
-				return std::nullopt; // TODO: add this
-			default:
-				return std::nullopt;
-		}
 	}
 
 	void fetch_variable_value(const StoryVariableInfo& story_vars);
