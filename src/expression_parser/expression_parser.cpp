@@ -67,7 +67,7 @@ namespace {
 	Variant builtin_pow(const std::vector<Variant>& args) {
 		const Variant& base = args[0];
 		const Variant& exponent = args[1];
-		return std::pow(base, exponent);
+		return std::pow(static_cast<double>(base), static_cast<double>(exponent));
 	}
 
 	Variant builtin_int(const std::vector<Variant>& args) {
@@ -79,11 +79,11 @@ namespace {
 	}
 
 	Variant builtin_floor(const std::vector<Variant>& args) {
-		return std::floor(args[0]);
+		return std::floor(static_cast<double>(args[0]));
 	}
 
 	Variant builtin_ceil(const std::vector<Variant>& args) {
-		return std::ceil(args[0]);
+		return std::ceil(static_cast<double>(args[0]));
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
