@@ -79,6 +79,7 @@ void InkStory::init_story() {
 	bind_ink_functions();
 
 	story_state.current_knots_stack = {{&(story_data->knots[story_data->knot_order[0]]), 0}};
+	story_state.variable_info.current_weave_uuid = story_state.current_knot().knot->uuid;
 }
 
 void InkStory::bind_ink_functions() {
@@ -177,10 +178,6 @@ std::string InkStory::continue_story() {
 		if (!eval_result.target_knot.empty()) {
 			GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 			if (!target.found_any) {
-				/*if (auto target_var = story_state.variables.find(eval_result.target_knot); target_var != story_state.variables.end()) {
-					target = story_data->get_content(std::get<std::string>(target_var->second), story_state.current_nonchoice_knot().knot, story_state.current_stitch);
-				}*/
-
 				if (std::optional<ExpressionParserV2::Variant> target_var = story_state.variable_info.get_variable_value(eval_result.target_knot); target_var.has_value()) {
 					target = story_data->get_content(*target_var, story_state.current_nonchoice_knot().knot, story_state.current_stitch);
 				}
@@ -237,10 +234,11 @@ std::string InkStory::continue_story() {
 									story_state.story_tracking.increment_visit_count(target.knot, &target.knot->stitches[0]);
 								}
 
+								story_state.variable_info.current_weave_uuid = target.knot->uuid;
 								for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
 									story_state.variable_info.set_variable_value(target.knot->parameters[i].name, story_state.arguments_stack.back()[i].second);
 									if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
-										story_state.variable_info.redirects.insert({
+										story_state.variable_info.redirects[target.knot->uuid].insert({
 											target.knot->parameters[i].name,
 											story_state.arguments_stack.back()[i].first,
 										});
@@ -269,10 +267,11 @@ std::string InkStory::continue_story() {
 									changed_knot = true;
 								}
 
+								story_state.variable_info.current_weave_uuid = target.stitch->uuid;
 								for (std::size_t i = 0; i < target.stitch->parameters.size(); ++i) {
 									story_state.variable_info.set_variable_value(target.knot->parameters[i].name, story_state.arguments_stack.back()[i].second);
 									if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
-										story_state.variable_info.redirects.insert({
+										story_state.variable_info.redirects[target.stitch->uuid].insert({
 											target.knot->parameters[i].name,
 											story_state.arguments_stack.back()[i].first,
 										});
@@ -315,10 +314,11 @@ std::string InkStory::continue_story() {
 						story_state.current_knots_stack.push_back({target.knot, 0});
 						story_state.story_tracking.increment_visit_count(target.knot);
 
+						story_state.variable_info.current_weave_uuid = target.knot->uuid;
 						for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
 							story_state.variable_info.set_variable_value(target.knot->parameters[i].name, story_state.arguments_stack.back()[i].second);
 							if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
-								story_state.variable_info.redirects.insert({
+								story_state.variable_info.redirects[target.knot->uuid].insert({
 									target.knot->parameters[i].name,
 									story_state.arguments_stack.back()[i].first,
 								});
@@ -369,6 +369,8 @@ std::string InkStory::continue_story() {
 			eval_result.reached_function_return = false;
 			eval_result.reached_newline = false;
 			changed_knot = true;
+
+			story_state.variable_info.current_weave_uuid = story_state.current_stitch ? story_state.current_stitch->uuid : story_state.current_nonchoice_knot().knot->uuid;
 		}
 
 		// any gather points we've hit need to have their visit counts incremented
@@ -388,6 +390,8 @@ std::string InkStory::continue_story() {
 
 		if (!changed_knot) {
 			++story_state.current_knot().index;
+		} else {
+			story_state.variable_info.current_weave_uuid = story_state.current_stitch ? story_state.current_stitch->uuid : story_state.current_nonchoice_knot().knot->uuid;
 		}
 
 		// if we've run out of content in this knot, the story continues to the next gather point
@@ -411,6 +415,8 @@ std::string InkStory::continue_story() {
 					}
 				}
 
+				story_state.variable_info.current_weave_uuid = story_state.current_stitch ? story_state.current_stitch->uuid : story_state.current_nonchoice_knot().knot->uuid;
+
 				if (found_gather) {
 					eval_result.reached_newline = true;
 				} else {
@@ -425,6 +431,8 @@ std::string InkStory::continue_story() {
 				story_state.function_call_stack.pop_back();
 				story_state.arguments_stack.pop_back();
 				eval_result.reached_newline = false;
+
+				story_state.variable_info.current_weave_uuid = story_state.current_stitch ? story_state.current_stitch->uuid : story_state.current_nonchoice_knot().knot->uuid;
 			}
 		}
 	}
@@ -464,12 +472,12 @@ void InkStory::choose_choice_index(std::size_t index) {
 		if (story_state.current_choices[index].from_thread) {
 			const InkStoryState::ThreadEntry& thread_entry = story_state.current_thread_entries[index];
 			story_state.current_knots_stack.back() = {thread_entry.containing_knot, thread_entry.index_in_knot};
-			//story_state.arguments_stack.push_back(thread_entry.arguments);
 
+			story_state.variable_info.current_weave_uuid = thread_entry.containing_knot->uuid;
 			for (std::size_t i = 0; i < thread_entry.containing_knot->parameters.size(); ++i) {
 				story_state.variable_info.set_variable_value(thread_entry.containing_knot->parameters[i].name, thread_entry.arguments[i].second);
 				if (thread_entry.containing_knot->parameters[i].by_ref && thread_entry.containing_knot->parameters[i].name != thread_entry.arguments[i].first) {
-					story_state.variable_info.redirects.insert({
+					story_state.variable_info.redirects[thread_entry.containing_knot->uuid].insert({
 						thread_entry.containing_knot->parameters[i].name,
 						thread_entry.arguments[i].first,
 					});

@@ -2,6 +2,7 @@
 
 #include "types/ink_list.h"
 #include "serialization.h"
+#include "uuid.h"
 
 #include <variant>
 #include <cstdint>
@@ -97,13 +98,15 @@ typedef void (*VariableObserverFunc)(const std::string&, const Variant&);
 struct StoryVariableInfo {
 	std::unordered_map<std::string, Variant> variables;
 	std::unordered_map<std::string, Variant> constants;
-	std::unordered_map<std::string, std::string> redirects;
+	std::unordered_map<Uuid, std::unordered_map<std::string, std::string>> redirects;
 
 	// HACK: find some better way to store these+argument counts
 	std::unordered_map<std::string, std::pair<InkFunction, std::uint8_t>> builtin_functions;
 	std::unordered_map<std::string, InkFunction> external_functions;
 
 	std::unordered_map<std::string, std::vector<VariableObserverFunc>> observers;
+
+	Uuid current_weave_uuid;
 
 	std::optional<Variant> get_variable_value(const std::string& variable) const;
 	void set_variable_value(const std::string& variable, const Variant& value);

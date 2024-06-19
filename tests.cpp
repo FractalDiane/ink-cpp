@@ -110,20 +110,12 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 		ExpressionParser::TokenType::LiteralNumberInt,
 	);
 
-	//std::unordered_set<ExpressionParser::Token*> dummy;
 	std::vector<ExpressionParser::Token> result_postfix = ExpressionParser::shunt(result);
 	EXPECT_EQ(result.size(), result_postfix.size());
 	
-	//ExpressionParser::VariableMap variables;
-	//ExpressionParser::VariableMap constants;
-	//ExpressionParser::RedirectMap redirects;
 	ExpressionParser::ExecuteResult result_token = ExpressionParser::execute_expression_tokens(result_postfix, blank_variable_info);
 	EXPECT_FALSE(result_token.has_value());
 	EXPECT_EQ(static_cast<std::int64_t>(blank_variable_info.variables["test"]), 12);
-
-	/*for (ExpressionParser::Token* token : result) {
-		delete token;
-	}*/
 }
 
 TEST_F(ExpressionParserTests, ExpressionEvaluation) {
@@ -184,7 +176,6 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	Variant t17 = execute_expression("(5 * 5) - (3 * 3) + 3", blank_variable_info).value();
 	EXPECT_EQ(static_cast<std::int64_t>(t17), 19);
 
-	//ExpressionParser::RedirectMap redirects;
 	ExpressionParser::StoryVariableInfo vars;
 	vars.variables = {{"x", 5}, {"y", 3}, {"c", 3}};
 	execute_expression("x = (x * x) - (y * y) + c", vars);

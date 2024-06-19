@@ -13,8 +13,12 @@ using namespace ExpressionParserV2;
 std::optional<Variant> StoryVariableInfo::get_variable_value(const std::string& variable) const {
 	const std::string* var = &variable;
 	while (true) {
-		if (auto redirect = redirects.find(*var); redirect != redirects.end()) {
-			var = &redirect->second;
+		if (auto weave_redirects = redirects.find(current_weave_uuid); weave_redirects != redirects.end()) {
+			if (auto redirect = weave_redirects->second.find(*var); redirect != weave_redirects->second.end()) {
+				var = &redirect->second;
+			} else {
+				break;
+			}
 		} else {
 			break;
 		}
@@ -34,8 +38,12 @@ std::optional<Variant> StoryVariableInfo::get_variable_value(const std::string& 
 void StoryVariableInfo::set_variable_value(const std::string& variable, const Variant& value) {
 	const std::string* var = &variable;
 	while (true) {
-		if (auto redirect = redirects.find(*var); redirect != redirects.end()) {
-			var = &redirect->second;
+		if (auto weave_redirects = redirects.find(current_weave_uuid); weave_redirects != redirects.end()) {
+			if (auto redirect = weave_redirects->second.find(*var); redirect != weave_redirects->second.end()) {
+				var = &redirect->second;
+			} else {
+				break;
+			}
 		} else {
 			break;
 		}

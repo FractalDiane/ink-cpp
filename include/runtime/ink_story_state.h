@@ -78,12 +78,7 @@ struct InkStoryState {
 	bool just_diverted_to_non_knot = false;
 	std::optional<std::size_t> choice_divert_index = std::nullopt;
 
-	//ExpressionParser::VariableMap variables;
-	//ExpressionParser::VariableMap constants;
-	//ExpressionParser::FunctionMap functions;
 	ExpressionParserV2::StoryVariableInfo variable_info;
-	//std::unordered_map<Uuid, ExpressionParser::VariableMap> local_variables;
-	//std::unordered_map<Uuid, std::unordered_map<std::string, std::string>> variable_redirects;
 
 	class InkObject* get_current_object(std::int64_t index_offset);
 	bool has_choice_been_taken(class InkObject* choice_object, std::size_t index);
@@ -94,7 +89,6 @@ struct InkStoryState {
 	inline std::size_t current_knot_size() const { return current_knots_stack.back().knot->objects.size(); }
 	KnotStatus& current_nonchoice_knot();
 
-	//ExpressionParser::VariableMap get_story_constants();
 	void update_local_knot_variables();
 
 	void apply_thread_choices();
