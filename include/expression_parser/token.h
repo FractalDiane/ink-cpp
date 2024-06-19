@@ -28,9 +28,11 @@ class Variant {
 private:
 	VariantValue value;
 	bool _has_value;
+	bool _is_bool;
 
 public:
 	Variant();
+
 	Variant(bool val);
 	Variant(signed char val);
 	Variant(unsigned char val);
@@ -97,8 +99,9 @@ struct StoryVariableInfo {
 	std::unordered_map<std::string, Variant> constants;
 	std::unordered_map<std::string, std::string> redirects;
 
-	std::unordered_map<std::string, InkFunction> immediate_functions;
-	std::unordered_set<std::string> deferred_functions;
+	// HACK: find some better way to store these+argument counts
+	std::unordered_map<std::string, std::pair<InkFunction, std::uint8_t>> builtin_functions;
+	std::unordered_map<std::string, InkFunction> external_functions;
 
 	std::unordered_map<std::string, std::vector<VariableObserverFunc>> observers;
 
@@ -195,8 +198,8 @@ enum class ParenCommaType {
 };
 
 enum class FunctionFetchType {
-	Immediate,
-	Defer,
+	Builtin,
+	External,
 	StoryKnot,
 };
 
@@ -260,6 +263,10 @@ struct Token {
 		return {.type = TokenType::Keyword, .keyword_type = keyword_type};
 	}
 
+	static Token literal_bool(bool val) {
+		return {.type = TokenType::LiteralNumberInt, .value = val};
+	}
+
 	static Token literal_int(i64 val) {
 		return {.type = TokenType::LiteralNumberInt, .value = val};
 	}
@@ -284,12 +291,12 @@ struct Token {
 		return {.type = TokenType::ParenComma, .paren_comma_type = paren_comma_type};
 	}
 
-	static Token function_immediate(const std::string& function_name, InkFunction function, std::uint8_t arg_count = 0) {
-		return {.type = TokenType::Function, .value = function_name, .function = function, .function_fetch_type = FunctionFetchType::Immediate, .function_argument_count = arg_count};
+	static Token function_builtin(const std::string& function_name, InkFunction function, std::uint8_t arg_count = 0) {
+		return {.type = TokenType::Function, .value = function_name, .function = function, .function_fetch_type = FunctionFetchType::Builtin, .function_argument_count = arg_count};
 	}
 
-	static Token function_deferred(const std::string& function_name, std::uint8_t arg_count = 0) {
-		return {.type = TokenType::Function, .value = function_name, .function_fetch_type = FunctionFetchType::Defer, .function_argument_count = arg_count};
+	static Token function_external(const std::string& function_name, std::uint8_t arg_count = 0) {
+		return {.type = TokenType::Function, .value = function_name, .function_fetch_type = FunctionFetchType::External, .function_argument_count = arg_count};
 	}
 
 	static Token function_story_knot(const std::string& function_name, std::uint8_t arg_count = 0) {
@@ -320,13 +327,14 @@ struct Token {
 
 	void fetch_variable_value(const StoryVariableInfo& story_vars);
 	void store_variable_value(StoryVariableInfo& story_vars);
+	void fetch_function_value(const StoryVariableInfo& story_vars);
 
 	Variant increment(bool post, StoryVariableInfo& story_vars);
 	Variant decrement(bool post, StoryVariableInfo& story_vars);
 
 	void assign_variable(const Token& other, StoryVariableInfo& story_vars);
 
-	Variant call_function(const std::vector<Variant>& arguments);
+	Variant call_function(const std::vector<Variant>& arguments, const StoryVariableInfo& story_variable_info);
 };
 
 }

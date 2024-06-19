@@ -24,8 +24,8 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "ink-proof"
-#define TEST_FILE "30_nested_turns_since"
+#define TEST_FOLDER "13_global_variables"
+#define TEST_FILE "13c_printing_variables"
 
 int main(int argc, char* argv[]) {
 	//if (argc > 1) {

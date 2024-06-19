@@ -118,19 +118,19 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 			result.push_back(Token::operat(keyword->second.first, keyword->second.second));
 			found_result = true;
 		} else if (word == "true") {
-			result.push_back(Token::literal_int(1));
+			result.push_back(Token::literal_bool(true));
 			found_result = true;
 		} else if (word == "false") {
-			result.push_back(Token::literal_int(0));
+			result.push_back(Token::literal_bool(false));
 			found_result = true;
 		} else if (auto builtin_func = BuiltinFunctions.find(word); builtin_func != BuiltinFunctions.end()) {
-			result.push_back(Token::function_immediate(word, builtin_func->second.first, builtin_func->second.second));
+			result.push_back(Token::function_builtin(word, builtin_func->second.first, builtin_func->second.second));
 			found_result = true;
-		} else if (auto func = story_var_info.immediate_functions.find(word); func != story_var_info.immediate_functions.end()) {
-			result.push_back(Token::function_immediate(word, func->second));
+		} else if (auto func = story_var_info.builtin_functions.find(word); func != story_var_info.builtin_functions.end()) {
+			result.push_back(Token::function_builtin(word, func->second.first, func->second.second));
 			found_result = true;
-		} else if (story_var_info.deferred_functions.contains(word)) {
-			result.push_back(Token::function_deferred(word));
+		} else if (story_var_info.external_functions.contains(word)) {
+			result.push_back(Token::function_external(word));
 			found_result = true;
 		} else if (word == "temp") {
 			result.push_back(Token::keyword(KeywordType::Temp));
@@ -151,7 +151,8 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 				if (word.contains(".")) {
 					try {
 						double word_float = std::stod(word);
-						result.push_back(Token::literal_float(word_float));
+						Token token = Token::literal_float(word_float);
+						result.push_back(token);
 						found_result = true;
 					} catch (...) {
 						
@@ -159,7 +160,8 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 				} else {
 					try {
 						std::int64_t word_int = std::stoll(word);
-						result.push_back(Token::literal_int(word_int));
+						Token token = Token::literal_int(word_int);
+						result.push_back(token);
 						found_result = true;
 					} catch (...) {
 						
@@ -178,9 +180,11 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 
 		if (!found_result) {
 			if (in_knot_name) {
-				result.push_back(Token::literal_knotname(word, true));
+				Token token = Token::literal_knotname(word, true);
+				result.push_back(token);
 			} else {
-				result.push_back(Token::variable(word));
+				Token token = Token::variable(word);
+				result.push_back(token);
 			}
 		}
 
@@ -361,7 +365,8 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 			if (this_char != '"') {
 				current_string.push_back(this_char);
 			} else {
-				result.push_back(Token::literal_string(current_string));
+				Token token = Token::literal_string(current_string);
+				result.push_back(token);
 				current_string.clear();
 				in_quotes = false;
 			}
@@ -644,6 +649,8 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(
 			} break;
 
 			case TokenType::Function: {
+				this_token.fetch_function_value(story_variable_info);
+
 				std::vector<Token> func_args;
 				for (std::uint8_t i = 0; i < this_token.function_argument_count; ++i) {
 					func_args.push_back(stack[stack.size() - (this_token.function_argument_count - i)]);
@@ -654,15 +661,21 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(
 				}
 
 				std::vector<Variant> arg_values;
-				for (const Token& token : func_args) {
-					arg_values.push_back(token.value);
-				}
+				if (this_token.function_argument_count > 0) {
+					for (const Token& token : func_args) {
+						arg_values.push_back(token.value);
+					}
 
-				for (std::uint8_t i = 0; i < this_token.function_argument_count; ++i) {
-					stack.pop_back();
+					for (std::uint8_t i = 0; i < this_token.function_argument_count; ++i) {
+						stack.pop_back();
+					}
 				}
-
-				if (Variant result = this_token.call_function(arg_values); result.has_value()) {
+				
+				if (auto builtin_func = BuiltinFunctions.find(this_token.value); builtin_func != BuiltinFunctions.end()) {
+					if (Variant result = (builtin_func->second.first)(arg_values); result.has_value()) {
+						stack.push_back(Token::from_variant(result));
+					}
+				} else if (Variant result = this_token.call_function(arg_values, story_variable_info); result.has_value()) {
 					stack.push_back(Token::from_variant(result));
 				}
 			} break;

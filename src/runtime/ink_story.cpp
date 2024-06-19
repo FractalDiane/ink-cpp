@@ -84,41 +84,34 @@ void InkStory::init_story() {
 void InkStory::bind_ink_functions() {
 	using namespace ExpressionParserV2;
 
-	#define EXP_FUNC(name, body) story_state.variable_info.immediate_functions.insert({name, [this](const std::vector<ExpressionParserV2::Variant>& arguments) -> ExpressionParserV2::Variant body});
+	#define EXP_FUNC(name, argc, body) story_state.variable_info.builtin_functions.insert({name, {[this](const std::vector<ExpressionParserV2::Variant>& arguments) -> ExpressionParserV2::Variant body, (std::uint8_t)argc}});
 
-	EXP_FUNC("CHOICE_COUNT", { return story_state.current_choices.size(); });
-	EXP_FUNC("TURNS", { return story_state.total_choices_taken; });
+	EXP_FUNC("CHOICE_COUNT", 0, { return story_state.current_choices.size(); });
+	EXP_FUNC("TURNS", 0, { return story_state.total_choices_taken; });
 
-	EXP_FUNC("TURNS_SINCE", {
-		//std::string knot = as_string(stack.top()->get_variant_value(variables, constants, variable_redirects).value());
+	EXP_FUNC("TURNS_SINCE", 1, {
 		std::string knot = arguments[0];
 
 		if (GetContentResult content = story_data->get_content(knot, story_state.current_knot().knot, story_state.current_stitch); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
 			if (story_state.story_tracking.get_content_stats(content.get_target(), stats)) {
-				//stack.pop();
 				return stats.turns_since_visited;
 			}
 		}
 		
-		//stack.pop();
 		return -1;
 	});
 
-	EXP_FUNC("SEED_RANDOM", {
-		//std::int64_t seed = as_int(stack.top()->get_variant_value(variables, constants, variable_redirects).value());
-		//stack.pop();
+	EXP_FUNC("SEED_RANDOM", 1, {;
 		std::int64_t seed = arguments[0];
 
 		story_state.rng.seed(static_cast<unsigned int>(seed));
 		return Variant();
 	});
 
-	EXP_FUNC("RANDOM", {
+	EXP_FUNC("RANDOM", 2, {
 		std::int64_t from = arguments[0];
-		//stack.pop();
 		std::int64_t to = arguments[1];
-		//stack.pop();
 
 		std::int64_t result = randi_range(from, to, story_state.rng);
 		return result;

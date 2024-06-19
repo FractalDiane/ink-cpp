@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include <stdexcept>
+
 using namespace ExpressionParserV2;
 
 #define i64 std::int64_t
@@ -103,6 +105,16 @@ void Token::store_variable_value(StoryVariableInfo& story_vars) {
 	}
 }
 
+void Token::fetch_function_value(const StoryVariableInfo& story_vars) {
+	if (type == TokenType::Function) {
+		if (auto builtin_func = story_vars.builtin_functions.find(value); builtin_func != story_vars.builtin_functions.end()) {
+			function = builtin_func->second.first;
+		} else if (auto external_func = story_vars.external_functions.find(value); external_func != story_vars.external_functions.end()) {
+			function = external_func->second;
+		}
+	}
+}
+
 Variant Token::increment(bool post, StoryVariableInfo& story_vars) {
 	Variant result;
 	if (post) {
@@ -134,9 +146,27 @@ void Token::assign_variable(const Token& other, StoryVariableInfo& story_vars) {
 	}
 }
 
-Variant Token::call_function(const std::vector<Variant>& arguments) {
+Variant Token::call_function(const std::vector<Variant>& arguments, const StoryVariableInfo& story_variable_info) {
 	if (type == TokenType::Function) {
-		return (function)(arguments);
+		switch (function_fetch_type) {
+			case FunctionFetchType::Builtin: {
+				return (function)(arguments);
+			} break;
+
+			case FunctionFetchType::External: {
+				// TODO: external functions
+				/*if (auto func = story_variable_info.deferred_functions.find(value); func != story_variable_info.deferred_functions.end()) {
+					return (func->second)(arguments);
+				} else {
+					throw std::runtime_error("Tried calling an unknown function");
+				}*/
+			} break;
+
+			case FunctionFetchType::StoryKnot:
+			default: {
+				throw std::runtime_error("Story knot function was not prepared before evaluating expression");
+			} break;
+		}
 	}
 	
 	return Variant();
@@ -144,10 +174,10 @@ Variant Token::call_function(const std::vector<Variant>& arguments) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define VCON(type) Variant::Variant(type val) : value(static_cast<i64>(val)), _has_value(true) {}
+#define VCON(type) Variant::Variant(type val) : value(static_cast<i64>(val)), _has_value(true), _is_bool(false) {}
 
-Variant::Variant() : value((std::int64_t)0), _has_value(false) {}
-VCON(bool)
+Variant::Variant() : value((std::int64_t)0), _has_value(false), _is_bool(false) {}
+Variant::Variant(bool val) : value(static_cast<i64>(val)), _has_value(true), _is_bool(true) {}
 VCON(signed char)
 VCON(unsigned char)
 VCON(signed short)
@@ -158,9 +188,9 @@ VCON(signed long)
 VCON(unsigned long)
 VCON(signed long long)
 VCON(unsigned long long)
-Variant::Variant(float val) : value(static_cast<double>(val)), _has_value(true) {}
-Variant::Variant(double val) : value(val), _has_value(true) {}
-Variant::Variant(const std::string& val) : value(val), _has_value(true) {}
+Variant::Variant(float val) : value(static_cast<double>(val)), _has_value(true), _is_bool(false) {}
+Variant::Variant(double val) : value(val), _has_value(true), _is_bool(false) {}
+Variant::Variant(const std::string& val) : value(val), _has_value(true), _is_bool(false) {}
 //Variant::Variant(const VariantValue& val) : value(val), has_value(true) {}
 
 #undef VCON
@@ -170,6 +200,7 @@ Variant::Variant(const Variant& from) : value(from.value) {}
 Variant& Variant::operator=(const Variant& from) {
 	if (this != &from) {
 		value = from.value;
+		_has_value = from._has_value;
 	}
 
 	return *this;
@@ -179,7 +210,11 @@ std::string Variant::to_printable_string() const {
 	if (_has_value) {
 		switch (value.index()) {
 			case Variant_Int:
-				return std::to_string(v<i64>(value));
+				if (_is_bool) {
+					return v<i64>(value) != 0 ? "true" : "false";
+				} else {
+					return std::to_string(v<i64>(value));
+				}
 			case Variant_Float:
 				return std::to_string(v<double>(value));
 			case Variant_String:
@@ -1050,10 +1085,10 @@ Token Deserializer<Token>::operator()(const ByteVec& bytes, std::size_t& index) 
 			FunctionFetchType fetch_type = static_cast<FunctionFetchType>(ds8(bytes, index));
 			std::uint8_t args = ds8(bytes, index);
 			switch (fetch_type) {
-				case FunctionFetchType::Immediate:
-					return Token::function_immediate(name, nullptr, args);
-				case FunctionFetchType::Defer:
-					return Token::function_deferred(name, args);
+				case FunctionFetchType::Builtin:
+					return Token::function_builtin(name, nullptr, args);
+				case FunctionFetchType::External:
+					return Token::function_external(name, args);
 				case FunctionFetchType::StoryKnot:
 				default:
 					return Token::function_story_knot(name, args);

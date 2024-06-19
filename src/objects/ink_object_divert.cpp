@@ -50,15 +50,13 @@ std::string InkObjectDivert::get_target(InkStoryState& story_state, const Expres
 	if (target_var.has_value() && target_var->index() == ExpressionParserV2::Variant_String) {
 		target = *target_var;
 	} else if (!target_knot.tokens.empty()) {
-		//target = target_knot.tokens[0]->to_printable_string();
-		target = target_knot.tokens[0].value.to_printable_string();
+		target = target_knot.tokens[0].variable_name;
 	}
 
 	return target;
 }
 
 void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	//ExpressionParserV2::VariableMap story_constants = story_state.get_story_constants();
 	story_state.update_local_knot_variables();
 	std::string target = get_target(story_state, story_state.variable_info);
 
