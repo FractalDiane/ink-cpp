@@ -72,10 +72,7 @@ private:
 
 	UuidValue current_uuid = 0;
 
-	std::unordered_set<std::string> declared_variables;
-	std::unordered_set<std::string> declared_functions = {
-		"RANDOM", "SEED_RANDOM", "CHOICE_COUNT", "TURNS", "TURNS_SINCE",
-	};
+	ExpressionParserV2::StoryVariableInfo story_variable_info;
 	
 public:
 	InkStory compile_script(const std::string& script);

@@ -12,7 +12,7 @@ struct InkChoiceEntry {
 	std::vector<InkObject*> text;
 	Knot result;
 	bool sticky = false;
-	std::vector<ExpressionParser::ShuntedExpression> conditions;
+	std::vector<ExpressionParserV2::ShuntedExpression> conditions;
 	bool fallback = false;
 	bool immediately_continue_to_result = false;
 

@@ -322,6 +322,15 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 	result_knots.push_back(start_knot);
 	current_knot_index = 0;
 
+	story_variable_info = ExpressionParserV2::StoryVariableInfo();
+	story_variable_info.builtin_functions = {
+		{"RANDOM", {nullptr, (std::uint8_t)2}},
+		{"SEED_RANDOM", {nullptr, (std::uint8_t)1}},
+		{"CHOICE_COUNT", {nullptr, (std::uint8_t)0}},
+		{"TURNS", {nullptr, (std::uint8_t)0}},
+		{"TURNS_SINCE", {nullptr, (std::uint8_t)1}},
+	};
+
 	token_index = 0;
 	while (token_index < token_stream.size()) {
 		const InkLexer::Token& this_token = token_stream[token_index];
@@ -400,7 +409,6 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 		case InkToken::Equal: {
 			if (at_line_start) {
-				//if (next_token_is_sequence(all_tokens, token_index, {InkToken::Equal, InkToken::Equal})) {
 				if (next_token_is(all_tokens, token_index, InkToken::Equal)) {
 					++token_index;
 					if (next_token_is(all_tokens, token_index, InkToken::Equal)) {
@@ -415,9 +423,6 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						}
 
 						std::string new_knot_name = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
-						//if (new_knot.is_function) {
-						//	declared_functions.insert(new_knot_name);
-						//}
 
 						bool is_new_knot = true;
 						std::size_t existing_index = 0;
@@ -527,7 +532,6 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					}
 
 					stitches.push_back(new_stitch);
-					//std::sort(stitches.begin(), stitches.end(), [](const Stitch& a, const Stitch& b) { return a.index < b.index; });
 
 					while (all_tokens[token_index].token != InkToken::NewLine) {
 						++token_index;
@@ -547,7 +551,6 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			if (at_line_start && token.count > choice_level) {
 				++choice_level;
 				std::vector<InkChoiceEntry> choice_options;
-				//bool has_gather = false;
 				bool current_choice_sticky = token.token == InkToken::Plus;
 
 				while (token_index < all_tokens.size()) {
@@ -559,7 +562,6 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							end_line = true;
 							break;
 						} else if (next_token_is(all_tokens, token_index, InkToken::Dash)) {
-							//has_gather = true;
 							end_line = true;
 							break;
 						} else if ((next_token_is(all_tokens, token_index, InkToken::Asterisk) || next_token_is(all_tokens, token_index, InkToken::Plus)) && next_token(all_tokens, token_index).count <= choice_level) {
@@ -575,9 +577,13 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 					choice_stack.push_back({.sticky = current_choice_sticky});
 
-					if (next_token_is_sequence(all_tokens, token_index, {InkToken::LeftParen, InkToken::Text, InkToken::RightParen})) {
+					while (all_tokens[token_index].token == InkToken::Text && !all_tokens[token_index].escaped && strip_string_edges(all_tokens[token_index].get_text_contents(), true, true, true).empty()) {
+						++token_index;
+					}
+
+					if (all_tokens[token_index].token == InkToken::LeftParen && next_token_is_sequence(all_tokens, token_index, {InkToken::Text, InkToken::RightParen})) {
 						GatherPoint label;
-						label.name = all_tokens[token_index + 2].text_contents;
+						label.name = all_tokens[token_index + 1].text_contents;
 						label.uuid = Uuid(current_uuid++);
 						label.type = WeaveContentType::GatherPoint;
 						label.index = static_cast<std::uint16_t>(story_knots[current_knot_index].objects.size());
@@ -592,7 +598,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 						gather_points.push_back(label);
 
-						token_index += 4;
+						token_index += 3;
 					}
 
 					while (token_index < all_tokens.size()) {
@@ -731,10 +737,10 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			}
 
 			std::vector<std::vector<InkObject*>> items = {{}};
-			std::vector<std::pair<ExpressionParser::ShuntedExpression, Knot>> items_conditions = {{{}, Knot()}};
+			std::vector<std::pair<ExpressionParserV2::ShuntedExpression, Knot>> items_conditions = {{{}, Knot()}};
 			Knot items_else;
 			std::vector<std::string> text_items;
-			ExpressionParser::ShuntedExpression switch_expression;
+			ExpressionParserV2::ShuntedExpression switch_expression;
 			switch_expression.uuid = current_uuid++;
 
 			bool is_conditional = false;
@@ -775,7 +781,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 								}
 
 								try {
-									current_condition = ExpressionParser::tokenize_and_shunt_expression(condition_string, {}, declared_functions);
+									current_condition = ExpressionParserV2::tokenize_and_shunt_expression(condition_string, story_variable_info);
 								} catch (...) {
 									throw std::runtime_error("Malformed condition in conditional");
 								}
@@ -856,7 +862,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 										}
 
 										try {
-											ExpressionParser::ShuntedExpression shunted = ExpressionParser::tokenize_and_shunt_expression(this_condition, {}, declared_functions);
+											ExpressionParserV2::ShuntedExpression shunted = ExpressionParserV2::tokenize_and_shunt_expression(this_condition, story_variable_info);
 											shunted.uuid = current_uuid++;
 											if (items_conditions.back().first.tokens.empty()) {
 												items_conditions.back().first = shunted;
@@ -913,7 +919,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				}
 
 				try {
-					ExpressionParser::ShuntedExpression condition_shunted = ExpressionParser::tokenize_and_shunt_expression(condition, {}, declared_functions);
+					ExpressionParserV2::ShuntedExpression condition_shunted = ExpressionParserV2::tokenize_and_shunt_expression(condition, story_variable_info);
 					condition_shunted.uuid = current_uuid++;
 					choice_stack.back().conditions.push_back(condition_shunted);
 				} catch (...) {
@@ -932,7 +938,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				} else if (!text_items.empty()) {
 					std::string all_text = join_string_vector(text_items, std::string());
 					try {
-						ExpressionParser::ShuntedExpression shunted = ExpressionParser::tokenize_and_shunt_expression(all_text, {}, declared_functions);
+						ExpressionParserV2::ShuntedExpression shunted = ExpressionParserV2::tokenize_and_shunt_expression(all_text, story_variable_info);
 						shunted.uuid = current_uuid++;
 						result_object = new InkObjectInterpolation(shunted);
 					} catch (...) {
@@ -961,15 +967,15 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			if (next_token_is(all_tokens, token_index, InkToken::Text) && !strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true).empty()) {
 				if (!in_parens) {
 					std::string target = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
-					ExpressionParser::ShuntedExpression target_tokens;
+					ExpressionParserV2::ShuntedExpression target_tokens;
 					target_tokens.uuid = current_uuid++;
 					try {
-						target_tokens = ExpressionParser::tokenize_and_shunt_expression(target, {}, declared_functions);
+						target_tokens = ExpressionParserV2::tokenize_and_shunt_expression(target, story_variable_info);
 					} catch (...) {
 						throw std::runtime_error("Illegal value in divert target");
 					}
 		
-					std::vector<ExpressionParser::ShuntedExpression> arguments;
+					std::vector<ExpressionParserV2::ShuntedExpression> arguments;
 					if (next_token_is(all_tokens, token_index + 1, InkToken::LeftParen)) {
 						token_index += 3;
 
@@ -993,7 +999,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						std::vector<std::string> split = split_string(all_args, ',', true, true);
 						for (const std::string& arg : split) {
 							try {
-								ExpressionParser::ShuntedExpression tokenized = ExpressionParser::tokenize_and_shunt_expression(arg, {}, declared_functions);
+								ExpressionParserV2::ShuntedExpression tokenized = ExpressionParserV2::tokenize_and_shunt_expression(arg, story_variable_info);
 								tokenized.uuid = current_uuid++;
 								arguments.push_back(tokenized);
 							} catch (...) {
@@ -1029,12 +1035,12 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					result_object = new InkObjectText("->");
 				}
 			} else if (next_token_is(all_tokens, token_index, InkToken::Arrow)) {
-				ExpressionParser::ShuntedExpression target_tokens;
+				ExpressionParserV2::ShuntedExpression target_tokens;
 				target_tokens.uuid = current_uuid++;
 				if (next_token_is(all_tokens, token_index + 1, InkToken::Text)) {
 					std::string target = strip_string_edges(all_tokens[token_index + 2].text_contents, true, true, true);
 					try {
-						target_tokens = ExpressionParser::tokenize_and_shunt_expression(target, {}, declared_functions);
+						target_tokens = ExpressionParserV2::tokenize_and_shunt_expression(target, story_variable_info);
 					} catch (...) {
 						throw std::runtime_error("Illegal value in tunnel divert target");
 					}
@@ -1097,7 +1103,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				}
 
 				try {
-					ExpressionParser::ShuntedExpression expression_shunted = ExpressionParser::tokenize_and_shunt_expression(expression, {}, declared_functions);
+					ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info);
 					expression_shunted.uuid = current_uuid++;
 					result_object = new InkObjectLogic(expression_shunted);
 				} catch (...) {
@@ -1170,7 +1176,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					--token_index;
 
 					try {
-						ExpressionParser::ShuntedExpression expression_shunted = ExpressionParser::tokenize_and_shunt_expression(expression, {}, declared_functions);
+						ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info);
 						expression_shunted.uuid = current_uuid++;
 						result_object = new InkObjectGlobalVariable(identifier, token.token == InkToken::KeywordConst, expression_shunted);
 					} catch (...) {
@@ -1193,25 +1199,10 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				++token_index;
 			}
 
-			/*std::ifstream infile{strip_string_edges(path, true, true, true)};
-			std::stringstream buffer;
-			buffer << infile.rdbuf();
-			std::string file_text = buffer.str();
-			infile.close();*/
-
-			/*InkLexer lexer;
-			std::vector<InkLexer::Token> token_stream = lexer.lex_script(file_text);
-			token_stream = remove_comments(token_stream);
-
-			all_tokens.insert(all_tokens.begin() + token_index, token_stream.begin(), token_stream.end());
-			--token_index;
-			end_line = true;*/
-
 			InkCompiler include_compiler;
 			include_compiler.set_current_uuid(current_uuid);
 			InkStory include_story = include_compiler.compile_file(strip_string_edges(path, true, true, true));
 			current_uuid = include_compiler.get_current_uuid();
-			//for (auto& knot : include_story.get_story_data()->)
 			for (const auto& included_knot : include_story.story_data->knots) {
 				bool already_exists = false;
 				for (Knot& existing_knot : story_knots) {

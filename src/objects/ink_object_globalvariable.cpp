@@ -7,7 +7,7 @@
 ByteVec InkObjectGlobalVariable::to_bytes() const {
 	Serializer<std::uint8_t> s8;
 	Serializer<std::string> sstring;
-	VectorSerializer<ExpressionParser::Token*> vstoken;
+	VectorSerializer<ExpressionParserV2::Token> vstoken;
 	
 	ByteVec result = sstring(name);
 	ByteVec result2 = s8(static_cast<std::uint8_t>(is_constant));
@@ -22,25 +22,26 @@ ByteVec InkObjectGlobalVariable::to_bytes() const {
 InkObject* InkObjectGlobalVariable::populate_from_bytes(const ByteVec& bytes, std::size_t& index) {
 	Deserializer<std::uint8_t> ds8;
 	Deserializer<std::string> dsstring;
-	VectorDeserializer<ExpressionParser::Token*> vdstoken;
+	VectorDeserializer<ExpressionParserV2::Token> vdstoken;
 
 	name = dsstring(bytes, index);
 	is_constant = static_cast<bool>(ds8(bytes, index));
-	value_shunted_tokens = ExpressionParser::ShuntedExpression(vdstoken(bytes, index));
+	value_shunted_tokens = ExpressionParserV2::ShuntedExpression(vdstoken(bytes, index));
 
 	return this;
 }
 
 InkObjectGlobalVariable::~InkObjectGlobalVariable() {
-	value_shunted_tokens.dealloc_tokens();
+	//value_shunted_tokens.dealloc_tokens();
 }
 
 void InkObjectGlobalVariable::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
-	auto& map = is_constant ? story_state.constants : story_state.variables;
+	//ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
+	story_state.update_local_knot_variables();
+	auto& map = is_constant ? story_state.variable_info.constants : story_state.variable_info.variables;
 	
-	ExpressionParser::ExecuteResult result = prepare_next_function_call(value_shunted_tokens, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
-	if (!result.has_value() && result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
+	ExpressionParserV2::ExecuteResult result = prepare_next_function_call(value_shunted_tokens, story_state, eval_result, story_state.variable_info);
+	if (!result.has_value() && result.error().reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
 		return;
 	}
 

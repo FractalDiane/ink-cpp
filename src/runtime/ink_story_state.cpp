@@ -52,10 +52,14 @@ InkStoryState::KnotStatus& InkStoryState::current_nonchoice_knot() {
 	return current_knots_stack.front();
 }
 
-ExpressionParser::VariableMap InkStoryState::get_story_constants() {
+/*ExpressionParser::VariableMap InkStoryState::get_story_constants() {
 	ExpressionParser::VariableMap result = story_tracking.get_visit_count_variables(current_knot().knot, current_stitch);
 	result.insert(constants.begin(), constants.end());
 	return result;
+}*/
+
+void InkStoryState::update_local_knot_variables() {
+	story_tracking.update_visit_count_variables(current_knot().knot, current_stitch, variable_info);
 }
 
 void InkStoryState::apply_thread_choices() {

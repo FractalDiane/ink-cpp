@@ -21,9 +21,9 @@ std::vector<std::uint8_t> InkObject::to_bytes() const {
 }
 
 InkObject::~InkObject() {
-	for (ExpressionParser::Token* token : function_return_values) {
+	/*for (ExpressionParser::Token* token : function_return_values) {
 		delete token;
-	}
+	}*/
 }
 
 InkObject* InkObject::populate_from_bytes(const std::vector<std::uint8_t>& bytes, std::size_t& index) {
@@ -106,19 +106,19 @@ InkObject* InkObject::create_from_id(ObjectId id) {
 	}
 }
 
-ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(ExpressionParser::ShuntedExpression& expression, InkStoryState& story_state, InkStoryEvalResult& eval_result, ExpressionParser::VariableMap& variables, const ExpressionParser::VariableMap& constants, ExpressionParser::RedirectMap& redirects) {
+ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(ExpressionParserV2::ShuntedExpression& expression, InkStoryState& story_state, InkStoryEvalResult& eval_result, ExpressionParserV2::StoryVariableInfo& story_variable_info) {
 	bool continuing_preparation = story_state.current_knot().returning_from_function && story_state.current_knot().current_function_prep_expression == expression.uuid;
 	if (!continuing_preparation) {
 		expression.push_entry();
 	}
 
-	ExpressionParser::ShuntedExpression::StackEntry& expression_entry = expression.stack_back();
+	ExpressionParserV2::ShuntedExpression::StackEntry& expression_entry = expression.stack_back();
 
 	if (continuing_preparation) {
 		if (eval_result.return_value.has_value()) {
-			ExpressionParser::Token* value = ExpressionParser::variant_to_token(*eval_result.return_value);
+			ExpressionParserV2::Variant value = *eval_result.return_value;
 			function_return_values.push_back(value);
-			expression_entry.function_prepared_tokens[expression_entry.function_eval_index] = value;
+			expression_entry.function_prepared_tokens[expression_entry.function_eval_index] = ExpressionParserV2::Token::from_variant(value);
 		} else {
 			expression_entry.function_prepared_tokens.erase(expression_entry.function_prepared_tokens.begin() + expression_entry.function_eval_index);
 		}
@@ -128,8 +128,8 @@ ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(Expression
 		// thanks Ryan
 		std::size_t args_expected = expression_entry.argument_count;
 		while (args_expected > 0) {
-			ExpressionParser::Token* this_token = expression_entry.function_prepared_tokens[expression_entry.function_eval_index];
-			if (this_token->get_type() == ExpressionParser::TokenType::Operator) {
+			ExpressionParserV2::Token& this_token = expression_entry.function_prepared_tokens[expression_entry.function_eval_index];
+			if (this_token.type == ExpressionParserV2::TokenType::Operator) {
 				++args_expected;
 			} else {
 				--args_expected;
@@ -143,44 +143,34 @@ ExpressionParser::ExecuteResult InkObject::prepare_next_function_call(Expression
 		story_state.current_knot().current_function_prep_expression = UINT32_MAX;
 	}
 
-	ExpressionParser::ExecuteResult result = ExpressionParser::execute_expression_tokens(expression.stack_back().function_prepared_tokens, variables, constants, redirects, story_state.functions);
+	ExpressionParserV2::ExecuteResult result = ExpressionParserV2::execute_expression_tokens(expression.stack_back().function_prepared_tokens, story_variable_info);
 	if (result.has_value()) {
-		for (ExpressionParser::Token* token : expression_entry.tokens_to_dealloc) {
-			delete token;
-		}
-
 		expression.pop_entry();
 		return *result;
-	} else if (result.error().reason == ExpressionParser::NulloptResult::Reason::NoReturnValue) {
-		for (ExpressionParser::Token* token : expression_entry.tokens_to_dealloc) {
-			delete token;
-		}
-
+	} else if (result.error().reason == ExpressionParserV2::NulloptResult::Reason::NoReturnValue) {
 		expression.pop_entry();
 		return std::unexpected(result.error());
 	}
 
-	const ExpressionParser::NulloptResult& nullopt_result = result.error();
-	expression_entry.tokens_to_dealloc.insert(nullopt_result.tokens_to_dealloc.begin(), nullopt_result.tokens_to_dealloc.end());
-	if (nullopt_result.reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
+	const ExpressionParserV2::NulloptResult& nullopt_result = result.error();
+	if (nullopt_result.reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
 		story_state.arguments_stack.push_back({});
-		expression_entry.argument_count = nullopt_result.function->data.argument_count;
-		if (nullopt_result.function->data.argument_count > 0) {
-			std::vector<std::pair<std::string, ExpressionParser::Variant>>& args = story_state.arguments_stack.back();
+		expression_entry.argument_count = nullopt_result.function.function_argument_count;
+		if (nullopt_result.function.function_argument_count > 0) {
+			std::vector<std::pair<std::string, ExpressionParserV2::Variant>>& args = story_state.arguments_stack.back();
 
-			for (ExpressionParser::Token* token : nullopt_result.arguments) {
-				std::optional<ExpressionParser::Variant> arg_value = token->get_variant_value(variables, constants, redirects);
-				std::pair<std::string, ExpressionParser::Variant> arg;
-				arg.second = *arg_value;
-				if (token->get_type() == ExpressionParser::TokenType::Variable) {
-					arg.first = static_cast<ExpressionParser::TokenVariable*>(token)->data;
+			for (const ExpressionParserV2::Token& token : nullopt_result.arguments) {
+				std::pair<std::string, ExpressionParserV2::Variant> arg;
+				arg.second = token.value;
+				if (token.type == ExpressionParserV2::TokenType::Variable) {
+					arg.first = token.variable_name;
 				}
 
 				args.push_back(arg);
 			}
 		}
 
-		eval_result.target_knot = nullopt_result.function->data.name;
+		eval_result.target_knot = static_cast<std::string>(nullopt_result.function.value);
 		eval_result.divert_type = DivertType::Function;
 		eval_result.imminent_function_prep = true;
 		story_state.current_knot().current_function_prep_expression = expression.uuid;

@@ -6,45 +6,38 @@
 #include "expression_parser/expression_parser.h"
 
 ByteVec InkObjectLogic::to_bytes() const {
-	VectorSerializer<ExpressionParser::Token*> s;
+	VectorSerializer<ExpressionParserV2::Token> s;
 	return s(contents_shunted_tokens.tokens);
 }
 
 InkObject* InkObjectLogic::populate_from_bytes(const ByteVec& bytes, std::size_t& index) {
-	VectorDeserializer<ExpressionParser::Token*> ds;
-	contents_shunted_tokens = ExpressionParser::ShuntedExpression(ds(bytes, index));
+	VectorDeserializer<ExpressionParserV2::Token> ds;
+	contents_shunted_tokens = ExpressionParserV2::ShuntedExpression(ds(bytes, index));
 	return this;
 }
 
 InkObjectLogic::~InkObjectLogic() {
-	contents_shunted_tokens.dealloc_tokens();
+	//contents_shunted_tokens.dealloc_tokens();
 }
 
 void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	using namespace ExpressionParser;
+	story_state.update_local_knot_variables();
 
-	ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
-
-	ExpressionParser::ExecuteResult logic_result = prepare_next_function_call(contents_shunted_tokens, story_state, eval_result, story_state.variables, story_constants, story_state.variable_redirects);
-	if (!logic_result.has_value() && logic_result.error().reason == ExpressionParser::NulloptResult::Reason::FoundKnotFunction) {
+	ExpressionParserV2::ExecuteResult logic_result = prepare_next_function_call(contents_shunted_tokens, story_state, eval_result, story_state.variable_info);
+	if (!logic_result.has_value() && logic_result.error().reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
 		return;
 	}
 
 	bool is_return = false;
 	if (!contents_shunted_tokens.tokens.empty()) {
-		Token* first = contents_shunted_tokens.tokens[0];
-		if (first->get_type() == TokenType::Keyword && static_cast<TokenKeyword*>(first)->data == TokenKeyword::Type::Return) {
+		const ExpressionParserV2::Token& first = contents_shunted_tokens.tokens[0];
+		if (first.type == ExpressionParserV2::TokenType::Keyword && first.keyword_type == ExpressionParserV2::KeywordType::Return) {
 			is_return = true;
 			eval_result.reached_function_return = true;
 		}
 	}
 
-	//ExpressionParser::ExecuteResult result = ExpressionParser::execute_expression_tokens(contents_shunted_tokens.function_prepared_tokens, story_state.variables, story_constants, story_state.variable_redirects, story_state.functions);
 	if (is_return) {
-		//if (result.has_value()) {
-		//	eval_result.result += ExpressionParser::to_printable_string(*result);
-		//}
-
 		if (logic_result.has_value()) {
 			eval_result.return_value = *logic_result;
 		} else {

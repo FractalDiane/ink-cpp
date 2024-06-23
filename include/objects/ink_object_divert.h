@@ -8,13 +8,13 @@
 
 class InkObjectDivert : public InkObject {
 private:
-	ExpressionParser::ShuntedExpression target_knot;
-	std::vector<ExpressionParser::ShuntedExpression> arguments;
+	ExpressionParserV2::ShuntedExpression target_knot;
+	std::vector<ExpressionParserV2::ShuntedExpression> arguments;
 	DivertType type;
 
 public:
 	InkObjectDivert() : target_knot{}, arguments{}, type{DivertType::ToKnot} {}
-	InkObjectDivert(const ExpressionParser::ShuntedExpression& target, const std::vector<ExpressionParser::ShuntedExpression>& arguments, DivertType type) : target_knot{target}, arguments{arguments}, type{type} {}
+	InkObjectDivert(const ExpressionParserV2::ShuntedExpression& target, const std::vector<ExpressionParserV2::ShuntedExpression>& arguments, DivertType type) : target_knot{target}, arguments{arguments}, type{type} {}
 	
 	virtual ~InkObjectDivert() override;
 
@@ -26,5 +26,5 @@ public:
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 
-	std::string get_target(InkStoryState& story_state, const ExpressionParser::VariableMap& story_constants);
+	std::string get_target(InkStoryState& story_state, const ExpressionParserV2::StoryVariableInfo& story_var_info);
 };

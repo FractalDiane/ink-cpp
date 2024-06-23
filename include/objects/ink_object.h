@@ -25,7 +25,7 @@ enum class ObjectId {
 
 class InkObject {
 protected:
-	std::vector<struct ExpressionParser::Token*> function_return_values;
+	std::vector<class ExpressionParserV2::Variant> function_return_values;
 
 public:
 	virtual ~InkObject();
@@ -45,8 +45,8 @@ public:
 	static InkObject* create_from_id(ObjectId id);
 
 protected:
-	ExpressionParser::ExecuteResult prepare_next_function_call(struct ExpressionParser::ShuntedExpression& expression, InkStoryState& story_state, InkStoryEvalResult& eval_result,
-									ExpressionParser::VariableMap& variables, const ExpressionParser::VariableMap& constants, ExpressionParser::RedirectMap& redirects);
+	ExpressionParserV2::ExecuteResult prepare_next_function_call(struct ExpressionParserV2::ShuntedExpression& expression, InkStoryState& story_state, InkStoryEvalResult& eval_result,
+									ExpressionParserV2::StoryVariableInfo& story_variable_info);
 };
 
 template <>
