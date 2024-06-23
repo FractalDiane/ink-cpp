@@ -24,8 +24,8 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "13_global_variables"
-#define TEST_FILE "13c_printing_variables"
+#define TEST_FOLDER "8_variable_text"
+#define TEST_FILE "8i_alternative_at_choice_start"
 
 int main(int argc, char* argv[]) {
 	//if (argc > 1) {
@@ -62,6 +62,7 @@ int main(int argc, char* argv[]) {
 	InkCompiler compiler;
 	InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
 	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	//print_vector(story.get_current_choices());

@@ -577,9 +577,13 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 					choice_stack.push_back({.sticky = current_choice_sticky});
 
-					if (next_token_is_sequence(all_tokens, token_index, {InkToken::LeftParen, InkToken::Text, InkToken::RightParen})) {
+					while (all_tokens[token_index].token == InkToken::Text && !all_tokens[token_index].escaped && strip_string_edges(all_tokens[token_index].get_text_contents(), true, true, true).empty()) {
+						++token_index;
+					}
+
+					if (all_tokens[token_index].token == InkToken::LeftParen && next_token_is_sequence(all_tokens, token_index, {InkToken::Text, InkToken::RightParen})) {
 						GatherPoint label;
-						label.name = all_tokens[token_index + 2].text_contents;
+						label.name = all_tokens[token_index + 1].text_contents;
 						label.uuid = Uuid(current_uuid++);
 						label.type = WeaveContentType::GatherPoint;
 						label.index = static_cast<std::uint16_t>(story_knots[current_knot_index].objects.size());
@@ -594,7 +598,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 						gather_points.push_back(label);
 
-						token_index += 4;
+						token_index += 3;
 					}
 
 					while (token_index < all_tokens.size()) {
@@ -1195,25 +1199,10 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				++token_index;
 			}
 
-			/*std::ifstream infile{strip_string_edges(path, true, true, true)};
-			std::stringstream buffer;
-			buffer << infile.rdbuf();
-			std::string file_text = buffer.str();
-			infile.close();*/
-
-			/*InkLexer lexer;
-			std::vector<InkLexer::Token> token_stream = lexer.lex_script(file_text);
-			token_stream = remove_comments(token_stream);
-
-			all_tokens.insert(all_tokens.begin() + token_index, token_stream.begin(), token_stream.end());
-			--token_index;
-			end_line = true;*/
-
 			InkCompiler include_compiler;
 			include_compiler.set_current_uuid(current_uuid);
 			InkStory include_story = include_compiler.compile_file(strip_string_edges(path, true, true, true));
 			current_uuid = include_compiler.get_current_uuid();
-			//for (auto& knot : include_story.get_story_data()->)
 			for (const auto& included_knot : include_story.story_data->knots) {
 				bool already_exists = false;
 				for (Knot& existing_knot : story_knots) {

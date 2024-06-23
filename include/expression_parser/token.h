@@ -92,7 +92,7 @@ public:
 };
 
 //using VariableObserverFunc = std::function<void(const std::string&, const Variant&)>;
-using InkFunction = std::function<Variant(const std::vector<Variant>& args)>;
+using InkFunction = std::function<Variant(const std::vector<Variant>&)>;
 typedef void (*VariableObserverFunc)(const std::string&, const Variant&);
 
 struct StoryVariableInfo {

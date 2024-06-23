@@ -116,8 +116,6 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 
 	if (continuing_preparation) {
 		if (eval_result.return_value.has_value()) {
-			//ExpressionParser::Token* value = ExpressionParser::variant_to_token(*eval_result.return_value);
-			//ExpressionParserV2::Token value = ExpressionParserV2::Token::from_variant(*eval_result.return_value);
 			ExpressionParserV2::Variant value = *eval_result.return_value;
 			function_return_values.push_back(value);
 			expression_entry.function_prepared_tokens[expression_entry.function_eval_index] = ExpressionParserV2::Token::from_variant(value);
@@ -147,23 +145,14 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 
 	ExpressionParserV2::ExecuteResult result = ExpressionParserV2::execute_expression_tokens(expression.stack_back().function_prepared_tokens, story_variable_info);
 	if (result.has_value()) {
-		/*for (ExpressionParser::Token* token : expression_entry.tokens_to_dealloc) {
-			delete token;
-		}*/
-
 		expression.pop_entry();
 		return *result;
 	} else if (result.error().reason == ExpressionParserV2::NulloptResult::Reason::NoReturnValue) {
-		/*for (ExpressionParser::Token* token : expression_entry.tokens_to_dealloc) {
-			delete token;
-		}*/
-
 		expression.pop_entry();
 		return std::unexpected(result.error());
 	}
 
 	const ExpressionParserV2::NulloptResult& nullopt_result = result.error();
-	//expression_entry.tokens_to_dealloc.insert(nullopt_result.tokens_to_dealloc.begin(), nullopt_result.tokens_to_dealloc.end());
 	if (nullopt_result.reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
 		story_state.arguments_stack.push_back({});
 		expression_entry.argument_count = nullopt_result.function.function_argument_count;
@@ -171,7 +160,6 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 			std::vector<std::pair<std::string, ExpressionParserV2::Variant>>& args = story_state.arguments_stack.back();
 
 			for (const ExpressionParserV2::Token& token : nullopt_result.arguments) {
-				//ExpressionParserV2::Variant arg_value = token.value.has_value() ? std::optional(token.value) : std::nullopt;// token->get_variant_value(variables, constants, redirects);
 				std::pair<std::string, ExpressionParserV2::Variant> arg;
 				arg.second = token.value;
 				if (token.type == ExpressionParserV2::TokenType::Variable) {

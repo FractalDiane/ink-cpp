@@ -267,11 +267,11 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.current_knots_stack.push_back({&(selected_choice_struct->result), 0});
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 
+		story_state.story_tracking.increment_turns_since();
+
 		if (!selected_choice_struct->label.name.empty()) {
 			story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, &selected_choice_struct->label);
 		}
-
-		story_state.story_tracking.increment_turns_since();
 
 		story_state.current_choices.clear();
 		story_state.current_choice_structs.clear();

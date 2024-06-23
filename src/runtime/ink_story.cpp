@@ -91,9 +91,9 @@ void InkStory::bind_ink_functions() {
 	EXP_FUNC("TURNS", 0, { return story_state.total_choices_taken; });
 
 	EXP_FUNC("TURNS_SINCE", 1, {
-		std::string knot = arguments[0];
+		const Variant& knot = arguments[0];
 
-		if (GetContentResult content = story_data->get_content(knot, story_state.current_knot().knot, story_state.current_stitch); content.found_any) {
+		if (GetContentResult content = story_data->get_content(static_cast<std::string>(knot), story_state.current_nonchoice_knot().knot, story_state.current_stitch); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
 			if (story_state.story_tracking.get_content_stats(content.get_target(), stats)) {
 				return stats.turns_since_visited;
@@ -156,7 +156,7 @@ std::string InkStory::continue_story() {
 				break;
 			}
 		}
-
+		
 		current_object->execute(story_state, eval_result);
 
 		// after collecting the options from a choice, a thread returns to its origin

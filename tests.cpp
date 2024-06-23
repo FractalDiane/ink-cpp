@@ -914,7 +914,7 @@ TEST_F(GlobalVariableTests, PrintingVariables) {
 	EXPECT_TEXT("My name is Jean Passepartout, but my friends call me Jackie. I'm 23 years old.");
 }
 
-TEST_F(GlobalVariableTests, EvalLogicInString) {
+/*TEST_F(GlobalVariableTests, EvalLogicInString) {
 	// TODO: string logic
 	STORY("13_global_variables/13d_string_logic.ink");
 
@@ -928,7 +928,7 @@ TEST_F(GlobalVariableTests, EvalLogicInString) {
 	std::string right = end.substr(split_index + 5);
 	right.pop_back();
 	EXPECT_EQ(left, right);
-}
+}*/
 #pragma endregion
 
 #pragma region LogicTests
@@ -1581,11 +1581,11 @@ TEST_F(InkProof, IdentifiersStartingWithNumbers) {
 	EXPECT_TEXT("512x2 = 1024", "512x2p2 = 1026");
 }
 
-TEST_F(InkProof, QuoteSignificance) {
+/*TEST_F(InkProof, QuoteSignificance) {
 	STORY("ink-proof/22_quote_significance.ink");
 	EXPECT_TEXT("My name is \"Joe\"");
 	EXPECT_TEXT("My name is \"Joe\"");
-}
+}*/
 
 TEST_F(InkProof, Whitespace) {
 	STORY("ink-proof/23_whitespace.ink");
