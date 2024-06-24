@@ -47,8 +47,8 @@ public:
 	Variant(unsigned long long val);
 	Variant(float val);
 	Variant(double val);
-
 	Variant(const std::string& val);
+	Variant(const InkList& val);
 	//Variant(const VariantValue& val);
 	
 	Variant(const Variant& from);
@@ -89,9 +89,9 @@ public:
 	operator i64() const;
 	operator double() const;
 	operator std::string() const;
+	operator InkList() const;
 };
 
-//using VariableObserverFunc = std::function<void(const std::string&, const Variant&)>;
 using InkFunction = std::function<Variant(const std::vector<Variant>&)>;
 typedef void (*VariableObserverFunc)(const std::string&, const Variant&);
 
@@ -105,6 +105,9 @@ struct StoryVariableInfo {
 	std::unordered_map<std::string, InkFunction> external_functions;
 
 	std::unordered_map<std::string, std::vector<VariableObserverFunc>> observers;
+
+	std::unordered_map<Uuid, InkListDefinition> defined_lists;
+	UuidValue current_list_definition_uuid = 0;
 
 	Uuid current_weave_uuid;
 
@@ -122,6 +125,8 @@ struct StoryVariableInfo {
 	inline void flag_variable_changed(const std::string& variable) {
 		execute_variable_observers(variable, variables[variable]);
 	}
+
+	void add_list_definition(const std::vector<InkListDefinitionEntry>& values);
 
 private:
 	void execute_variable_observers(const std::string& variable, const Variant& new_value);

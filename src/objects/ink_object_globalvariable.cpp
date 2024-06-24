@@ -36,7 +36,6 @@ InkObjectGlobalVariable::~InkObjectGlobalVariable() {
 }
 
 void InkObjectGlobalVariable::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	//ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
 	story_state.update_local_knot_variables();
 	auto& map = is_constant ? story_state.variable_info.constants : story_state.variable_info.variables;
 	

@@ -98,6 +98,11 @@ void StoryVariableInfo::execute_variable_observers(const std::string& variable, 
 	}
 }
 
+void StoryVariableInfo::add_list_definition(const std::vector<InkListDefinitionEntry>& values) {
+	Uuid new_uuid = current_list_definition_uuid++;
+	defined_lists.emplace(new_uuid, InkListDefinition(values, new_uuid));
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 void Token::fetch_variable_value(const StoryVariableInfo& story_vars) {
@@ -201,6 +206,7 @@ VCON(unsigned long long)
 Variant::Variant(float val) : value(static_cast<double>(val)), _has_value(true) {}
 Variant::Variant(double val) : value(val), _has_value(true) {}
 Variant::Variant(const std::string& val) : value(val), _has_value(true) {}
+Variant::Variant(const InkList& val) : value(val), _has_value(true) {}
 //Variant::Variant(const VariantValue& val) : value(val), has_value(true) {}
 
 #undef VCON
@@ -1330,6 +1336,14 @@ Variant::operator std::string() const {
 		return v<std::string>(value);
 	} else {
 		return std::string();
+	}
+}
+
+Variant::operator InkList() const {
+	if (value.index() == Variant_List) {
+		return v<InkList>(value);
+	} else {
+		return InkList();
 	}
 }
 

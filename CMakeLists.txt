@@ -9,15 +9,20 @@ set(SRC_UTIL
 	src/serialization.cpp
 	src/uuid.cpp
 
-	src/expression_parser/token.cpp
-	src/expression_parser/expression_parser.cpp
+	#src/expression_parser/token.cpp
+	#src/expression_parser/expression_parser.cpp
 
-	src/types/ink_list.cpp
+	#src/types/ink_list.cpp
 )
 
 set(SRC_COMPILER src/ink_compiler.cpp)
 
 set(SRC_RUNTIME 
+	src/expression_parser/token.cpp
+	src/expression_parser/expression_parser.cpp
+
+	src/types/ink_list.cpp
+	
 	src/runtime/ink_story_data.cpp
 	src/runtime/ink_story.cpp
 	src/runtime/ink_story_state.cpp
@@ -35,6 +40,7 @@ set(SRC_OBJECTS
 	src/objects/ink_object_glue.cpp
 	src/objects/ink_object_interpolation.cpp
 	src/objects/ink_object_linebreak.cpp
+	src/objects/ink_object_list.cpp
 	src/objects/ink_object_logic.cpp
 	src/objects/ink_object_sequence.cpp
 	src/objects/ink_object_tag.cpp

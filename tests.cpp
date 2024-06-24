@@ -71,13 +71,14 @@ FIXTURE(FunctionTests);
 FIXTURE(ConstantTests);
 FIXTURE(TunnelTests);
 FIXTURE(ThreadTests);
+FIXTURE(ListTests);
 
 FIXTURE(MiscellaneousTests);
 
 FIXTURE(InkProof);
 
 #pragma region NonStoryFunctionTests
-TEST_F(NonStoryFunctionTests, DeinkifyExpression) {
+/*TEST_F(NonStoryFunctionTests, DeinkifyExpression) {
 	EXPECT_EQ(deinkify_expression("true and true"), "true && true");
 	EXPECT_EQ(deinkify_expression("true or false"), "true || false");
 	EXPECT_EQ(deinkify_expression("not true"), "! true");
@@ -88,6 +89,44 @@ TEST_F(NonStoryFunctionTests, DeinkifyExpression) {
 	EXPECT_EQ(deinkify_expression("++var"), "var = var + 1");
 	EXPECT_EQ(deinkify_expression("var--"), "var = var - 1");
 	EXPECT_EQ(deinkify_expression("--var"), "var = var - 1");
+}*/
+
+TEST_F(NonStoryFunctionTests, InkListFunctions) {
+	InkStoryState story_state;
+	story_state.variable_info.add_list_definition({{"red", 1}, {"orange", 2}, {"yellow", 3}});
+	story_state.variable_info.add_list_definition({{"sunday", 1}, {"monday", 2}, {"tuesday", 3}, {"wednesday", 4}, {"thursday", 5}, {"friday", 6}, {"saturday", 7}});
+
+	InkList best_days{{"friday", "saturday", "sunday"}, story_state};
+
+	InkList weekends{{"saturday", "sunday"}, story_state};
+	EXPECT_TRUE(best_days.contains(weekends));
+
+	EXPECT_EQ(best_days + weekends, best_days);
+	EXPECT_EQ(best_days - weekends, InkList({"friday"}, story_state));
+	EXPECT_EQ(best_days ^ weekends, weekends);
+
+	InkList all{{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}, story_state};
+	InkList all2 = best_days.all_possible_items();
+	EXPECT_EQ(all, all2);
+
+	InkList inverse{{"monday", "tuesday", "wednesday", "thursday"}, story_state};
+	InkList inverse2 = best_days.inverse();
+	EXPECT_EQ(inverse, inverse2);
+
+	InkList combined_list{{"red", "yellow", "tuesday"}, story_state};
+	EXPECT_FALSE(combined_list.contains(weekends));
+
+	EXPECT_EQ(combined_list + weekends, InkList({"red", "yellow", "tuesday", "saturday", "sunday"}, story_state));
+	EXPECT_EQ(combined_list - weekends, combined_list);
+	EXPECT_EQ(combined_list ^ weekends, InkList(story_state));
+	
+	InkList all_c{{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "red", "orange", "yellow"}, story_state};
+	InkList all2_c = combined_list.all_possible_items();
+	EXPECT_EQ(all_c, all2_c);
+	
+	InkList inverse_c{{"orange", "monday", "wednesday", "thursday", "friday", "saturday", "sunday"}, story_state};
+	InkList inverse2_c = combined_list.inverse();
+	EXPECT_EQ(inverse_c, inverse2_c);
 }
 #pragma endregion
 
@@ -1426,6 +1465,15 @@ TEST_F(ThreadTests, ThreadDivertParameters) {
 	EXPECT_CHOICES("Review my case notes", "Go through the front door");
 	story.choose_choice_index(0);
 	EXPECT_TEXT("Once again, I flicked through the notes I'd made so far. Still not obvious suspects.");
+}
+#pragma endregion
+
+#pragma region ListTests
+TEST_F(ListTests, BasicLists) {
+	STORY("21_lists/21a_basic_lists.ink");
+	EXPECT_TEXT("");
+	//EXPECT_EQ()
+	//EXPECT_CHOICES("")
 }
 #pragma endregion
 

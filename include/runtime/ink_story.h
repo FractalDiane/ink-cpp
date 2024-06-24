@@ -6,6 +6,8 @@
 #include "expression_parser/token.h"
 #include "expression_parser/expression_parser.h"
 
+#include "types/ink_list.h"
+
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -48,6 +50,7 @@ public:
 	}
 
 	InkStoryData* get_story_data() const { return story_data; }
+	const InkStoryState& get_story_state() const { return story_state; }
 	void print_info() const;
 
 	bool can_continue();
@@ -66,4 +69,6 @@ public:
 	void unobserve_variable(const std::string& variable_name);
 	void unobserve_variable(ExpressionParserV2::VariableObserverFunc observer);
 	void unobserve_variable(const std::string& variable_name, ExpressionParserV2::VariableObserverFunc observer);
+
+	const std::unordered_map<Uuid, InkListDefinition>& get_list_definitions() const { return story_state.variable_info.defined_lists; }
 };

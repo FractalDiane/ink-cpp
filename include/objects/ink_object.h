@@ -21,6 +21,7 @@ enum class ObjectId {
 	Tag,
 	GlobalVariable,
 	Logic,
+	List,
 };
 
 class InkObject {
