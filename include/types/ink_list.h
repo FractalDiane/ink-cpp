@@ -1,6 +1,7 @@
 #pragma once
 
 #include "uuid.h"
+#include "serialization.h"
 
 #include <string>
 #include <vector>
@@ -11,7 +12,8 @@
 
 struct InkListDefinitionEntry {
 	std::string label;
-	std::int64_t value;
+	std::int64_t value = 0;
+	bool is_included_by_default = false;
 };
 
 class InkListDefinition {
@@ -118,4 +120,37 @@ public:
 	//InkList& operator+=(const InkList& other);
 	//InkList& operator-=(const InkList& other);
 	//InkList& operator^=(const InkList& other);
+
+	ByteVec to_bytes() const;
+	static InkList from_bytes(const ByteVec& bytes, std::size_t& index);
+};
+
+template <>
+struct Serializer<InkListItem> {
+	ByteVec operator()(const InkListItem& item);
+};
+
+template <>
+struct Deserializer<InkListItem> {
+	InkListItem operator()(const ByteVec& bytes, std::size_t& index);
+};
+
+template <>
+struct Serializer<InkList> {
+	ByteVec operator()(const InkList& list);
+};
+
+template <>
+struct Deserializer<InkList> {
+	InkList operator()(const ByteVec& bytes, std::size_t& index);
+};
+
+template <>
+struct Serializer<InkListDefinitionEntry> {
+	ByteVec operator()(const InkListDefinitionEntry& entry);
+};
+
+template <>
+struct Deserializer<InkListDefinitionEntry> {
+	InkListDefinitionEntry operator()(const ByteVec& bytes, std::size_t& index);
 };

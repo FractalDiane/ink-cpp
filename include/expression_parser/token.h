@@ -127,6 +127,7 @@ struct StoryVariableInfo {
 	}
 
 	void add_list_definition(const std::vector<InkListDefinitionEntry>& values);
+	std::optional<Uuid> get_list_entry_origin(const std::string& entry) const;
 
 private:
 	void execute_variable_observers(const std::string& variable, const Variant& new_value);
@@ -140,6 +141,7 @@ enum class TokenType {
 	LiteralNumberFloat,
 	LiteralString,
 	LiteralKnotName,
+	LiteralList,
 	Operator,
 	ParenComma,
 	Function,
@@ -293,6 +295,10 @@ struct Token {
 
 	static Token literal_knotname(const std::string& val, bool has_arrow) {
 		return {.type = TokenType::LiteralKnotName, .value = val, .knot_name_has_arrow = has_arrow};
+	}
+
+	static Token literal_list(const InkList& val) {
+		return {.type = TokenType::LiteralList, .value = val};
 	}
 
 	static Token operat(OperatorType op_type, OperatorUnaryType unary_type) {

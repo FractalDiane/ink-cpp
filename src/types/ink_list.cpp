@@ -177,3 +177,98 @@ InkList InkList::all_possible_items() const {
 
 	return result;
 }
+
+ByteVec InkList::to_bytes() const {
+	std::vector<InkListItem> values;
+	values.reserve(current_values.size());
+	for (const InkListItem& value : current_values) {
+		values.push_back(value);
+	}
+
+	/*std::vector<Uuid> origins;
+	origins.reserve(all_origins.size());
+	for (Uuid origin : all_origins) {
+		origins.push_back(origin);
+	}*/
+
+	VectorSerializer<InkListItem> sitems;
+	//VectorSerializer<Uuid> sorigins;
+
+	ByteVec result = sitems(values);
+	//ByteVec result2 = sorigins(origins);
+	//result.insert(result.end(), result2.begin(), result2.end());
+	return result;
+}
+
+InkList InkList::from_bytes(const ByteVec& bytes, std::size_t& index) {
+	VectorDeserializer<InkListItem> dsitems;
+	//VectorDeserializer<Uuid> dsorigins;
+
+	std::vector<InkListItem> items = dsitems(bytes, index);
+	//std::vector<Uuid> origins = dsorigins(bytes, index);
+
+	InkList result;
+	for (const InkListItem& item : items) {
+		result.add_item(item);
+	}
+
+	return result;
+}
+
+ByteVec Serializer<InkListItem>::operator()(const InkListItem& item) {
+	Serializer<std::string> sstring;
+	Serializer<std::int64_t> svalue;
+	Serializer<Uuid> sorigin;
+
+	ByteVec result = sstring(item.label);
+	ByteVec result2 = svalue(item.value);
+	ByteVec result3 = sorigin(item.origin_list_uuid);
+
+	result.insert(result.end(), result2.begin(), result2.end());
+	result.insert(result.end(), result3.begin(), result3.end());
+	return result;
+}
+
+InkListItem Deserializer<InkListItem>::operator()(const ByteVec& bytes, std::size_t& index) {
+	Deserializer<std::string> dsstring;
+	Deserializer<std::int64_t> dsvalue;
+	Deserializer<Uuid> dsorigin;
+
+	std::string label = dsstring(bytes, index);
+	std::int64_t value = dsvalue(bytes, index);
+	Uuid origin = dsorigin(bytes, index);
+
+	return InkListItem(label, value, origin);
+}
+
+ByteVec Serializer<InkList>::operator()(const InkList& list) {
+	return list.to_bytes();
+}
+
+InkList Deserializer<InkList>::operator()(const ByteVec& bytes, std::size_t& index) {
+	return InkList::from_bytes(bytes, index);
+}
+
+ByteVec Serializer<InkListDefinitionEntry>::operator()(const InkListDefinitionEntry& entry) {
+	Serializer<std::string> sstring;
+	Serializer<std::int64_t> s64;
+
+	ByteVec result = sstring(entry.label);
+	ByteVec result2 = s64(entry.value);
+	result.insert(result.end(), result2.begin(), result2.end());
+	result.push_back(static_cast<std::uint8_t>(entry.is_included_by_default));
+	return result;
+}
+
+InkListDefinitionEntry Deserializer<InkListDefinitionEntry>::operator()(const ByteVec& bytes, std::size_t& index) {
+	Deserializer<std::string> dsstring;
+	Deserializer<std::int64_t> ds64;
+	Deserializer<std::uint8_t> ds8;
+
+	InkListDefinitionEntry result;
+	result.label = dsstring(bytes, index);
+	result.value = ds64(bytes, index);
+	result.is_included_by_default = static_cast<bool>(ds8(bytes, index));
+
+	return result;
+}

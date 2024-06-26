@@ -29,10 +29,10 @@ enum class InkToken : char {
 	Ampersand,
 	Bang,
 	Tilde,
+	Comma,
 
 	LeftParen,
 	RightParen,
-	//Comma,
 
 	KeywordVar,
 	KeywordConst,

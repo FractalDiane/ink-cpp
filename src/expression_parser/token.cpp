@@ -103,6 +103,16 @@ void StoryVariableInfo::add_list_definition(const std::vector<InkListDefinitionE
 	defined_lists.emplace(new_uuid, InkListDefinition(values, new_uuid));
 }
 
+std::optional<Uuid> StoryVariableInfo::get_list_entry_origin(const std::string& entry) const {
+	for (const auto& list : defined_lists) {
+		if (list.second.get_entry_value(entry).has_value()) {
+			return list.first;
+		}
+	}
+
+	return std::nullopt;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 void Token::fetch_variable_value(const StoryVariableInfo& story_vars) {

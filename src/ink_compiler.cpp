@@ -14,6 +14,7 @@
 #include "objects/ink_object_glue.h"
 #include "objects/ink_object_interpolation.h"
 #include "objects/ink_object_linebreak.h"
+#include "objects/ink_object_list.h"
 #include "objects/ink_object_logic.h"
 #include "objects/ink_object_sequence.h"
 #include "objects/ink_object_tag.h"
@@ -53,7 +54,7 @@ namespace {
 		{'|', InkToken::Pipe},
 		{'&', InkToken::Ampersand},
 		{'~', InkToken::Tilde},
-		//{',', InkToken::Comma},
+		{',', InkToken::Comma},
 	};
 
 	struct KeywordEntry {
@@ -64,7 +65,6 @@ namespace {
 	static const std::unordered_map<std::string, KeywordEntry> TokenKeywords = {
 		{"VAR", {InkToken::KeywordVar, true}},
 		{"CONST", {InkToken::KeywordConst, true}},
-		{"LIST", {InkToken::KeywordList, true}},
 		{"function", {InkToken::KeywordFunction, false}},
 		{"INCLUDE", {InkToken::KeywordInclude, true}},
 		{"LIST", {InkToken::KeywordList, true}},
@@ -1158,6 +1158,14 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				result_object = new InkObjectText("|");
 			}
 		} break;
+
+		case InkToken::Comma: {
+			if (false) {
+
+			} else {
+				result_object = new InkObjectText(",");
+			}
+		} break;
 		
 		case InkToken::KeywordVar:
 		case InkToken::KeywordConst: {
@@ -1168,7 +1176,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					token_index += 3;
 					std::string expression;
 					expression.reserve(50);
-					while (all_tokens[token_index].token != InkToken::NewLine) {
+					while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::NewLine) {
 						expression += all_tokens[token_index].get_text_contents();
 						++token_index;
 					}
@@ -1187,6 +1195,96 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				}
 			} else {
 				result_object = new InkObjectText(token.token == InkToken::KeywordConst ? "CONST" : "VAR");
+			}
+		} break;
+
+		case InkToken::KeywordList: {
+			if (at_line_start) {
+				if (next_token_is_sequence(all_tokens, token_index, {InkToken::Text, InkToken::Equal})) {
+					const std::string& identifier = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
+					
+					token_index += 3;
+					std::vector<InkListDefinitionEntry> entries;
+					entries.reserve(16);
+
+					std::string this_entry_name;
+					std::optional<std::int64_t> this_entry_value = std::nullopt;
+					std::int64_t last_entry_value = 0;
+					bool include_this_entry = false;
+					bool in_list_parens = false;
+					while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::NewLine) {
+						const InkLexer::Token& this_token = all_tokens[token_index];
+						switch (this_token.token) {
+							case InkToken::LeftParen: {
+								if (!in_list_parens) {
+									in_list_parens = true;
+									include_this_entry = true;
+								} else {
+									throw std::runtime_error("Malformed LIST definition: mismatched '('");
+								}
+							} break;
+
+							case InkToken::Text: {
+								if (std::string stripped = strip_string_edges(this_token.get_text_contents(), true, true, true); !stripped.empty()) {
+									this_entry_name = stripped;
+								}
+							} break;
+
+							case InkToken::Equal: {
+								if (last_token(all_tokens).token == InkToken::Text && next_token_is(all_tokens, token_index, InkToken::Text)) {
+									try {
+										this_entry_value = std::stoll(all_tokens[token_index + 1].get_text_contents());
+										token_index += 2;
+									} catch (...) {
+										throw std::runtime_error("Malformed LIST definition: invalid entry value");
+									}
+								} else {
+									throw std::runtime_error("Malformed LIST definition: misplaced '='");
+								}
+							} break;
+
+							case InkToken::Comma: {
+								if (!this_entry_name.empty()) {
+									InkListDefinitionEntry new_entry;
+									new_entry.label = this_entry_name;
+									new_entry.value = this_entry_value.has_value() ? *this_entry_value : last_entry_value + 1;
+									new_entry.is_included_by_default = include_this_entry;
+									entries.push_back(new_entry);
+
+									this_entry_name.clear();
+									this_entry_value = std::nullopt;
+									last_entry_value = new_entry.value;
+									include_this_entry = false;
+								} else {
+									throw std::runtime_error("Malformed LIST definition: misplaced ','");
+								}
+							} break;
+
+							case InkToken::RightParen: {
+								if (in_list_parens) {
+									in_list_parens = false;
+								} else {
+									throw std::runtime_error("Malformed LIST definition: mismatched ')'");
+								}
+							} break;
+
+							default: {
+								throw std::runtime_error("Malformed LIST definition");
+							} break;
+						}
+
+						++token_index;
+					}
+
+					--token_index;
+
+					story_variable_info.add_list_definition(entries);
+					result_object = new InkObjectList(identifier, entries);
+				} else {
+					throw std::runtime_error("Malformed LIST definition");
+				}
+			} else {
+				result_object = new InkObjectText("LIST");
 			}
 		} break;
 

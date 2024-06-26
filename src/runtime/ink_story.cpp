@@ -152,6 +152,7 @@ std::string InkStory::continue_story() {
 		&& current_object->stop_before_this(story_state)) {
 			if (story_state.in_glue) {
 				story_state.in_glue = false;
+				eval_result.reached_newline = false;
 			} else {
 				break;
 			}

@@ -28,8 +28,6 @@ namespace ExpressionParserV2 {
 		std::size_t function_eval_index = SIZE_MAX;
 		std::size_t argument_count = 0;
 		bool preparation_finished = false;
-
-		//std::unordered_set<Token*> tokens_to_dealloc;
 	};
 
 	std::vector<StackEntry> preparation_stack;

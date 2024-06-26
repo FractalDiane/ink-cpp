@@ -132,6 +132,9 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 		} else if (story_var_info.external_functions.contains(word)) {
 			result.push_back(Token::function_external(word));
 			found_result = true;
+		} else if (std::optional<Uuid> list_item_origin = story_var_info.get_list_entry_origin(word); list_item_origin.has_value()) {
+			//InkList new_list{}
+			//result.push_back(Token::literal_list())
 		} else if (word == "temp") {
 			result.push_back(Token::keyword(KeywordType::Temp));
 			found_result = true;
@@ -700,7 +703,6 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression(const std::string& expression, StoryVariableInfo& story_variable_info) {
-	//std::unordered_set<Token*> dummy;
 	std::vector<Token> tokenized = ExpressionParserV2::tokenize_expression(expression, story_variable_info);
 	std::vector<Token> shunted = ExpressionParserV2::shunt(tokenized);
 
