@@ -92,39 +92,39 @@ FIXTURE(InkProof);
 }*/
 
 TEST_F(NonStoryFunctionTests, InkListFunctions) {
-	InkStoryState story_state;
-	story_state.variable_info.add_list_definition({{"red", 1}, {"orange", 2}, {"yellow", 3}});
-	story_state.variable_info.add_list_definition({{"sunday", 1}, {"monday", 2}, {"tuesday", 3}, {"wednesday", 4}, {"thursday", 5}, {"friday", 6}, {"saturday", 7}});
+	InkListDefinitionMap definition_map;
+	definition_map.add_list_definition({{"red", 1}, {"orange", 2}, {"yellow", 3}});
+	definition_map.add_list_definition({{"sunday", 1}, {"monday", 2}, {"tuesday", 3}, {"wednesday", 4}, {"thursday", 5}, {"friday", 6}, {"saturday", 7}});
 
-	InkList best_days{{"friday", "saturday", "sunday"}, story_state};
+	InkList best_days{{"friday", "saturday", "sunday"}, definition_map};
 
-	InkList weekends{{"saturday", "sunday"}, story_state};
+	InkList weekends{{"saturday", "sunday"}, definition_map};
 	EXPECT_TRUE(best_days.contains(weekends));
 
 	EXPECT_EQ(best_days + weekends, best_days);
-	EXPECT_EQ(best_days - weekends, InkList({"friday"}, story_state));
+	EXPECT_EQ(best_days - weekends, InkList({"friday"}, definition_map));
 	EXPECT_EQ(best_days ^ weekends, weekends);
 
-	InkList all{{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}, story_state};
+	InkList all{{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"}, definition_map};
 	InkList all2 = best_days.all_possible_items();
 	EXPECT_EQ(all, all2);
 
-	InkList inverse{{"monday", "tuesday", "wednesday", "thursday"}, story_state};
+	InkList inverse{{"monday", "tuesday", "wednesday", "thursday"}, definition_map};
 	InkList inverse2 = best_days.inverse();
 	EXPECT_EQ(inverse, inverse2);
 
-	InkList combined_list{{"red", "yellow", "tuesday"}, story_state};
+	InkList combined_list{{"red", "yellow", "tuesday"}, definition_map};
 	EXPECT_FALSE(combined_list.contains(weekends));
 
-	EXPECT_EQ(combined_list + weekends, InkList({"red", "yellow", "tuesday", "saturday", "sunday"}, story_state));
+	EXPECT_EQ(combined_list + weekends, InkList({"red", "yellow", "tuesday", "saturday", "sunday"}, definition_map));
 	EXPECT_EQ(combined_list - weekends, combined_list);
-	EXPECT_EQ(combined_list ^ weekends, InkList(story_state));
+	EXPECT_EQ(combined_list ^ weekends, InkList(definition_map));
 	
-	InkList all_c{{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "red", "orange", "yellow"}, story_state};
+	InkList all_c{{"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "red", "orange", "yellow"}, definition_map};
 	InkList all2_c = combined_list.all_possible_items();
 	EXPECT_EQ(all_c, all2_c);
 	
-	InkList inverse_c{{"orange", "monday", "wednesday", "thursday", "friday", "saturday", "sunday"}, story_state};
+	InkList inverse_c{{"orange", "monday", "wednesday", "thursday", "friday", "saturday", "sunday"}, definition_map};
 	InkList inverse2_c = combined_list.inverse();
 	EXPECT_EQ(inverse_c, inverse2_c);
 }
@@ -188,11 +188,11 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	Variant t8 = execute_expression(R"("hello" + " " + "there")", blank_variable_info).value();
 	EXPECT_EQ(static_cast<std::string>(t8), "hello there");
 
-	Variant t9 = execute_expression("++5", blank_variable_info).value();
+	/*Variant t9 = execute_expression("++5", blank_variable_info).value();
 	EXPECT_EQ(static_cast<std::int64_t>(t9), 6);
 
 	Variant t10 = execute_expression("5++", blank_variable_info).value();
-	EXPECT_EQ(static_cast<std::int64_t>(t10), 5);
+	EXPECT_EQ(static_cast<std::int64_t>(t10), 5);*/
 
 	Variant t11 = execute_expression(R"("hello" ? "llo")", blank_variable_info).value();
 	EXPECT_EQ(static_cast<bool>(t11), true);
@@ -226,8 +226,13 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	EXPECT_EQ(static_cast<double>(t19), 36);
 
 	ExpressionParser::StoryVariableInfo vars3;
-	vars3.variables = {{"visited_snakes", true}, {"dream_about_snakes", false}};
-	Variant t20 = execute_expression("visited_snakes && not dream_about_snakes", vars3).value();
+	vars3.variables = {{"x", 5}};
+	execute_expression("x++", vars3);
+	EXPECT_EQ(static_cast<std::int64_t>(vars3.variables["x"]), 6);
+
+	ExpressionParser::StoryVariableInfo vars4;
+	vars4.variables = {{"visited_snakes", true}, {"dream_about_snakes", false}};
+	Variant t20 = execute_expression("visited_snakes && not dream_about_snakes", vars4).value();
 	EXPECT_EQ(static_cast<bool>(t20), true);
 }
 #pragma endregion
@@ -1471,9 +1476,17 @@ TEST_F(ThreadTests, ThreadDivertParameters) {
 #pragma region ListTests
 TEST_F(ListTests, BasicLists) {
 	STORY("21_lists/21a_basic_lists.ink");
-	EXPECT_TEXT("");
-	//EXPECT_EQ()
-	//EXPECT_CHOICES("")
+	EXPECT_TEXT("The kettle is cold");
+	EXPECT_CHOICES("Turn on kettle", "Touch the kettle");
+
+	story.choose_choice_index(1);
+	EXPECT_TEXT("The kettle is cool to the touch.");
+	EXPECT_CHOICES("Turn on kettle", "Touch the kettle");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("The kettle begins to bubble and boil.");
+	EXPECT_CHOICES("Touch the kettle");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("The outside of the kettle is very warm!");
 }
 #pragma endregion
 

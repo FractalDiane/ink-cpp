@@ -70,5 +70,5 @@ public:
 	void unobserve_variable(ExpressionParserV2::VariableObserverFunc observer);
 	void unobserve_variable(const std::string& variable_name, ExpressionParserV2::VariableObserverFunc observer);
 
-	const std::unordered_map<Uuid, InkListDefinition>& get_list_definitions() const { return story_state.variable_info.defined_lists; }
+	const std::unordered_map<Uuid, InkListDefinition>& get_list_definitions() const { return story_state.variable_info.defined_lists.defined_lists; }
 };

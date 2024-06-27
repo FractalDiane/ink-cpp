@@ -1204,7 +1204,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					const std::string& identifier = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
 					
 					token_index += 3;
-					std::vector<InkListDefinitionEntry> entries;
+					std::vector<InkListDefinition::Entry> entries;
 					entries.reserve(16);
 
 					std::string this_entry_name;
@@ -1212,6 +1212,20 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					std::int64_t last_entry_value = 0;
 					bool include_this_entry = false;
 					bool in_list_parens = false;
+
+					auto add_entry = [&]() { 
+						InkListDefinition::Entry new_entry;
+						new_entry.label = this_entry_name;
+						new_entry.value = this_entry_value.has_value() ? *this_entry_value : last_entry_value + 1;
+						new_entry.is_included_by_default = include_this_entry;
+						entries.push_back(new_entry);
+
+						this_entry_name.clear();
+						this_entry_value = std::nullopt;
+						last_entry_value = new_entry.value;
+						include_this_entry = false;
+					};
+
 					while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::NewLine) {
 						const InkLexer::Token& this_token = all_tokens[token_index];
 						switch (this_token.token) {
@@ -1245,16 +1259,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 							case InkToken::Comma: {
 								if (!this_entry_name.empty()) {
-									InkListDefinitionEntry new_entry;
-									new_entry.label = this_entry_name;
-									new_entry.value = this_entry_value.has_value() ? *this_entry_value : last_entry_value + 1;
-									new_entry.is_included_by_default = include_this_entry;
-									entries.push_back(new_entry);
-
-									this_entry_name.clear();
-									this_entry_value = std::nullopt;
-									last_entry_value = new_entry.value;
-									include_this_entry = false;
+									(add_entry)();
 								} else {
 									throw std::runtime_error("Malformed LIST definition: misplaced ','");
 								}
@@ -1277,6 +1282,10 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					}
 
 					--token_index;
+
+					if (!this_entry_name.empty()) {
+						(add_entry)();
+					}
 
 					story_variable_info.add_list_definition(entries);
 					result_object = new InkObjectList(identifier, entries);

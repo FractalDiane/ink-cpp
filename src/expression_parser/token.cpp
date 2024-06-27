@@ -98,21 +98,6 @@ void StoryVariableInfo::execute_variable_observers(const std::string& variable, 
 	}
 }
 
-void StoryVariableInfo::add_list_definition(const std::vector<InkListDefinitionEntry>& values) {
-	Uuid new_uuid = current_list_definition_uuid++;
-	defined_lists.emplace(new_uuid, InkListDefinition(values, new_uuid));
-}
-
-std::optional<Uuid> StoryVariableInfo::get_list_entry_origin(const std::string& entry) const {
-	for (const auto& list : defined_lists) {
-		if (list.second.get_entry_value(entry).has_value()) {
-			return list.first;
-		}
-	}
-
-	return std::nullopt;
-}
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 void Token::fetch_variable_value(const StoryVariableInfo& story_vars) {
@@ -140,28 +125,14 @@ void Token::fetch_function_value(const StoryVariableInfo& story_vars) {
 	}
 }
 
-Variant Token::increment(bool post, StoryVariableInfo& story_vars) {
-	Variant result;
-	if (post) {
-		result = value++;
-	} else {
-		result = ++value;
-	}
-
+void Token::increment(bool post, StoryVariableInfo& story_vars) {
+	value++;
 	store_variable_value(story_vars);
-	return result;
 }
 
-Variant Token::decrement(bool post, StoryVariableInfo& story_vars) {
-	Variant result;
-	if (post) {
-		result = value--;
-	} else {
-		result = --value;
-	}
-
+void Token::decrement(bool post, StoryVariableInfo& story_vars) {
+	value--;
 	store_variable_value(story_vars);
-	return result;
 }
 
 void Token::assign_variable(const Token& other, StoryVariableInfo& story_vars) {
@@ -255,6 +226,24 @@ std::string Variant::to_printable_string() const {
 			case Variant_String: {
 				return v<std::string>(value);
 			} break;
+
+			case Variant_List: {
+				const InkList& list = v<InkList>(value);
+
+				std::string result;
+				result.reserve(list.size() * 16);
+				
+				std::size_t index = 0;
+				for (auto it = list.cbegin(); it != list.cend(); ++it) {
+					result += it->label;
+					++index;
+					if (index < list.size()) {
+						result += ", ";
+					}
+				}
+
+				return result;
+			} break;
 				
 			default: {
 				return std::string();
@@ -335,6 +324,14 @@ Variant Variant::operator+(const Variant& rhs) const {
 			}
 		} break;
 
+		case Variant_List: {
+			if (rhs.value.index() == Variant_List) {
+				return v<InkList>(value) + v<InkList>(rhs.value);
+			} else {
+				return Variant();
+			}
+		} break;
+
 		default: {
 			return Variant();
 		} break;
@@ -400,6 +397,14 @@ Variant Variant::operator-(const Variant& rhs) const {
 				default: {
 					return Variant();
 				} break;
+			}
+		} break;
+
+		case Variant_List: {
+			if (rhs.value.index() == Variant_List) {
+				return v<InkList>(value) - v<InkList>(rhs.value);
+			} else {
+				return Variant();
 			}
 		} break;
 
@@ -683,6 +688,14 @@ Variant Variant::operator==(const Variant& rhs) const {
 			}
 		} break;
 
+		case Variant_List: {
+			if (rhs.value.index() == Variant_List) {
+				return v<InkList>(value) == v<InkList>(rhs.value);
+			} else {
+				return Variant();
+			}
+		} break;
+
 		default: {
 			return Variant();
 		} break;
@@ -759,6 +772,14 @@ Variant Variant::operator!=(const Variant& rhs) const {
 			}
 		} break;
 
+		case Variant_List: {
+			if (rhs.value.index() == Variant_List) {
+				return v<InkList>(value) != v<InkList>(rhs.value);
+			} else {
+				return Variant();
+			}
+		} break;
+
 		default: {
 			return Variant();
 		} break;
@@ -825,6 +846,14 @@ Variant Variant::operator<(const Variant& rhs) const {
 				default: {
 					return Variant();
 				} break;
+			}
+		} break;
+
+		case Variant_List: {
+			if (rhs.value.index() == Variant_List) {
+				return v<InkList>(value) < v<InkList>(rhs.value);
+			} else {
+				return Variant();
 			}
 		} break;
 
@@ -897,6 +926,14 @@ Variant Variant::operator>(const Variant& rhs) const {
 			}
 		} break;
 
+		case Variant_List: {
+			if (rhs.value.index() == Variant_List) {
+				return v<InkList>(value) > v<InkList>(rhs.value);
+			} else {
+				return Variant();
+			}
+		} break;
+
 		default: {
 			return Variant();
 		} break;
@@ -966,6 +1003,14 @@ Variant Variant::operator<=(const Variant& rhs) const {
 			}
 		} break;
 
+		case Variant_List: {
+			if (rhs.value.index() == Variant_List) {
+				return v<InkList>(value) <= v<InkList>(rhs.value);
+			} else {
+				return Variant();
+			}
+		} break;
+
 		default: {
 			return Variant();
 		} break;
@@ -1032,6 +1077,14 @@ Variant Variant::operator>=(const Variant& rhs) const {
 				default: {
 					return Variant();
 				} break;
+			}
+		} break;
+
+		case Variant_List: {
+			if (rhs.value.index() == Variant_List) {
+				return v<InkList>(value) >= v<InkList>(rhs.value);
+			} else {
+				return Variant();
 			}
 		} break;
 
@@ -1213,7 +1266,7 @@ Variant Variant::operator!() const {
 	}
 }
 
-Variant& Variant::operator++() {
+/*Variant& Variant::operator++() {
 	switch (value.index()) {
 		case Variant_Int: {
 			++v<i64>(value);
@@ -1247,44 +1300,52 @@ Variant& Variant::operator--() {
 			return *this;
 		}
 	}
-}
+}*/
 
-Variant Variant::operator++(int) {
+void Variant::operator++(int) {
 	switch (value.index()) {
 		case Variant_Int: {
-			Variant result = v<i64>(value);
+			//Variant result = v<i64>(value);
 			++v<i64>(value);
-			return result;
+			//return result;
 		} break;
 
 		case Variant_Float: {
-			Variant result = v<double>(value);
+			//Variant result = v<double>(value);
 			++v<double>(value);
-			return result;
+			//return result;
+		} break;
+
+		case Variant_List: {
+			v<InkList>(value)++;
 		} break;
 
 		default: {
-			return Variant();
+			//return Variant();
 		}
 	}
 }
 
-Variant Variant::operator--(int) {
+void Variant::operator--(int) {
 	switch (value.index()) {
 		case Variant_Int: {
-			Variant result = v<i64>(value);
+			//Variant result = v<i64>(value);
 			--v<i64>(value);
-			return result;
+			//return result;
 		} break;
 
 		case Variant_Float: {
-			Variant result = v<double>(value);
+			//Variant result = v<double>(value);
 			--v<double>(value);
-			return result;
+			//return result;
+		} break;
+
+		case Variant_List: {
+			v<InkList>(value)--;
 		} break;
 
 		default: {
-			return Variant();
+			//return Variant();
 		}
 	}
 }

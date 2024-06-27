@@ -77,10 +77,10 @@ public:
 	Variant operator-() const;
 	Variant operator!() const;
 
-	Variant& operator++();
-	Variant operator++(int);
-	Variant& operator--();
-	Variant operator--(int);
+	//Variant& operator++();
+	void operator++(int);
+	//Variant& operator--();
+	void operator--(int);
 
 	Variant operator_contains(const Variant& rhs) const;
 	Variant operator_intersect(const Variant& rhs) const;
@@ -106,8 +106,7 @@ struct StoryVariableInfo {
 
 	std::unordered_map<std::string, std::vector<VariableObserverFunc>> observers;
 
-	std::unordered_map<Uuid, InkListDefinition> defined_lists;
-	UuidValue current_list_definition_uuid = 0;
+	InkListDefinitionMap defined_lists;
 
 	Uuid current_weave_uuid;
 
@@ -126,8 +125,8 @@ struct StoryVariableInfo {
 		execute_variable_observers(variable, variables[variable]);
 	}
 
-	void add_list_definition(const std::vector<InkListDefinitionEntry>& values);
-	std::optional<Uuid> get_list_entry_origin(const std::string& entry) const;
+	void add_list_definition(const std::vector<InkListDefinition::Entry>& values) { defined_lists.add_list_definition(values); }
+	std::optional<Uuid> get_list_entry_origin(const std::string& entry) const { return defined_lists.get_list_entry_origin(entry); }
 
 private:
 	void execute_variable_observers(const std::string& variable, const Variant& new_value);
@@ -329,8 +328,8 @@ struct Token {
 	void store_variable_value(StoryVariableInfo& story_vars);
 	void fetch_function_value(const StoryVariableInfo& story_vars);
 
-	Variant increment(bool post, StoryVariableInfo& story_vars);
-	Variant decrement(bool post, StoryVariableInfo& story_vars);
+	void increment(bool post, StoryVariableInfo& story_vars);
+	void decrement(bool post, StoryVariableInfo& story_vars);
 
 	void assign_variable(const Token& other, StoryVariableInfo& story_vars);
 

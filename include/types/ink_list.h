@@ -10,13 +10,14 @@
 #include <unordered_map>
 #include <optional>
 
-struct InkListDefinitionEntry {
-	std::string label;
-	std::int64_t value = 0;
-	bool is_included_by_default = false;
-};
-
 class InkListDefinition {
+public:
+	struct Entry {
+		std::string label;
+		std::int64_t value = 0;
+		bool is_included_by_default = false;
+	};
+
 private:
 	std::unordered_map<std::string, std::int64_t> list_entries;
 	Uuid uuid;
@@ -31,15 +32,24 @@ public:
 		}
 	}
 
-	InkListDefinition(const std::vector<InkListDefinitionEntry>& entries, Uuid uuid) : uuid(uuid) {
-		for (const InkListDefinitionEntry& entry : entries) {
+	InkListDefinition(const std::vector<Entry>& entries, Uuid uuid) : uuid(uuid) {
+		for (const Entry& entry : entries) {
 			list_entries.emplace(entry.label, entry.value);
 		}
 	}
 
 	std::optional<std::int64_t> get_entry_value(const std::string& entry) const;
+	std::optional<std::string> get_label_from_value(std::int64_t value) const;
 
 	inline Uuid get_uuid() const { return uuid; }
+};
+
+struct InkListDefinitionMap {
+	std::unordered_map<Uuid, InkListDefinition> defined_lists;
+	UuidValue current_list_definition_uuid = 0;
+
+	void add_list_definition(const std::vector<InkListDefinition::Entry>& values);
+	std::optional<Uuid> get_list_entry_origin(const std::string& entry) const;
 };
 
 struct InkListItem {
@@ -76,22 +86,22 @@ struct InkStoryState;
 class InkList {
 	std::unordered_set<InkListItem> current_values;
 	std::unordered_set<Uuid> all_origins;
-	const InkStoryState* owning_story_state;
+	const InkListDefinitionMap* owning_definition_map;
 
 public:
-	InkList() : current_values{}, owning_story_state(nullptr) {}
+	InkList() : current_values{}, owning_definition_map(nullptr) {}
 
 	InkList(const InkStory& story);
-	InkList(const InkStoryState& story_state);
-	InkList(const InkStoryState* story_state);
+	InkList(const InkListDefinitionMap& definition_map);
+	InkList(const InkListDefinitionMap* definition_map);
 
 	InkList(std::initializer_list<std::string> current_values, const InkStory& story);
-	InkList(std::initializer_list<std::string> current_values, const InkStoryState& story_state);
-	InkList(std::initializer_list<std::string> current_values, const InkStoryState* story_state);
+	InkList(std::initializer_list<std::string> current_values, const InkListDefinitionMap& definition_map);
+	InkList(std::initializer_list<std::string> current_values, const InkListDefinitionMap* definition_map);
 
 	InkList(std::initializer_list<InkListItem> current_values, const InkStory& story);
-	InkList(std::initializer_list<InkListItem> current_values, const InkStoryState& story_state);
-	InkList(std::initializer_list<InkListItem> current_values, const InkStoryState* story_state);
+	InkList(std::initializer_list<InkListItem> current_values, const InkListDefinitionMap& definition_map);
+	InkList(std::initializer_list<InkListItem> current_values, const InkListDefinitionMap* definition_map);
 	
 	InkList(const InkList& from);
 	InkList& operator=(const InkList& from);
@@ -107,19 +117,40 @@ public:
 	bool contains(const InkList& other) const;
 	InkList inverse() const;
 
+	std::size_t count() const { return current_values.size(); }
+	std::size_t size() const { return current_values.size(); }
 	InkListItem min_item() const;
 	InkListItem max_item() const;
 	InkList all_possible_items() const;
 
+	auto begin() { return current_values.begin(); }
+	auto end() { return current_values.end(); }
+	auto cbegin() const { return current_values.cbegin(); }
+	auto cend() const { return current_values.cend(); }
+
 	bool operator==(const InkList& other) const { return current_values == other.current_values; }
 	bool operator!=(const InkList& other) const { return current_values != other.current_values; }
+	bool operator<(const InkList& other) const { return min_item().value < other.min_item().value; }
+	bool operator>(const InkList& other) const { return max_item().value > other.max_item().value; }
+	bool operator<=(const InkList& other) const { return min_item().value <= other.min_item().value; }
+	bool operator>=(const InkList& other) const { return max_item().value >= other.max_item().value; }
 
 	InkList operator+(const InkList& other) const { return union_with(other); }
 	InkList operator-(const InkList& other) const { return without(other); }
 	InkList operator^(const InkList& other) const { return intersect_with(other); }
-	//InkList& operator+=(const InkList& other);
-	//InkList& operator-=(const InkList& other);
-	//InkList& operator^=(const InkList& other);
+
+	InkList operator+(std::int64_t amount) const;
+	InkList operator-(std::int64_t amount) const;
+
+	// TODO: MAKE THESE LESS BAD
+	InkList& operator+=(const InkList& other) { *this = *this + other; return *this; }
+	InkList& operator-=(const InkList& other) { *this = *this - other; return *this; }
+	InkList& operator^=(const InkList& other) { *this = *this ^ other; return *this; }
+	InkList& operator+=(std::int64_t amount) { *this = *this + amount; return *this; }
+	InkList& operator-=(std::int64_t amount) { *this = *this - amount; return *this; }
+
+	InkList& operator++(int) { *this += 1; return *this; }
+	InkList& operator--(int) { *this -= 1; return *this; }
 
 	ByteVec to_bytes() const;
 	static InkList from_bytes(const ByteVec& bytes, std::size_t& index);
@@ -146,11 +177,11 @@ struct Deserializer<InkList> {
 };
 
 template <>
-struct Serializer<InkListDefinitionEntry> {
-	ByteVec operator()(const InkListDefinitionEntry& entry);
+struct Serializer<InkListDefinition::Entry> {
+	ByteVec operator()(const InkListDefinition::Entry& entry);
 };
 
 template <>
-struct Deserializer<InkListDefinitionEntry> {
-	InkListDefinitionEntry operator()(const ByteVec& bytes, std::size_t& index);
+struct Deserializer<InkListDefinition::Entry> {
+	InkListDefinition::Entry operator()(const ByteVec& bytes, std::size_t& index);
 };

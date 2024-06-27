@@ -24,8 +24,8 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "15_conditional_blocks"
-#define TEST_FILE "15g_conditional_with_content"
+#define TEST_FOLDER "11_nested_flow"
+#define TEST_FILE "11e_complex_nesting"
 
 int main(int argc, char* argv[]) {
 	//if (argc > 1) {
@@ -60,9 +60,32 @@ int main(int argc, char* argv[]) {
 	ExpressionParserV2::Token test2 = test;
 
 	InkCompiler compiler;
-	InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
+	//InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
+	InkStory story = compiler.compile_script(R"(-> main
+=== main ===
+- (test)
+hi
+-> main_a
+
+= main_a
+- (test2)
+test
+* one
+* two
+- (test3)
+-> END
+	)");
 	std::cout << story.continue_story() << std::endl;
-	//story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	//print_vector(story.get_current_choices());

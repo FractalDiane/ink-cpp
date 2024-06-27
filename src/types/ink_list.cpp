@@ -10,45 +10,70 @@ std::optional<std::int64_t> InkListDefinition::get_entry_value(const std::string
 	return std::nullopt;
 }
 
-InkList::InkList(const InkStory& story) : current_values{}, owning_story_state(&story.get_story_state()) {}
-InkList::InkList(const InkStoryState& story_state) : current_values{}, owning_story_state(&story_state) {}
-InkList::InkList(const InkStoryState* story_state) : current_values{}, owning_story_state(story_state) {}
+std::optional<std::string> InkListDefinition::get_label_from_value(std::int64_t value) const {
+	for (const auto& entry : list_entries) {
+		if (entry.second == value) {
+			return entry.first;
+		}
+	}
 
-InkList::InkList(std::initializer_list<std::string> current_values, const InkStory& story) : current_values{}, owning_story_state(&story.get_story_state()) {
+	return std::nullopt;
+}
+
+void InkListDefinitionMap::add_list_definition(const std::vector<InkListDefinition::Entry>& values) {
+	Uuid new_uuid = current_list_definition_uuid++;
+	defined_lists.emplace(new_uuid, InkListDefinition(values, new_uuid));
+}
+
+std::optional<Uuid> InkListDefinitionMap::get_list_entry_origin(const std::string& entry) const {
+	for (const auto& list : defined_lists) {
+		if (list.second.get_entry_value(entry).has_value()) {
+			return list.first;
+		}
+	}
+
+	return std::nullopt;
+}
+
+InkList::InkList(const InkStory& story) : current_values{}, owning_definition_map(&story.get_story_state().variable_info.defined_lists) {}
+InkList::InkList(const InkListDefinitionMap& definition_map) : current_values{}, owning_definition_map(&definition_map) {}
+InkList::InkList(const InkListDefinitionMap* definition_map) : current_values{}, owning_definition_map(definition_map) {}
+
+InkList::InkList(std::initializer_list<std::string> current_values, const InkStory& story) : current_values{}, owning_definition_map(&story.get_story_state().variable_info.defined_lists) {
 	for (const std::string& string : current_values) {
 		add_item(string);
 	}
 }
 
-InkList::InkList(std::initializer_list<std::string> current_values, const InkStoryState& story_state) : current_values{}, owning_story_state(&story_state) {
+InkList::InkList(std::initializer_list<std::string> current_values, const InkListDefinitionMap& definition_map) : current_values{}, owning_definition_map(&definition_map) {
 	for (const std::string& string : current_values) {
 		add_item(string);
 	}
 }
 
-InkList::InkList(std::initializer_list<std::string> current_values, const InkStoryState* story_state) : current_values{}, owning_story_state(story_state) {
+InkList::InkList(std::initializer_list<std::string> current_values, const InkListDefinitionMap* definition_map) : current_values{}, owning_definition_map(definition_map) {
 	for (const std::string& string : current_values) {
 		add_item(string);
 	}
 }
 
-InkList::InkList(std::initializer_list<InkListItem> current_values, const InkStory& story) : current_values(current_values), owning_story_state(&story.get_story_state()) {}
-InkList::InkList(std::initializer_list<InkListItem> current_values, const InkStoryState& story_state) : current_values(current_values), owning_story_state(&story_state) {}
-InkList::InkList(std::initializer_list<InkListItem> current_values, const InkStoryState* story_state) : current_values(current_values), owning_story_state(story_state) {}
+InkList::InkList(std::initializer_list<InkListItem> current_values, const InkStory& story) : current_values(current_values), owning_definition_map(&story.get_story_state().variable_info.defined_lists) {}
+InkList::InkList(std::initializer_list<InkListItem> current_values, const InkListDefinitionMap& definition_map) : current_values(current_values), owning_definition_map(&definition_map) {}
+InkList::InkList(std::initializer_list<InkListItem> current_values, const InkListDefinitionMap* definition_map) : current_values(current_values), owning_definition_map(definition_map) {}
 
-InkList::InkList(const InkList& from) : current_values(from.current_values), owning_story_state(from.owning_story_state) {}
+InkList::InkList(const InkList& from) : current_values(from.current_values), owning_definition_map(from.owning_definition_map) {}
 
 InkList& InkList::operator=(const InkList& from) {
 	if (this != &from) {
 		current_values = from.current_values;
-		owning_story_state = from.owning_story_state;
+		owning_definition_map = from.owning_definition_map;
 	}
 
 	return *this;
 }
 
 void InkList::add_item(const std::string& item_name) {
-	for (const auto& list : owning_story_state->variable_info.defined_lists) {
+	for (const auto& list : owning_definition_map->defined_lists) {
 		if (std::optional<std::int64_t> entry_value = list.second.get_entry_value(item_name); entry_value.has_value()) {
 			current_values.insert(InkListItem(item_name, *entry_value, list.second.get_uuid()));
 			all_origins.insert(list.second.get_uuid());
@@ -63,7 +88,7 @@ void InkList::add_item(const InkListItem& item) {
 }
 
 void InkList::remove_item(const std::string& item_name) {
-	for (const auto& list : owning_story_state->variable_info.defined_lists) {
+	for (const auto& list : owning_definition_map->defined_lists) {
 		if (std::optional<std::int64_t> entry_value = list.second.get_entry_value(item_name); entry_value.has_value()) {
 			current_values.erase(InkListItem(item_name, *entry_value, list.second.get_uuid()));
 			return;
@@ -85,7 +110,7 @@ InkList InkList::union_with(const InkList& other) const {
 }
 
 InkList InkList::intersect_with(const InkList& other) const {
-	InkList result{owning_story_state};
+	InkList result{owning_definition_map};
 	for (const InkListItem& item : other.current_values) {
 		if (current_values.contains(item)) {
 			result.add_item(item);
@@ -115,9 +140,9 @@ bool InkList::contains(const InkList& other) const {
 }
 
 InkList InkList::inverse() const {
-	InkList result{owning_story_state};
+	InkList result{owning_definition_map};
 	for (Uuid origin : all_origins) {
-		const InkListDefinition& this_definition = owning_story_state->variable_info.defined_lists.at(origin);
+		const InkListDefinition& this_definition = owning_definition_map->defined_lists.at(origin);
 		for (const auto& entry : this_definition.list_entries) {
 			if (!current_values.contains(InkListItem(entry.first, entry.second, this_definition.get_uuid()))) {
 				result.add_item(InkListItem(entry.first, entry.second, origin));
@@ -167,11 +192,33 @@ InkListItem InkList::max_item() const {
 }
 
 InkList InkList::all_possible_items() const {
-	InkList result{owning_story_state};
+	InkList result{owning_definition_map};
 	for (Uuid origin : all_origins) {
-		const InkListDefinition& this_definition = owning_story_state->variable_info.defined_lists.at(origin);
+		const InkListDefinition& this_definition = owning_definition_map->defined_lists.at(origin);
 		for (const auto& entry : this_definition.list_entries) {
 			result.add_item(InkListItem(entry.first, entry.second, origin));
+		}
+	}
+
+	return result;
+}
+
+InkList InkList::operator+(std::int64_t amount) const {
+	InkList result{owning_definition_map};
+	for (const InkListItem& item : current_values) {
+		if (std::optional<std::string> incremented_label = owning_definition_map->defined_lists.at(item.origin_list_uuid).get_label_from_value(item.value + amount); incremented_label.has_value()) {
+			result.add_item(*incremented_label);
+		}
+	}
+
+	return result;
+}
+
+InkList InkList::operator-(std::int64_t amount) const {
+	InkList result{owning_definition_map};
+	for (const InkListItem& item : current_values) {
+		if (std::optional<std::string> incremented_label = owning_definition_map->defined_lists.at(item.origin_list_uuid).get_label_from_value(item.value - amount); incremented_label.has_value()) {
+			result.add_item(*incremented_label);
 		}
 	}
 
@@ -249,7 +296,7 @@ InkList Deserializer<InkList>::operator()(const ByteVec& bytes, std::size_t& ind
 	return InkList::from_bytes(bytes, index);
 }
 
-ByteVec Serializer<InkListDefinitionEntry>::operator()(const InkListDefinitionEntry& entry) {
+ByteVec Serializer<InkListDefinition::Entry>::operator()(const InkListDefinition::Entry& entry) {
 	Serializer<std::string> sstring;
 	Serializer<std::int64_t> s64;
 
@@ -260,12 +307,12 @@ ByteVec Serializer<InkListDefinitionEntry>::operator()(const InkListDefinitionEn
 	return result;
 }
 
-InkListDefinitionEntry Deserializer<InkListDefinitionEntry>::operator()(const ByteVec& bytes, std::size_t& index) {
+InkListDefinition::Entry Deserializer<InkListDefinition::Entry>::operator()(const ByteVec& bytes, std::size_t& index) {
 	Deserializer<std::string> dsstring;
 	Deserializer<std::int64_t> ds64;
 	Deserializer<std::uint8_t> ds8;
 
-	InkListDefinitionEntry result;
+	InkListDefinition::Entry result;
 	result.label = dsstring(bytes, index);
 	result.value = ds64(bytes, index);
 	result.is_included_by_default = static_cast<bool>(ds8(bytes, index));

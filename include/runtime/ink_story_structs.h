@@ -59,6 +59,7 @@ struct Knot : public InkWeaveContent {
 	Knot(const std::vector<class InkObject*> objects) : objects{objects}, stitches{{}}, gather_points{{}} {}
 
 	std::string divert_target_to_global(const std::string& target) const;
+	//std::vector<GatherPoint> get_all_gather_points() const;
 
 	void append_knot(const Knot& other);
 };

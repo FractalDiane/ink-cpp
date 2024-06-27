@@ -8,10 +8,10 @@
 class InkObjectList : public InkObject {
 private:
 	std::string name;
-	std::vector<InkListDefinitionEntry> entries;
+	std::vector<InkListDefinition::Entry> entries;
 
 public:
-	InkObjectList(const std::string& name, const std::vector<InkListDefinitionEntry>& entries) : name(name), entries(entries) {}
+	InkObjectList(const std::string& name, const std::vector<InkListDefinition::Entry>& entries) : name(name), entries(entries) {}
 
 	virtual ObjectId get_id() const override { return ObjectId::List; }
 

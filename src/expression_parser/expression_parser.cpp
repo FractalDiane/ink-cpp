@@ -133,8 +133,10 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 			result.push_back(Token::function_external(word));
 			found_result = true;
 		} else if (std::optional<Uuid> list_item_origin = story_var_info.get_list_entry_origin(word); list_item_origin.has_value()) {
-			//InkList new_list{}
-			//result.push_back(Token::literal_list())
+			InkList new_list{story_var_info.defined_lists};
+			new_list.add_item(word);
+			result.push_back(Token::literal_list(new_list));
+			found_result = true;
 		} else if (word == "temp") {
 			result.push_back(Token::keyword(KeywordType::Temp));
 			found_result = true;
@@ -435,6 +437,7 @@ std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix) {
 			case TokenType::LiteralNumberFloat:
 			case TokenType::LiteralString:
 			case TokenType::LiteralKnotName:
+			case TokenType::LiteralList:
 			case TokenType::Variable: {
 				postfix.push_back(this_token);
 			} break;
@@ -592,7 +595,8 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(
 			case TokenType::LiteralNumberInt:
 			case TokenType::LiteralNumberFloat:
 			case TokenType::LiteralString:
-			case TokenType::LiteralKnotName: {
+			case TokenType::LiteralKnotName:
+			case TokenType::LiteralList: {
 				stack.push_back(this_token);
 			} break;
 
@@ -624,9 +628,15 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(
 						Token& operand = stack.back();
 
 						bool postfix = this_token.operator_unary_type == OperatorUnaryType::Postfix;
-						stack.push_back(Token::from_variant(this_token.operator_type == OperatorType::Increment ? operand.increment(postfix, story_variable_info) : operand.decrement(postfix, story_variable_info)));
+						if (this_token.operator_type == OperatorType::Increment) {
+							operand.increment(postfix, story_variable_info);
+						} else {
+							operand.decrement(postfix, story_variable_info);
+						}
+						//stack.push_back(Token::from_variant(this_token.operator_type == OperatorType::Increment ? operand.increment(postfix, story_variable_info) : operand.decrement(postfix, story_variable_info)));
 
-						stack.erase(stack.end() - 2);
+						//stack.erase(stack.end() - 2);
+						stack.pop_back();
 					} break;
 
 					case OperatorType::Assign: {
