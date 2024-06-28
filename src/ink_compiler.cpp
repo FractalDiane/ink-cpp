@@ -26,6 +26,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <list>
 
 #include <iostream>
 #include <format>
@@ -550,7 +551,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 		case InkToken::Plus: {
 			if (at_line_start && token.count > choice_level) {
 				++choice_level;
-				std::vector<InkChoiceEntry> choice_options;
+				std::list<InkChoiceEntry> choice_options;
 				bool current_choice_sticky = token.token == InkToken::Plus;
 
 				while (token_index < all_tokens.size()) {
@@ -576,6 +577,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					++token_index;
 
 					choice_stack.push_back({.sticky = current_choice_sticky});
+					anonymous_knot_stack.push_back(&choice_stack.back().result);
 
 					while (all_tokens[token_index].token == InkToken::Text && !all_tokens[token_index].escaped && strip_string_edges(all_tokens[token_index].get_text_contents(), true, true, true).empty()) {
 						++token_index;
@@ -586,18 +588,20 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						label.name = all_tokens[token_index + 1].text_contents;
 						label.uuid = Uuid(current_uuid++);
 						label.type = WeaveContentType::GatherPoint;
-						label.index = static_cast<std::uint16_t>(story_knots[current_knot_index].objects.size());
+						//label.index = static_cast<std::uint16_t>(story_knots[current_knot_index].objects.size());
 						label.in_choice = true;
 						label.choice_index = static_cast<std::uint16_t>(choice_options.size());
 						choice_stack.back().label = label;
 
+						Knot& gather_point_knot = anonymous_knot_stack.size() > 1 ? *anonymous_knot_stack[anonymous_knot_stack.size() - 2] : story_knots[current_knot_index];
 						std::vector<GatherPoint>& gather_points = 
-						!story_knots[current_knot_index].stitches.empty() && story_knots[current_knot_index].objects.size() >= story_knots[current_knot_index].stitches[0].index
-						? story_knots[current_knot_index].stitches.back().gather_points
-						: story_knots[current_knot_index].gather_points;
+						!gather_point_knot.stitches.empty() && gather_point_knot.objects.size() >= gather_point_knot.stitches[0].index
+						? gather_point_knot.stitches.back().gather_points
+						: gather_point_knot.gather_points;
 
+						label.index = static_cast<std::uint16_t>(gather_point_knot.objects.size());
 						gather_points.push_back(label);
-
+						
 						token_index += 3;
 					}
 
@@ -666,10 +670,17 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					in_choice_line = false;
 					choice_options.push_back(choice_stack.back());
 					choice_stack.pop_back();
+					anonymous_knot_stack.pop_back();
 				}
 
 				in_choice_line = false;
-				result_object = new InkObjectChoice(choice_options);
+
+				std::vector<InkChoiceEntry> choice_options_vec{
+					std::make_move_iterator(std::begin(choice_options)),
+					std::make_move_iterator(std::end(choice_options)),
+				};
+
+				result_object = new InkObjectChoice(choice_options_vec);
 				--choice_level;
 			} else {
 				result_object = new InkObjectText(token.token == InkToken::Plus ? "+" : "*");
@@ -1063,15 +1074,17 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 		case InkToken::Dash: {
 			if (at_line_start) {
+				Knot& gather_point_knot = !anonymous_knot_stack.empty() ? *anonymous_knot_stack.back() : story_knots[current_knot_index];
 				std::vector<GatherPoint>& gather_points = 
-				!story_knots[current_knot_index].stitches.empty() && story_knots[current_knot_index].objects.size() >= story_knots[current_knot_index].stitches[0].index
-				? story_knots[current_knot_index].stitches.back().gather_points
-				: story_knots[current_knot_index].gather_points;
+				!gather_point_knot.stitches.empty() && gather_point_knot.objects.size() >= gather_point_knot.stitches[0].index
+				? gather_point_knot.stitches.back().gather_points
+				: gather_point_knot.gather_points;
 				
 				GatherPoint new_gather_point;
 				new_gather_point.uuid = Uuid(current_uuid++);
 				new_gather_point.type = WeaveContentType::GatherPoint;
-				new_gather_point.index = static_cast<std::uint16_t>(story_knots[current_knot_index].objects.size());
+				//new_gather_point.index = static_cast<std::uint16_t>(story_knots[current_knot_index].objects.size());
+				new_gather_point.index = static_cast<std::uint16_t>(gather_point_knot.objects.size());
 				new_gather_point.level = token.count;
 
 				if (next_token_is_sequence(all_tokens, token_index, {InkToken::LeftParen, InkToken::Text, InkToken::RightParen})) {

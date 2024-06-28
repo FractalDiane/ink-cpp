@@ -188,6 +188,21 @@ std::string Knot::divert_target_to_global(const std::string& target) const {
 	return target;
 }
 
+std::vector<GatherPoint*> Knot::get_all_gather_points() {
+	std::vector<GatherPoint*> result;
+	for (GatherPoint& gather_point : gather_points) {
+		result.push_back(&gather_point);
+	}
+
+	for (Stitch& stitch : stitches) {
+		for (GatherPoint& gather_point : stitch.gather_points) {
+			result.push_back(&gather_point);
+		}
+	}
+
+	return result;
+}
+
 void Knot::append_knot(const Knot& other) {
 	for (InkObject* object : other.objects) {
 		objects.push_back(object);

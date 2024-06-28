@@ -60,22 +60,7 @@ int main(int argc, char* argv[]) {
 	ExpressionParserV2::Token test2 = test;
 
 	InkCompiler compiler;
-	//InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
-	InkStory story = compiler.compile_script(R"(-> main
-=== main ===
-- (test)
-hi
--> main_a
-
-= main_a
-- (test2)
-test
-* one
-* two
-- (test3)
--> END
-	)");
-	std::cout << story.continue_story() << std::endl;
+	InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
@@ -85,6 +70,11 @@ test
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;

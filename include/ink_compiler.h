@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <unordered_set>
+#include <list>
 #include <format>
 
 class InkLexer {
@@ -57,6 +58,7 @@ private:
 	std::size_t token_index = 0;
 	InkObject* last_token_object = nullptr;
 	std::size_t current_knot_index = 0;
+	std::vector<Knot*> anonymous_knot_stack;
 
 	std::size_t brace_level = 0;
 	bool in_choice_line = false;
@@ -66,7 +68,7 @@ private:
 	bool just_added_divert_to_tunnel = false;
 
 	std::size_t choice_level = 0;
-	std::vector<InkChoiceEntry> choice_stack;
+	std::list<InkChoiceEntry> choice_stack;
 
 	std::size_t current_sequence_index = 0;
 

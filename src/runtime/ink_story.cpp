@@ -396,17 +396,20 @@ std::string InkStory::continue_story() {
 		}
 
 		// if we've run out of content in this knot, the story continues to the next gather point
-		if (story_state.index_in_knot() >= story_state.current_knot_size()) {
+		if (!story_state.at_choice && story_state.index_in_knot() >= story_state.current_knot_size()) {
 			if (story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
 				story_state.current_knots_stack.pop_back();
 
-				bool found_gather = false;
+				//bool found_gather = false;
+				GatherPoint* found_gather = nullptr;
 				for (auto it = story_state.current_knots_stack.rbegin(); it != story_state.current_knots_stack.rend(); ++it) {
-					for (GatherPoint& gather_point : it->knot->gather_points) {
-						if (gather_point.level <= story_state.current_knots_stack.size() && gather_point.index > story_state.index_in_knot()) {
-							story_state.current_knot().index = gather_point.index;
-							story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, &gather_point);
-							found_gather = true;
+					for (GatherPoint* gather_point : it->knot->get_all_gather_points()) {
+						//if (gather_point->level <= story_state.current_knots_stack.size() && gather_point->index > story_state.index_in_knot()) {
+						if (gather_point->level <= story_state.current_knots_stack.size() && gather_point->index > it->index) {
+							//story_state.current_knot().index = gather_point->index;
+							//story_state.current_knots_stack.back() = {it->knot, gather_point->index};
+							story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, gather_point);
+							found_gather = gather_point;
 							break;
 						}
 					}
