@@ -24,47 +24,15 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "10_gathers"
-#define TEST_FILE "10a_gather"
+#define TEST_FOLDER "17_functions"
+#define TEST_FILE "17g_function_params_by_ref"
 
 int main(int argc, char* argv[]) {
-	//if (argc > 1) {
-	//	if (!strcmp(argv[1], "build") || !strcmp(argv[1], "compile")) {
-			//InkCompiler compiler;
-			//compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink", INKCPP_WORKING_DIR "/" TEST_FILE ".inkb");
-	/* } else if (!strcmp(argv[1], "run")) {
-			std::string infile = INKCPP_WORKING_DIR "/" TEST_FILE ".inkb";
-			InkStory story{infile};
-			while (story.can_continue()) {
-				std::cout << story.continue_story_maximally() << std::endl;
-				if (!story.get_current_choices().empty()) {
-					story.choose_choice_index(0);
-				}
-			}
-		}
-	}*/
-
-	/*InkCompiler compiler;
-	[[maybe_unused]]
-	InkStory story1 = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
-
-	InkCompiler compiler2;
-	compiler2.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink", INKCPP_WORKING_DIR "/" TEST_FILE ".inkb");
-	[[maybe_unused]]
-	InkStory story2{INKCPP_WORKING_DIR "/" TEST_FILE ".inkb"};*/
-
-	//std::cout << "test" << std::endl;
-
-	ExpressionParserV2::Token test = ExpressionParserV2::Token::function_story_knot("test", 3);
-	[[maybe_unused]]
-	ExpressionParserV2::Token test2 = test;
-
 	InkCompiler compiler;
 	InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
 	story.set_variable("met_blofeld", true);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
@@ -81,31 +49,4 @@ int main(int argc, char* argv[]) {
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
-	//print_vector(story.get_current_choices());
-	//story.choose_choice_index(0);
-	//std::cout << story.continue_story() << std::endl;
-	//print_vector(story.get_current_choices());
-	//story.choose_choice_index(0);
-	/*std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	print_vector(story.get_current_choices());
-	story.choose_choice_index(1);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;*/
-	/*/story.choose_choice_index(1);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	print_vector(story.get_current_choices());*/
 }

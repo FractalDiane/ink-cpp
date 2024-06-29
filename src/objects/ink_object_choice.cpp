@@ -257,6 +257,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			if (choice_eval_result.imminent_function_prep) {
 				eval_result.target_knot = choice_eval_result.target_knot;
 				eval_result.divert_type = DivertType::Function;
+				eval_result.imminent_function_prep = true;
 				return;
 			}
 		}

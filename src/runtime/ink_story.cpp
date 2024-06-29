@@ -334,6 +334,10 @@ std::string InkStory::continue_story() {
 						changed_knot = true;
 						function = true;
 
+						if (eval_result.imminent_function_prep) {
+							story_state.current_knot().knot->is_function_prep = true;
+						}
+
 						eval_result.imminent_function_prep = false;
 					} break;
 
@@ -378,7 +382,7 @@ std::string InkStory::continue_story() {
 			story_state.variable_info.current_weave_uuid = story_state.current_stitch ? story_state.current_stitch->uuid : story_state.current_nonchoice_knot().knot->uuid;
 		}
 
-		// any gather points we've hit need to have their visit counts incremented
+		// any gather points hit need to have their visit counts incremented
 		std::vector<GatherPoint> no_current_stitch;
 		std::vector<GatherPoint>& other_gathers = story_state.current_stitch ? story_state.current_stitch->gather_points : no_current_stitch;
 		auto joint_gather_view = std::vector{
@@ -400,7 +404,7 @@ std::string InkStory::continue_story() {
 		}
 
 		// if we've run out of content in this knot, the story continues to the next gather point
-		if (!story_state.at_choice && story_state.index_in_knot() >= story_state.current_knot_size()) {
+		if ((!story_state.at_choice || story_state.current_knot().knot->is_function_prep) && story_state.index_in_knot() >= story_state.current_knot_size()) {
 			if (story_state.current_knot().knot->is_choice_result) {
 				story_state.current_knots_stack.pop_back();
 

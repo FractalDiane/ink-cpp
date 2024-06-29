@@ -129,7 +129,8 @@ ByteVec Serializer<Knot>::operator()(const Knot& knot) {
 	ByteVec result4 = vsstitch(knot.stitches);
 	ByteVec result5 = vsgatherpoint(knot.gather_points);
 	ByteVec result6 = s8(static_cast<std::uint8_t>(knot.is_function));
-	ByteVec result7 = vsobject(knot.objects);
+	ByteVec result7 = s8(static_cast<std::uint8_t>(knot.is_choice_result));
+	ByteVec result8 = vsobject(knot.objects);
 
 	result.insert(result.end(), result2.begin(), result2.end());
 	result.insert(result.end(), result3.begin(), result3.end());
@@ -137,6 +138,7 @@ ByteVec Serializer<Knot>::operator()(const Knot& knot) {
 	result.insert(result.end(), result5.begin(), result5.end());
 	result.insert(result.end(), result6.begin(), result6.end());
 	result.insert(result.end(), result7.begin(), result7.end());
+	result.insert(result.end(), result8.begin(), result8.end());
 
 	return result;
 }
@@ -159,6 +161,7 @@ Knot Deserializer<Knot>::operator()(const ByteVec& bytes, std::size_t& index) {
 	result.stitches = vdsstitch(bytes, index);
 	result.gather_points = vdsgatherpoint(bytes, index);
 	result.is_function = static_cast<bool>(ds8(bytes, index));
+	result.is_choice_result = static_cast<bool>(ds8(bytes, index));
 	result.objects = vdsobject(bytes, index);
 
 	result.type = WeaveContentType::Knot;
