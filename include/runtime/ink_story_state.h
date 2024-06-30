@@ -81,7 +81,6 @@ struct InkStoryState {
 	std::optional<std::size_t> choice_divert_index = std::nullopt;
 
 	ExpressionParserV2::StoryVariableInfo variable_info;
-	//std::unordered_map<Uuid, InkListDefinition> defined_lists;
 
 	class InkObject* get_current_object(std::int64_t index_offset);
 	bool has_choice_been_taken(class InkObject* choice_object, std::size_t index);

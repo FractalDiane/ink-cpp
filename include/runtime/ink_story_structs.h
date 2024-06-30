@@ -54,12 +54,14 @@ struct Knot : public InkWeaveContent {
 	std::vector<Stitch> stitches;
 	std::vector<GatherPoint> gather_points;
 	bool is_function = false;
+	bool is_choice_result = false;
+	bool is_function_prep = false;
 
 	Knot() : objects{}, stitches{}, gather_points{} {}
 	Knot(const std::vector<class InkObject*> objects) : objects{objects}, stitches{{}}, gather_points{{}} {}
 
 	std::string divert_target_to_global(const std::string& target) const;
-	//std::vector<GatherPoint> get_all_gather_points() const;
+	std::vector<GatherPoint*> get_all_gather_points();
 
 	void append_knot(const Knot& other);
 };

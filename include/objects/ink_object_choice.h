@@ -17,6 +17,11 @@ struct InkChoiceEntry {
 	bool immediately_continue_to_result = false;
 
 	GatherPoint label;
+
+	InkChoiceEntry() { result.is_choice_result = true; }
+	InkChoiceEntry(bool sticky) : sticky(sticky) {
+		result.is_choice_result = true;
+	}
 };
 
 class InkObjectChoice : public InkObject {

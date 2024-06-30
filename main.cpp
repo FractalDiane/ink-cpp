@@ -24,60 +24,18 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "11_nested_flow"
-#define TEST_FILE "11e_complex_nesting"
+#define TEST_FOLDER "20_threads"
+#define TEST_FILE "20a_basic_threads"
 
 int main(int argc, char* argv[]) {
-	//if (argc > 1) {
-	//	if (!strcmp(argv[1], "build") || !strcmp(argv[1], "compile")) {
-			//InkCompiler compiler;
-			//compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink", INKCPP_WORKING_DIR "/" TEST_FILE ".inkb");
-	/* } else if (!strcmp(argv[1], "run")) {
-			std::string infile = INKCPP_WORKING_DIR "/" TEST_FILE ".inkb";
-			InkStory story{infile};
-			while (story.can_continue()) {
-				std::cout << story.continue_story_maximally() << std::endl;
-				if (!story.get_current_choices().empty()) {
-					story.choose_choice_index(0);
-				}
-			}
-		}
-	}*/
-
-	/*InkCompiler compiler;
-	[[maybe_unused]]
-	InkStory story1 = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
-
-	InkCompiler compiler2;
-	compiler2.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink", INKCPP_WORKING_DIR "/" TEST_FILE ".inkb");
-	[[maybe_unused]]
-	InkStory story2{INKCPP_WORKING_DIR "/" TEST_FILE ".inkb"};*/
-
-	//std::cout << "test" << std::endl;
-
-	ExpressionParserV2::Token test = ExpressionParserV2::Token::function_story_knot("test", 3);
-	[[maybe_unused]]
-	ExpressionParserV2::Token test2 = test;
-
 	InkCompiler compiler;
-	//InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
-	InkStory story = compiler.compile_script(R"(-> main
-=== main ===
-- (test)
-hi
--> main_a
-
-= main_a
-- (test2)
-test
-* one
-* two
-- (test3)
--> END
-	)");
+	InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
+	story.set_variable("met_blofeld", true);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(2);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
@@ -87,32 +45,10 @@ test
 	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	//print_vector(story.get_current_choices());
-	//story.choose_choice_index(0);
-	//std::cout << story.continue_story() << std::endl;
-	//print_vector(story.get_current_choices());
-	//story.choose_choice_index(0);
-	/*std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	print_vector(story.get_current_choices());
-	story.choose_choice_index(1);
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;*/
-	/*/story.choose_choice_index(1);
+	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
-	print_vector(story.get_current_choices());*/
 }
