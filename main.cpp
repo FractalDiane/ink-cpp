@@ -24,8 +24,8 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "17_functions"
-#define TEST_FILE "17g_function_params_by_ref"
+#define TEST_FOLDER "20_threads"
+#define TEST_FILE "20a_basic_threads"
 
 int main(int argc, char* argv[]) {
 	InkCompiler compiler;
@@ -33,7 +33,9 @@ int main(int argc, char* argv[]) {
 	story.set_variable("met_blofeld", true);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(2);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
