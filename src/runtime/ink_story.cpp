@@ -413,10 +413,8 @@ std::string InkStory::continue_story() {
 					while (true) {
 						InkStoryState::KnotStatus& this_knot = story_state.current_knots_stack.back();
 						for (GatherPoint* gather_point : this_knot.knot->get_all_gather_points()) {
-							//if (gather_point->level <= story_state.current_knots_stack.size() && gather_point->index > story_state.index_in_knot()) {
 							if (gather_point->level <= story_state.current_knots_stack.size() && gather_point->index > this_knot.index) {
 								story_state.current_knot().index = gather_point->index;
-								//story_state.current_knots_stack.back() = {it->knot, gather_point->index};
 								story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, gather_point);
 								found_gather = gather_point;
 								break;

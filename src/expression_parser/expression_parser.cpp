@@ -633,9 +633,7 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(
 						} else {
 							operand.decrement(postfix, story_variable_info);
 						}
-						//stack.push_back(Token::from_variant(this_token.operator_type == OperatorType::Increment ? operand.increment(postfix, story_variable_info) : operand.decrement(postfix, story_variable_info)));
 
-						//stack.erase(stack.end() - 2);
 						stack.pop_back();
 					} break;
 
