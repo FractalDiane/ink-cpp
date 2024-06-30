@@ -1488,6 +1488,11 @@ TEST_F(ListTests, BasicLists) {
 	story.choose_choice_index(0);
 	EXPECT_TEXT("The outside of the kettle is very warm!");
 }
+
+TEST_F(ListTests, ListDefaultValue) {
+	STORY("21_lists/21b_list_default_value.ink");
+	EXPECT_TEXT("The kettle is already boiling. Edgy, huh?");
+}
 #pragma endregion
 
 #pragma region Miscellaneous Tests

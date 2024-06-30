@@ -32,12 +32,13 @@ class InkStoryData {
 private:
 	std::unordered_map<std::string, Knot> knots;
 	std::vector<std::string> knot_order;
+	ExpressionParserV2::StoryVariableInfo variable_info;
 
 	friend class InkStory;
 	friend class InkCompiler;
 
 public:
-	InkStoryData(const std::vector<Knot>& story_knots);
+	InkStoryData(const std::vector<Knot>& story_knots, ExpressionParserV2::StoryVariableInfo&& variable_info);
 	~InkStoryData();
 
 	std::vector<std::uint8_t> get_serialized_bytes() const;

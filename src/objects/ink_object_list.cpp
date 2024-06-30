@@ -27,5 +27,11 @@ InkObject* InkObjectList::populate_from_bytes(const ByteVec& bytes, std::size_t&
 
 void InkObjectList::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	InkList new_list_var{story_state.variable_info.defined_lists};
+	for (const InkListDefinition::Entry& entry : entries) {
+		if (entry.is_included_by_default) {
+			new_list_var.add_item(entry.label);
+		}
+	}
+	
 	story_state.variable_info.variables[name] = new_list_var;
 }

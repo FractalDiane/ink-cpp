@@ -46,7 +46,8 @@ InkStory::InkStory(const std::string& inkb_file) {
 	VectorDeserializer<Knot> dsknots;
 	std::vector<Knot> knots = dsknots(bytes, index);
 
-	story_data = new InkStoryData(knots);
+	// TODO: read variable info from file
+	story_data = new InkStoryData(knots, {});
 	VectorDeserializer<std::string> dsorder;
 	story_data->knot_order = dsorder(bytes, index);
 	
@@ -76,6 +77,7 @@ void InkStory::init_story() {
 		}
 	}
 
+	story_state.variable_info = std::move(story_data->variable_info);
 	bind_ink_functions();
 
 	story_state.current_knots_stack = {{&(story_data->knots[story_data->knot_order[0]]), 0}};
@@ -85,7 +87,7 @@ void InkStory::init_story() {
 void InkStory::bind_ink_functions() {
 	using namespace ExpressionParserV2;
 
-	#define EXP_FUNC(name, argc, body) story_state.variable_info.builtin_functions.insert({name, {[this](const std::vector<ExpressionParserV2::Variant>& arguments) -> ExpressionParserV2::Variant body, (std::uint8_t)argc}});
+	#define EXP_FUNC(name, argc, body) story_state.variable_info.builtin_functions[name] = {[this](const std::vector<ExpressionParserV2::Variant>& arguments) -> ExpressionParserV2::Variant body, (std::uint8_t)argc};
 
 	EXP_FUNC("CHOICE_COUNT", 0, { return story_state.current_choices.size(); });
 	EXP_FUNC("TURNS", 0, { return story_state.total_choices_taken; });

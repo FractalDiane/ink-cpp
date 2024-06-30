@@ -103,7 +103,6 @@ namespace {
 	}
 }
 
-
 #undef O
 #undef C
 

@@ -9,7 +9,7 @@
 #define INKB_VERSION 0
 #endif
 
-InkStoryData::InkStoryData(const std::vector<Knot>& story_knots) {
+InkStoryData::InkStoryData(const std::vector<Knot>& story_knots, ExpressionParserV2::StoryVariableInfo&& variable_info) : variable_info(variable_info) {
 	knots.reserve(story_knots.size());
 	knot_order.reserve(story_knots.size());
 	for (const Knot& knot : story_knots) {

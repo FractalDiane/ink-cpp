@@ -371,7 +371,9 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 		++token_index;
 	}
 
-	return new InkStoryData(result_knots);
+	InkStoryData* result = new InkStoryData(result_knots, std::move(story_variable_info));
+	story_variable_info = ExpressionParserV2::StoryVariableInfo();
+	return result;
 }
 
 InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots)
