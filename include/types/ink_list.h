@@ -19,20 +19,21 @@ public:
 	};
 
 private:
+	std::string name;
 	std::unordered_map<std::string, std::int64_t> list_entries;
 	Uuid uuid;
 
 	friend class InkList;
 
 public:
-	InkListDefinition(std::initializer_list<std::string> entries, Uuid uuid) : uuid(uuid) {
+	InkListDefinition(const std::string& name, std::initializer_list<std::string> entries, Uuid uuid) : name(name), uuid(uuid) {
 		std::int64_t index = 1;
 		for (const std::string& entry : entries) {
 			list_entries.emplace(entry, index++);
 		}
 	}
 
-	InkListDefinition(const std::vector<Entry>& entries, Uuid uuid) : uuid(uuid) {
+	InkListDefinition(const std::string& name, const std::vector<Entry>& entries, Uuid uuid) : name(name), uuid(uuid) {
 		for (const Entry& entry : entries) {
 			list_entries.emplace(entry.label, entry.value);
 		}
@@ -42,13 +43,14 @@ public:
 	std::optional<std::string> get_label_from_value(std::int64_t value) const;
 
 	inline Uuid get_uuid() const { return uuid; }
+	inline const std::string& get_name() const { return name; }
 };
 
 struct InkListDefinitionMap {
 	std::unordered_map<Uuid, InkListDefinition> defined_lists;
 	UuidValue current_list_definition_uuid = 0;
 
-	void add_list_definition(const std::vector<InkListDefinition::Entry>& values);
+	void add_list_definition(const std::string& name, const std::vector<InkListDefinition::Entry>& values);
 	std::optional<Uuid> get_list_entry_origin(const std::string& entry) const;
 };
 

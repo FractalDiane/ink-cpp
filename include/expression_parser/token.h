@@ -125,7 +125,7 @@ struct StoryVariableInfo {
 		execute_variable_observers(variable, variables[variable]);
 	}
 
-	void add_list_definition(const std::vector<InkListDefinition::Entry>& values) { defined_lists.add_list_definition(values); }
+	void add_list_definition(const std::string& name, const std::vector<InkListDefinition::Entry>& values) { defined_lists.add_list_definition(name, values); }
 	std::optional<Uuid> get_list_entry_origin(const std::string& entry) const { return defined_lists.get_list_entry_origin(entry); }
 
 private:

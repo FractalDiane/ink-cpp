@@ -24,8 +24,8 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "20_threads"
-#define TEST_FILE "20a_basic_threads"
+#define TEST_FOLDER "21_lists"
+#define TEST_FILE "21d_list_namespaces"
 
 int main(int argc, char* argv[]) {
 	InkCompiler compiler;

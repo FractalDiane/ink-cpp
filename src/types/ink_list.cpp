@@ -2,6 +2,8 @@
 
 #include "runtime/ink_story.h"
 
+#include "ink_utils.h"
+
 std::optional<std::int64_t> InkListDefinition::get_entry_value(const std::string& entry) const {
 	if (auto found_entry = list_entries.find(entry); found_entry != list_entries.end()) {
 		return found_entry->second;
@@ -20,15 +22,24 @@ std::optional<std::string> InkListDefinition::get_label_from_value(std::int64_t 
 	return std::nullopt;
 }
 
-void InkListDefinitionMap::add_list_definition(const std::vector<InkListDefinition::Entry>& values) {
+void InkListDefinitionMap::add_list_definition(const std::string& name, const std::vector<InkListDefinition::Entry>& values) {
 	Uuid new_uuid = current_list_definition_uuid++;
-	defined_lists.emplace(new_uuid, InkListDefinition(values, new_uuid));
+	defined_lists.emplace(new_uuid, InkListDefinition(name, values, new_uuid));
 }
 
 std::optional<Uuid> InkListDefinitionMap::get_list_entry_origin(const std::string& entry) const {
-	for (const auto& list : defined_lists) {
-		if (list.second.get_entry_value(entry).has_value()) {
-			return list.first;
+	if (entry.contains('.')) {
+		std::vector<std::string> namespace_val = split_string(entry, '.', false);
+		for (const auto& list : defined_lists) {
+			if (list.second.get_name() == namespace_val[0] && list.second.get_entry_value(namespace_val[1]).has_value()) {
+				return list.first;
+			}
+		}
+	} else {
+		for (const auto& list : defined_lists) {
+			if (list.second.get_entry_value(entry).has_value()) {
+				return list.first;
+			}
 		}
 	}
 
@@ -61,11 +72,12 @@ InkList::InkList(std::initializer_list<InkListItem> current_values, const InkSto
 InkList::InkList(std::initializer_list<InkListItem> current_values, const InkListDefinitionMap& definition_map) : current_values(current_values), owning_definition_map(&definition_map) {}
 InkList::InkList(std::initializer_list<InkListItem> current_values, const InkListDefinitionMap* definition_map) : current_values(current_values), owning_definition_map(definition_map) {}
 
-InkList::InkList(const InkList& from) : current_values(from.current_values), owning_definition_map(from.owning_definition_map) {}
+InkList::InkList(const InkList& from) : current_values(from.current_values), all_origins(from.all_origins), owning_definition_map(from.owning_definition_map) {}
 
 InkList& InkList::operator=(const InkList& from) {
 	if (this != &from) {
 		current_values = from.current_values;
+		all_origins = from.all_origins;
 		owning_definition_map = from.owning_definition_map;
 	}
 
@@ -73,11 +85,24 @@ InkList& InkList::operator=(const InkList& from) {
 }
 
 void InkList::add_item(const std::string& item_name) {
-	for (const auto& list : owning_definition_map->defined_lists) {
-		if (std::optional<std::int64_t> entry_value = list.second.get_entry_value(item_name); entry_value.has_value()) {
-			current_values.insert(InkListItem(item_name, *entry_value, list.second.get_uuid()));
-			all_origins.insert(list.second.get_uuid());
-			return;
+	if (item_name.contains('.')) {
+		std::vector<std::string> namespace_val = split_string(item_name, '.', false);
+		for (const auto& list : owning_definition_map->defined_lists) {
+			if (list.second.get_name() == namespace_val[0]) {
+				if (std::optional<std::int64_t> entry_value = list.second.get_entry_value(namespace_val[1]); entry_value.has_value()) {
+					current_values.insert(InkListItem(namespace_val[1], *entry_value, list.second.get_uuid()));
+					all_origins.insert(list.second.get_uuid());
+					return;
+				}
+			}
+		}
+	} else {
+		for (const auto& list : owning_definition_map->defined_lists) {
+			if (std::optional<std::int64_t> entry_value = list.second.get_entry_value(item_name); entry_value.has_value()) {
+				current_values.insert(InkListItem(item_name, *entry_value, list.second.get_uuid()));
+				all_origins.insert(list.second.get_uuid());
+				return;
+			}
 		}
 	}
 }

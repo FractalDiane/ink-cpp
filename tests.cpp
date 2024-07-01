@@ -93,8 +93,8 @@ FIXTURE(InkProof);
 
 TEST_F(NonStoryFunctionTests, InkListFunctions) {
 	InkListDefinitionMap definition_map;
-	definition_map.add_list_definition({{"red", 1}, {"orange", 2}, {"yellow", 3}});
-	definition_map.add_list_definition({{"sunday", 1}, {"monday", 2}, {"tuesday", 3}, {"wednesday", 4}, {"thursday", 5}, {"friday", 6}, {"saturday", 7}});
+	definition_map.add_list_definition("colors", {{"red", 1}, {"orange", 2}, {"yellow", 3}});
+	definition_map.add_list_definition("days", {{"sunday", 1}, {"monday", 2}, {"tuesday", 3}, {"wednesday", 4}, {"thursday", 5}, {"friday", 6}, {"saturday", 7}});
 
 	InkList best_days{{"friday", "saturday", "sunday"}, definition_map};
 
@@ -1492,6 +1492,30 @@ TEST_F(ListTests, BasicLists) {
 TEST_F(ListTests, ListDefaultValue) {
 	STORY("21_lists/21b_list_default_value.ink");
 	EXPECT_TEXT("The kettle is already boiling. Edgy, huh?");
+}
+
+TEST_F(ListTests, ReusingLists) {
+	STORY("21_lists/21c_reusing_lists.ink");
+	EXPECT_TEXT("Today is today, also known as Monday. Tomorrow is tomorrow, also known as Tuesday.");
+}
+
+TEST_F(ListTests, ListNamespaces) {
+	STORY("21_lists/21d_list_namespaces.ink");
+	EXPECT_TEXT("I'm blue, da ba dee da ba die");
+}
+
+TEST_F(ListTests, ListValues) {
+	STORY("21_lists/21e_list_values.ink");
+	EXPECT_TEXT("The lecturer is quiet.");
+	EXPECT_TEXT("There is some quiet murmuring in the hall.");
+	EXPECT_TEXT("The lecturer raises their voice. They are now medium.");
+	EXPECT_TEXT("The murmuring gets louder. It's now medium.");
+	EXPECT_TEXT("The lecturer raises their voice. They are now loud.");
+	EXPECT_TEXT("The murmuring gets louder. It's now loud.");
+	EXPECT_TEXT("The lecturer raises their voice. They are now deafening.");
+	EXPECT_TEXT("The murmuring gets louder. It's now deafening.");
+	EXPECT_TEXT("The lecturer yells at the top of their lungs!");
+	EXPECT_TEXT("They give themself a sore throat and leave the room.");
 }
 #pragma endregion
 
