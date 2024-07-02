@@ -136,6 +136,7 @@ public:
 
 	std::size_t count() const { return current_values.size(); }
 	std::size_t size() const { return current_values.size(); }
+	bool empty() const { return current_values.empty(); }
 	InkListItem single_item() const;
 	InkListItem min_item() const;
 	InkListItem max_item() const;

@@ -23,6 +23,8 @@ namespace {
 		{"or", {OperatorType::Or, OperatorUnaryType::NotUnary}},
 		{"not", {OperatorType::Not, OperatorUnaryType::Prefix}},
 		{"mod", {OperatorType::Modulus, OperatorUnaryType::NotUnary}},
+		{"has", {OperatorType::Substring, OperatorUnaryType::NotUnary}},
+		{"hasnt", {OperatorType::NotSubstring, OperatorUnaryType::NotUnary}},
 	};
 
 	static const std::unordered_map<OperatorType, std::uint8_t> OperatorPrecedences = {
@@ -292,6 +294,10 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 						}
 						
 						++index;
+					} else if (next_char(expression, index) == '=') {
+						TRY_ADD_WORD();
+						result.push_back(Token::operat(OperatorType::PlusAssign, UnaryType::NotUnary));
+						++index;
 					} else {
 						result.push_back(Token::operat(OperatorType::Plus, UnaryType::NotUnary));
 					}
@@ -309,6 +315,10 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 						++index;
 					} else if (next_char(expression, index) == '>') {
 						in_knot_name = true;
+						++index;
+					} else if (next_char(expression, index) == '=') {
+						TRY_ADD_WORD();
+						result.push_back(Token::operat(OperatorType::MinusAssign, UnaryType::NotUnary));
 						++index;
 					} else {
 						if (next_char(expression, index) > 32 && (result.empty() || result.back().type == TokenType::Operator)) {
@@ -351,17 +361,32 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 
 				case '*': {
 					TRY_ADD_WORD();
-					result.push_back(Token::operat(OperatorType::Multiply, UnaryType::NotUnary));
+					if (next_char(expression, index) == '=') {
+						result.push_back(Token::operat(OperatorType::MultiplyAssign, UnaryType::NotUnary));
+						++index;
+					} else {
+						result.push_back(Token::operat(OperatorType::Multiply, UnaryType::NotUnary));
+					}
 				} break;
 
 				case '/': {
 					TRY_ADD_WORD();
-					result.push_back(Token::operat(OperatorType::Divide, UnaryType::NotUnary));
+					if (next_char(expression, index) == '=') {
+						result.push_back(Token::operat(OperatorType::DivideAssign, UnaryType::NotUnary));
+						++index;
+					} else {
+						result.push_back(Token::operat(OperatorType::Divide, UnaryType::NotUnary));
+					}
 				} break;
 
 				case '%': {
 					TRY_ADD_WORD();
-					result.push_back(Token::operat(OperatorType::Modulus, UnaryType::NotUnary));
+					if (next_char(expression, index) == '=') {
+						result.push_back(Token::operat(OperatorType::ModulusAssign, UnaryType::NotUnary));
+						++index;
+					} else {
+						result.push_back(Token::operat(OperatorType::Modulus, UnaryType::NotUnary));
+					}
 				} break;
 
 				case '?': {
@@ -372,6 +397,9 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 				case '!': {
 					if (next_char(expression, index) == '=') {
 						result.push_back(Token::operat(OperatorType::NotEqual, UnaryType::NotUnary));
+						++index;
+					} else if (next_char(expression, index) == '?') {
+						result.push_back(Token::operat(OperatorType::NotSubstring, UnaryType::NotUnary));
 						++index;
 					} else if (next_char(expression, index) > 32) {
 						result.push_back(Token::operat(OperatorType::Not, UnaryType::Prefix));
@@ -643,6 +671,19 @@ std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix) {
 	stack.push_back(result);\
 } break;
 
+#define OP_BIN_ASSIGN(_type, func) case OperatorType::_type: {\
+	Token& value = stack.back();\
+	Token& var = stack[stack.size() - 2];\
+	if (var.type != TokenType::Variable) {\
+		throw std::runtime_error("Invalid use of " #_type " operator");\
+	}\
+\
+	var.func(value.value, story_variable_info);\
+\
+	stack.pop_back();\
+	stack.pop_back();\
+} break;
+
 ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(std::vector<Token>& expression_tokens, StoryVariableInfo& story_variable_info) {
 	std::vector<Token> stack;
 	std::size_t index = 0;
@@ -679,12 +720,19 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(
 					OP_BIN(GreaterEqual, >=);
 
 					OP_BIN_F(Substring, contains);
+					OP_BIN_F(NotSubstring, not_contains);
 
 					OP_BIN(And, &&);
 					OP_BIN(Or, ||);
 
 					OP_UN_PRE(Negative, -);
 					OP_UN_PRE(Not, !);
+
+					OP_BIN_ASSIGN(PlusAssign, add_assign);
+					OP_BIN_ASSIGN(MinusAssign, sub_assign);
+					OP_BIN_ASSIGN(MultiplyAssign, mul_assign);
+					OP_BIN_ASSIGN(DivideAssign, div_assign);
+					OP_BIN_ASSIGN(ModulusAssign, mod_assign);
 
 					case OperatorType::Increment:
 					case OperatorType::Decrement: {

@@ -179,6 +179,10 @@ InkList InkList::without(const InkList& other) const {
 }
 
 bool InkList::contains(const InkList& other) const {
+	if (other.empty()) {
+		return false;
+	}
+	
 	for (const InkListItem& item : other.current_values) {
 		if (!current_values.contains(item)) {
 			return false;

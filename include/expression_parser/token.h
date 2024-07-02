@@ -64,6 +64,12 @@ public:
 	Variant operator/(const Variant& rhs) const;
 	Variant operator%(const Variant& rhs) const;
 
+	void operator+=(const Variant& rhs);
+	void operator-=(const Variant& rhs);
+	void operator*=(const Variant& rhs);
+	void operator/=(const Variant& rhs);
+	void operator%=(const Variant& rhs);
+
 	Variant operator==(const Variant& rhs) const;
 	Variant operator!=(const Variant& rhs) const;
 	Variant operator<(const Variant& rhs) const;
@@ -83,6 +89,7 @@ public:
 	void operator--(int);
 
 	Variant operator_contains(const Variant& rhs) const;
+	Variant operator_not_contains(const Variant& rhs) const;
 	Variant operator_intersect(const Variant& rhs) const;
 
 	operator bool() const;
@@ -167,6 +174,7 @@ enum class OperatorType {
 	Divide,
 	Modulus,
 	Substring,
+	NotSubstring,
 	Intersect,
 
 	Increment,
@@ -174,6 +182,11 @@ enum class OperatorType {
 	Negative,
 
 	Assign,
+	PlusAssign,
+	MinusAssign,
+	MultiplyAssign,
+	DivideAssign,
+	ModulusAssign,
 
 	Equal,
 	NotEqual,
@@ -335,6 +348,12 @@ struct Token {
 
 	void increment(bool post, StoryVariableInfo& story_vars);
 	void decrement(bool post, StoryVariableInfo& story_vars);
+
+	void add_assign(const Variant& rhs, StoryVariableInfo& story_vars);
+	void sub_assign(const Variant& rhs, StoryVariableInfo& story_vars);
+	void mul_assign(const Variant& rhs, StoryVariableInfo& story_vars);
+	void div_assign(const Variant& rhs, StoryVariableInfo& story_vars);
+	void mod_assign(const Variant& rhs, StoryVariableInfo& story_vars);
 
 	void assign_variable(const Token& other, StoryVariableInfo& story_vars);
 

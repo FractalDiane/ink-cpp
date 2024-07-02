@@ -1542,6 +1542,44 @@ TEST_F(ListTests, MultipleListValuesAssignment) {
 	STORY("21_lists/21j_list_multiple_values_assignment.ink");
 	EXPECT_TEXT("Adams, Cartwright, Denver are currently in surgery; please direct complaints to Bernard or Eamonn.");
 }
+
+TEST_F(ListTests, ListAssignEmpty) {
+	STORY("21_lists/21k_list_assign_empty.ink");
+	EXPECT_TEXT("The doctors currently in surgery are:");
+}
+
+TEST_F(ListTests, ListAddValuesInPlace) {
+	STORY("21_lists/21l_list_add_values_in_place.ink");
+	EXPECT_TEXT("The doctors currently in surgery are: Denver, Eamonn");
+	EXPECT_TEXT("The doctors currently in surgery are: Adams, Bernard, Denver, Eamonn");
+	EXPECT_TEXT("The doctors currently in surgery are: Adams, Bernard, Cartwright, Denver, Eamonn");
+	EXPECT_TEXT("The doctors currently in surgery are: Adams, Cartwright, Denver, Eamonn");
+	EXPECT_TEXT("The doctors currently in surgery are: Cartwright, Denver");
+}
+
+TEST_F(ListTests, ListQueries) {
+	STORY("21_lists/21m_list_queries.ink");
+	EXPECT_TEXT("2");
+	EXPECT_TEXT("Adams");
+	EXPECT_TEXT("Cartwright");
+	std::string random = story.continue_story();
+	EXPECT_TRUE(random == "Adams" || random == "Cartwright");
+}
+
+TEST_F(ListTests, ListContentTests) {
+	STORY("21_lists/21n_list_contents_tests.ink");
+	EXPECT_TEXT("The surgery is open today.");
+	EXPECT_TEXT("Dr Adams and Dr Cartwright are having a loud argument in one corner.");
+	EXPECT_TEXT("At least Adams and Bernard aren't arguing.");
+	EXPECT_TEXT("Dr Eamonn is polishing his glasses.");
+	EXPECT_TEXT("Dr Denver appears to be taking the day off.");
+	EXPECT_TEXT("false");
+}
+
+TEST_F(ListTests, NiceListPrintFunction) {
+	STORY("21_lists/21o_nice_list_print.ink");
+	EXPECT_TEXT("My favourite dinosaurs are stegosaurs, anklyosaurus and pleiosaur.");
+}
 #pragma endregion
 
 #pragma region Miscellaneous Tests
