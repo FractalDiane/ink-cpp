@@ -214,10 +214,6 @@ std::string InkStory::continue_story() {
 			}
 		}
 
-		if (current_object->get_id() != ObjectId::LineBreak) {
-			story_state.current_knot().reached_any_non_newline = true;
-		}
-
 		current_object->execute(story_state, eval_result);
 		
 		// after collecting the options from a choice, a thread returns to its origin

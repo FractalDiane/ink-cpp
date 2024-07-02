@@ -859,6 +859,11 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 									if (InkLexer::Token next = next_token(all_tokens, token_index); next.token == InkToken::Text && next.text_contents == "else") {
 										in_else = true;
 										token_index += 2;
+
+										while (next_token_is(all_tokens, token_index, InkToken::NewLine) || (strip_string_edges(next_token(all_tokens, token_index).get_text_contents(), true, true, true).empty())) {
+											++token_index;
+										}
+
 										found_dash = true;
 										break;
 									} else {
@@ -879,6 +884,10 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 										++token_index;
 										while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::Colon) {
 											this_condition += all_tokens[token_index].get_text_contents();
+											++token_index;
+										}
+
+										while (next_token_is(all_tokens, token_index, InkToken::NewLine) || (strip_string_edges(next_token(all_tokens, token_index).get_text_contents(), true, true, true).empty())) {
 											++token_index;
 										}
 
