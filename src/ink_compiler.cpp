@@ -905,8 +905,11 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							InkObject* compiled_object = compile_token(all_tokens, all_tokens[token_index], story_knots);
 							// HACK: get rid of whitespace in switch results if they're text
 							if (is_switch && compiled_object->get_id() == ObjectId::Text) {
-								InkObjectText* object_text = static_cast<InkObjectText*>(compiled_object);
-								object_text->set_text_contents(strip_string_edges(object_text->get_text_contents(), true, false, true));
+								const Knot& target_array = in_else ? items_else : items_conditions.back().second;
+								if (target_array.objects.empty()) {
+									InkObjectText* object_text = static_cast<InkObjectText*>(compiled_object);
+									object_text->set_text_contents(strip_string_edges(object_text->get_text_contents(), true, false, true));
+								}
 							}
 
 							if (compiled_object->has_any_contents(false)) {

@@ -127,9 +127,9 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 
 		// thanks Ryan
 		std::size_t args_expected = expression_entry.argument_count;
-		while (args_expected > 0) {
+		while (args_expected > 0 && !expression_entry.function_prepared_tokens.empty()) {
 			ExpressionParserV2::Token& this_token = expression_entry.function_prepared_tokens[expression_entry.function_eval_index];
-			if (this_token.type == ExpressionParserV2::TokenType::Operator) {
+			if (this_token.type == ExpressionParserV2::TokenType::Operator || this_token.type == ExpressionParserV2::TokenType::Function) {
 				++args_expected;
 			} else {
 				--args_expected;

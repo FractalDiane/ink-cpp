@@ -1200,6 +1200,12 @@ TEST_F(FunctionTests, InlineFunctionCall) {
 	EXPECT_TEXT("Monsieur Fogg was looking somewhat flagging.");
 }
 
+TEST_F(FunctionTests, InlineFunctionCallWithoutReturn) {
+	STORY("17_functions/17d2_inline_function_call_without_return.ink");
+	story.set_variable("health", 50);
+	EXPECT_TEXT("Monsieur Fogg was looking somewhat flagging.");
+}
+
 TEST_F(FunctionTests, NestedFunctionCalls) {
 	STORY("17_functions/17e_nested_function_calls.ink");
 	EXPECT_TEXT("The maximum of 2^5 and 3^3 is 32.");
