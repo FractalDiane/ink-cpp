@@ -105,7 +105,7 @@ void InkStory::bind_ink_functions() {
 		return -1;
 	});
 
-	EXP_FUNC("SEED_RANDOM", 1, {;
+	EXP_FUNC("SEED_RANDOM", 1, {
 		std::int64_t seed = arguments[0];
 
 		story_state.rng.seed(static_cast<unsigned int>(seed));
@@ -118,6 +118,56 @@ void InkStory::bind_ink_functions() {
 
 		std::int64_t result = randi_range(from, to, story_state.rng);
 		return result;
+	});
+
+	EXP_FUNC("LIST_VALUE", 1, {
+		const InkList& list = arguments[0];
+		return list.value();
+	});
+
+	EXP_FUNC("LIST_COUNT", 1, {
+		const InkList& list = arguments[0];
+		return list.count();
+	});
+
+	EXP_FUNC("LIST_MIN", 1, {
+		const InkList& list = arguments[0];
+		return list.min();
+	});
+
+	EXP_FUNC("LIST_MAX", 1, {
+		const InkList& list = arguments[0];
+		return list.max();
+	});
+
+	EXP_FUNC("LIST_RANDOM", 1, {
+		const InkList& list = arguments[0];
+		std::int64_t index = randi_range(0, list.count() - 1, story_state.rng);
+		return list.at(static_cast<std::size_t>(index));
+	});
+
+	EXP_FUNC("LIST_ALL", 1, {
+		const InkList& list = arguments[0];
+		return list.all_possible_items();
+	});
+
+	EXP_FUNC("LIST_INVERT", 1, {
+		const InkList& list = arguments[0];
+		return list.inverted();
+	});
+
+	EXP_FUNC("LIST_RANGE", 3, {
+		const InkList& list = arguments[0];
+		const Variant& minimum = arguments[1];
+		const Variant& maximum = arguments[2];
+
+		if (minimum.index() == Variant_Int && maximum.index() == Variant_Int) {
+			return list.range(static_cast<std::int64_t>(minimum), static_cast<std::int64_t>(maximum));
+		} else if (minimum.index() == Variant_String && maximum.index() == Variant_String) {
+			return list.range(static_cast<std::string>(minimum), static_cast<std::string>(maximum));
+		} else {
+			return list;
+		}
 	});
 
 	#undef EXP_FUNC

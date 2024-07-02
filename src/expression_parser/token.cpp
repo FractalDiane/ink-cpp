@@ -158,6 +158,16 @@ Variant Token::call_function(const std::vector<Variant>& arguments, const StoryV
 				}*/
 			} break;
 
+			case FunctionFetchType::ListSubscript: {
+				for (auto& entry : story_variable_info.defined_lists.defined_lists) {
+					if (entry.second.get_name() == static_cast<std::string>(value)) {
+						return entry.second.get_sublist_from_value(arguments[0], &story_variable_info.defined_lists);
+					}
+				}
+				
+				throw std::runtime_error("Could not find list entry" + std::to_string(static_cast<std::int64_t>(arguments[0])) + " for list " + static_cast<std::string>(value));
+			} break;
+
 			case FunctionFetchType::StoryKnot:
 			default: {
 				throw std::runtime_error("Story knot function was not prepared before evaluating expression");

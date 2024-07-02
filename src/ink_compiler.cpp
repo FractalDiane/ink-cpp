@@ -330,6 +330,15 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 		{"CHOICE_COUNT", {nullptr, (std::uint8_t)0}},
 		{"TURNS", {nullptr, (std::uint8_t)0}},
 		{"TURNS_SINCE", {nullptr, (std::uint8_t)1}},
+
+		{"LIST_VALUE", {nullptr, (std::uint8_t)1}},
+		{"LIST_COUNT", {nullptr, (std::uint8_t)1}},
+		{"LIST_MIN", {nullptr, (std::uint8_t)1}},
+		{"LIST_MAX", {nullptr, (std::uint8_t)1}},
+		{"LIST_RANDOM", {nullptr, (std::uint8_t)1}},
+		{"LIST_ALL", {nullptr, (std::uint8_t)1}},
+		{"LIST_INVERT", {nullptr, (std::uint8_t)1}},
+		{"LIST_RANGE", {nullptr, (std::uint8_t)3}},
 	};
 
 	token_index = 0;
@@ -1259,10 +1268,10 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							} break;
 
 							case InkToken::Equal: {
-								if (last_token(all_tokens).token == InkToken::Text && next_token_is(all_tokens, token_index, InkToken::Text)) {
+								if (all_tokens[token_index - 1].token == InkToken::Text && next_token_is(all_tokens, token_index, InkToken::Text)) {
 									try {
 										this_entry_value = std::stoll(all_tokens[token_index + 1].get_text_contents());
-										token_index += 2;
+										++token_index;
 									} catch (...) {
 										throw std::runtime_error("Malformed LIST definition: invalid entry value");
 									}

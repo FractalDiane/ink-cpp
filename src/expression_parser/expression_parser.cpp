@@ -176,7 +176,12 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 
 		if (!found_result) {
 			if (index < expression.length() - 1 && expression[index] == '(') {
-				result.push_back(Token::function_story_knot(word));
+				if (story_var_info.defined_lists.contains_list_name(word)) {
+					result.push_back(Token::function_list_subscript(word));
+				} else {
+					result.push_back(Token::function_story_knot(word));
+				}
+				
 				found_result = true;
 			}
 		}
@@ -194,6 +199,64 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 
 		word.clear();
 	}
+}
+
+void try_coalesce_list(const std::string& expression, std::vector<Token>& result, const StoryVariableInfo& story_var_info) {
+	std::size_t i = result.size() - 1;
+	std::vector<const Token*> list_entries;
+	std::size_t end_index = 0;
+
+	bool continue_loop = true;
+	while (continue_loop) {
+		--i;
+		const Token& this_token = result[i];
+		switch (this_token.type) {
+			case TokenType::ParenComma: {
+				switch (this_token.paren_comma_type) {
+					case ParenCommaType::Comma: {
+
+					} break;
+
+					case ParenCommaType::LeftParen: {
+						if (i == 0 || result[i - 1].type != TokenType::Function) {
+							end_index = i;
+							continue_loop = false;
+						} else {
+							return;
+						}
+					} break;
+
+					case ParenCommaType::RightParen:
+					default: {
+						return;
+					} break;
+				}
+			} break;
+
+			case TokenType::LiteralList: {
+				list_entries.push_back(&this_token);
+			} break;
+
+			default: {
+				return;
+			} break;
+		}
+
+		if (i == 0) {
+			break;
+		}
+	}
+
+	InkList new_list{story_var_info.defined_lists};
+	for (const Token* token : list_entries) {
+		new_list.add_item(static_cast<InkList>(token->value).single_item());
+	}
+
+	while (result.size() > end_index) {
+		result.pop_back();
+	}
+
+	result.push_back(Token::literal_list(new_list));
 }
 
 }
@@ -344,6 +407,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 				case ')': {
 					TRY_ADD_WORD();
 					result.push_back(Token::paren_comma(ParenCommaType::RightParen));
+					try_coalesce_list(expression, result, story_variable_info);
 				} break;
 
 				case ',': {

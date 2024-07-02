@@ -110,7 +110,7 @@ TEST_F(NonStoryFunctionTests, InkListFunctions) {
 	EXPECT_EQ(all, all2);
 
 	InkList inverse{{"monday", "tuesday", "wednesday", "thursday"}, definition_map};
-	InkList inverse2 = best_days.inverse();
+	InkList inverse2 = best_days.inverted();
 	EXPECT_EQ(inverse, inverse2);
 
 	InkList combined_list{{"red", "yellow", "tuesday"}, definition_map};
@@ -125,7 +125,7 @@ TEST_F(NonStoryFunctionTests, InkListFunctions) {
 	EXPECT_EQ(all_c, all2_c);
 	
 	InkList inverse_c{{"orange", "monday", "wednesday", "thursday", "friday", "saturday", "sunday"}, definition_map};
-	InkList inverse2_c = combined_list.inverse();
+	InkList inverse2_c = combined_list.inverted();
 	EXPECT_EQ(inverse_c, inverse2_c);
 }
 #pragma endregion
@@ -1516,6 +1516,31 @@ TEST_F(ListTests, ListValues) {
 	EXPECT_TEXT("The murmuring gets louder. It's now deafening.");
 	EXPECT_TEXT("The lecturer yells at the top of their lungs!");
 	EXPECT_TEXT("They give themself a sore throat and leave the room.");
+}
+
+TEST_F(ListTests, ExplicitListValues) {
+	STORY("21_lists/21f_list_explicit_values.ink");
+	EXPECT_TEXT("One is the loneliest number, two can be as bad as one");
+}
+
+TEST_F(ListTests, ListValueNumbers) {
+	STORY("21_lists/21g_list_value_numbers.ink");
+	EXPECT_TEXT("The lecturer has 2 notches still available to him.");
+}
+
+TEST_F(ListTests, ListNumbersToValues) {
+	STORY("21_lists/21h_list_numbers_to_values.ink");
+	EXPECT_TEXT("You have two points");
+}
+
+TEST_F(ListTests, MultipleListValues) {
+	STORY("21_lists/21i_list_multiple_values.ink");
+	EXPECT_TEXT("Adams, Cartwright are currently in surgery; please direct complaints to Bernard or Eamonn.");
+}
+
+TEST_F(ListTests, MultipleListValuesAssignment) {
+	STORY("21_lists/21j_list_multiple_values_assignment.ink");
+	EXPECT_TEXT("Adams, Cartwright, Denver are currently in surgery; please direct complaints to Bernard or Eamonn.");
 }
 #pragma endregion
 

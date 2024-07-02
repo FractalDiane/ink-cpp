@@ -211,6 +211,7 @@ enum class FunctionFetchType {
 	Builtin,
 	External,
 	StoryKnot,
+	ListSubscript,
 };
 
 //using TokenValue = std::variant<KeywordType, i64, double, std::string, OperatorType, ParenCommaType>;
@@ -318,6 +319,10 @@ struct Token {
 
 	static Token function_story_knot(const std::string& function_name, std::uint8_t arg_count = 0) {
 		return {.type = TokenType::Function, .value = function_name, .function_fetch_type = FunctionFetchType::StoryKnot, .function_argument_count = arg_count};
+	}
+
+	static Token function_list_subscript(const std::string& list_name) {
+		return {.type = TokenType::Function, .value = list_name, .function_fetch_type = FunctionFetchType::ListSubscript, .function_argument_count = 1};
 	}
 
 	static Token variable(const std::string& var_name) {

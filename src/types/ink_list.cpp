@@ -4,6 +4,8 @@
 
 #include "ink_utils.h"
 
+#include <optional>
+
 std::optional<std::int64_t> InkListDefinition::get_entry_value(const std::string& entry) const {
 	if (auto found_entry = list_entries.find(entry); found_entry != list_entries.end()) {
 		return found_entry->second;
@@ -20,6 +22,18 @@ std::optional<std::string> InkListDefinition::get_label_from_value(std::int64_t 
 	}
 
 	return std::nullopt;
+}
+
+InkList InkListDefinition::get_sublist_from_value(std::int64_t value, const InkListDefinitionMap* definition_map) const {
+	InkList result{definition_map};
+	for (const auto& entry : list_entries) {
+		if (entry.second == value) {
+			result.add_item(entry.first);
+			return result;
+		}
+	}
+
+	return result;
 }
 
 void InkListDefinitionMap::add_list_definition(const std::string& name, const std::vector<InkListDefinition::Entry>& values) {
@@ -44,6 +58,16 @@ std::optional<Uuid> InkListDefinitionMap::get_list_entry_origin(const std::strin
 	}
 
 	return std::nullopt;
+}
+
+bool InkListDefinitionMap::contains_list_name(const std::string& name) const {
+	for (const auto& list : defined_lists) {
+		if (list.second.get_name() == name) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 InkList::InkList(const InkStory& story) : current_values{}, owning_definition_map(&story.get_story_state().variable_info.defined_lists) {}
@@ -164,7 +188,7 @@ bool InkList::contains(const InkList& other) const {
 	return true;
 }
 
-InkList InkList::inverse() const {
+InkList InkList::inverted() const {
 	InkList result{owning_definition_map};
 	for (Uuid origin : all_origins) {
 		const InkListDefinition& this_definition = owning_definition_map->defined_lists.at(origin);
@@ -176,6 +200,14 @@ InkList InkList::inverse() const {
 	}
 
 	return result;
+}
+
+std::int64_t InkList::value() const {
+	return max_item().value;
+}
+
+InkListItem InkList::single_item() const {
+	return *current_values.begin();
 }
 
 InkListItem InkList::min_item() const {
@@ -216,12 +248,75 @@ InkListItem InkList::max_item() const {
 	return *max_item;
 }
 
+InkList InkList::min() const {
+	InkList result{owning_definition_map};
+	result.add_item(min_item());
+	return result;
+}
+
+InkList InkList::max() const {
+	InkList result{owning_definition_map};
+	result.add_item(max_item());
+	return result;
+}
+
+InkList InkList::at(std::size_t index) const {
+	InkList result{owning_definition_map};
+	
+	auto it = current_values.begin();
+	std::advance(it, index);
+	result.add_item(*it);
+
+	return result;
+}
+
 InkList InkList::all_possible_items() const {
 	InkList result{owning_definition_map};
 	for (Uuid origin : all_origins) {
 		const InkListDefinition& this_definition = owning_definition_map->defined_lists.at(origin);
 		for (const auto& entry : this_definition.list_entries) {
 			result.add_item(InkListItem(entry.first, entry.second, origin));
+		}
+	}
+
+	return result;
+}
+
+InkList InkList::range(std::int64_t from, std::int64_t to) const {
+	InkList result{owning_definition_map};
+	for (const InkListItem& item : current_values) {
+		if (item.value >= from && item.value <= to) {
+			result.add_item(item);
+		}
+	}
+
+	return result;
+}
+
+InkList InkList::range(const std::string& from, const std::string& to) const {
+	InkList result{owning_definition_map};
+
+	std::optional<std::int64_t> minimum = std::nullopt;
+	std::optional<std::int64_t> maximum = std::nullopt;
+	for (const InkListItem& item : current_values) {
+		if (item.label == from) {
+			minimum = item.value;
+			if (minimum.has_value() && maximum.has_value()) {
+				break;
+			}
+		}
+
+		if (item.label == to) {
+			maximum = item.value;
+			if (minimum.has_value() && maximum.has_value()) {
+				break;
+			}
+		}
+	}
+
+	for (const InkListItem& item : current_values) {
+		if (item.value >= *minimum && item.value <= *maximum) {
+			result.add_item(item);
 		}
 	}
 

@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <initializer_list>
+#include <set>
 #include <unordered_set>
 #include <unordered_map>
 #include <optional>
@@ -41,6 +42,7 @@ public:
 
 	std::optional<std::int64_t> get_entry_value(const std::string& entry) const;
 	std::optional<std::string> get_label_from_value(std::int64_t value) const;
+	InkList get_sublist_from_value(std::int64_t value, const struct InkListDefinitionMap* definition_map) const;
 
 	inline Uuid get_uuid() const { return uuid; }
 	inline const std::string& get_name() const { return name; }
@@ -52,6 +54,7 @@ struct InkListDefinitionMap {
 
 	void add_list_definition(const std::string& name, const std::vector<InkListDefinition::Entry>& values);
 	std::optional<Uuid> get_list_entry_origin(const std::string& entry) const;
+	bool contains_list_name(const std::string& name) const;
 };
 
 struct InkListItem {
@@ -71,6 +74,16 @@ struct InkListItem {
 	bool operator!=(const InkListItem& other) const {
 		return origin_list_uuid != other.origin_list_uuid || label != other.label;
 	}
+
+	bool operator<(const InkListItem& other) const {
+		if (value != other.value) {
+			return value < other.value;
+		} else if (origin_list_uuid != other.origin_list_uuid) {
+			return origin_list_uuid.get() < other.origin_list_uuid.get();
+		} else {
+			return label < other.label;
+		}
+	}
 };
 
 template <>
@@ -86,7 +99,7 @@ class InkStory;
 struct InkStoryState;
 
 class InkList {
-	std::unordered_set<InkListItem> current_values;
+	std::set<InkListItem> current_values;
 	std::unordered_set<Uuid> all_origins;
 	const InkListDefinitionMap* owning_definition_map;
 
@@ -117,13 +130,21 @@ public:
 	InkList intersect_with(const InkList& other) const;
 	InkList without(const InkList& other) const;
 	bool contains(const InkList& other) const;
-	InkList inverse() const;
+	InkList inverted() const;
+
+	std::int64_t value() const;
 
 	std::size_t count() const { return current_values.size(); }
 	std::size_t size() const { return current_values.size(); }
+	InkListItem single_item() const;
 	InkListItem min_item() const;
 	InkListItem max_item() const;
+	InkList min() const;
+	InkList max() const;
+	InkList at(std::size_t index) const;
 	InkList all_possible_items() const;
+	InkList range(std::int64_t from, std::int64_t to) const;
+	InkList range(const std::string& from, const std::string& to) const;
 
 	auto begin() { return current_values.begin(); }
 	auto end() { return current_values.end(); }
