@@ -28,6 +28,7 @@ struct InkStoryState {
 		bool returning_from_function = false;
 		Uuid current_function_prep_expression = UINT32_MAX;
 		bool any_new_content = false;
+		//bool reached_any_non_newline = false;
 	};
 
 	struct ThreadEntry {

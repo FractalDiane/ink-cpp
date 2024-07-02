@@ -608,6 +608,9 @@ std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix) {
 								} else {
 									break;
 								}
+							} else if (next.type == TokenType::Operator) {
+								postfix.push_back(next);
+								stack.pop();
 							} else {
 								throw;
 							}
