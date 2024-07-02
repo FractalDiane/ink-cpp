@@ -25,3 +25,12 @@ LIST DoctorsInSurgery = (Adams), Bernard, (Cartwright), Denver, Eamonn
 }
 
 {DoctorsInSurgery ? ()}
+
+LIST Facts = (Fogg_is_fairly_odd), 	first_name_phileas, (Fogg_is_English)
+
+{Facts ? Fogg_is_fairly_odd:I smiled politely.|I frowned. Was he a lunatic?}
+'{Facts ? first_name_phileas:Phileas|Monsieur}, really!' I cried.
+
+{ Facts ? (Fogg_is_English, Fogg_is_fairly_odd):
+	<> 'I know Englishmen are strange, but this is *incredible*!'
+}

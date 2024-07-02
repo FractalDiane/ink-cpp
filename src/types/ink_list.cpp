@@ -36,9 +36,10 @@ InkList InkListDefinition::get_sublist_from_value(std::int64_t value, const InkL
 	return result;
 }
 
-void InkListDefinitionMap::add_list_definition(const std::string& name, const std::vector<InkListDefinition::Entry>& values) {
+Uuid InkListDefinitionMap::add_list_definition(const std::string& name, const std::vector<InkListDefinition::Entry>& values) {
 	Uuid new_uuid = current_list_definition_uuid++;
 	defined_lists.emplace(new_uuid, InkListDefinition(name, values, new_uuid));
+	return new_uuid;
 }
 
 std::optional<Uuid> InkListDefinitionMap::get_list_entry_origin(const std::string& entry) const {
@@ -300,27 +301,18 @@ InkList InkList::range(std::int64_t from, std::int64_t to) const {
 InkList InkList::range(const std::string& from, const std::string& to) const {
 	InkList result{owning_definition_map};
 
+	bool in_range = false;
 	std::optional<std::int64_t> minimum = std::nullopt;
 	std::optional<std::int64_t> maximum = std::nullopt;
 	for (const InkListItem& item : current_values) {
 		if (item.label == from) {
-			minimum = item.value;
-			if (minimum.has_value() && maximum.has_value()) {
-				break;
-			}
+			in_range = true;
+			result.add_item(item);
 		}
 
 		if (item.label == to) {
-			maximum = item.value;
-			if (minimum.has_value() && maximum.has_value()) {
-				break;
-			}
-		}
-	}
-
-	for (const InkListItem& item : current_values) {
-		if (item.value >= *minimum && item.value <= *maximum) {
 			result.add_item(item);
+			break;
 		}
 	}
 

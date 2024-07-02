@@ -51,10 +51,8 @@ void StoryVariableInfo::set_variable_value(const std::string& variable, const Va
 	}
 
 	if (auto variable_value = variables.find(*var); variable_value != variables.end()) {
-		if (variable_value->second != value) {
-			variable_value->second = value;
-			flag_variable_changed(variable);
-		}
+		variable_value->second = value;
+		flag_variable_changed(variable);
 	} else {
 		variables.emplace(variable, value);
 	}
@@ -184,9 +182,19 @@ Variant Token::call_function(const std::vector<Variant>& arguments, const StoryV
 			} break;
 
 			case FunctionFetchType::ListSubscript: {
-				for (auto& entry : story_variable_info.defined_lists.defined_lists) {
-					if (entry.second.get_name() == static_cast<std::string>(value)) {
-						return entry.second.get_sublist_from_value(arguments[0], &story_variable_info.defined_lists);
+				if (function_argument_count > 0) {
+					for (auto& entry : story_variable_info.defined_lists.defined_lists) {
+						if (entry.second.get_name() == static_cast<std::string>(value)) {
+							return entry.second.get_sublist_from_value(arguments[0], &story_variable_info.defined_lists);
+						}
+					}
+				} else {
+					for (auto& entry : story_variable_info.defined_lists.defined_lists) {
+						if (entry.second.get_name() == static_cast<std::string>(value)) {
+							InkList empty_list{&story_variable_info.defined_lists};
+							empty_list.add_origin(entry.first);
+							return empty_list;
+						}
 					}
 				}
 				

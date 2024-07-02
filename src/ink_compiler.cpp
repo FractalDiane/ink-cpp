@@ -1322,8 +1322,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						(add_entry)();
 					}
 
-					story_variable_info.add_list_definition(identifier, entries);
-					result_object = new InkObjectList(identifier, entries);
+					Uuid new_list_uuid = story_variable_info.add_list_definition(identifier, entries);
+					result_object = new InkObjectList(identifier, new_list_uuid, entries);
 				} else {
 					throw std::runtime_error("Malformed LIST definition");
 				}

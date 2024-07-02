@@ -179,7 +179,7 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 		if (!found_result) {
 			if (index < expression.length() - 1 && expression[index] == '(') {
 				if (story_var_info.defined_lists.contains_list_name(word)) {
-					result.push_back(Token::function_list_subscript(word));
+					result.push_back(Token::function_list_subscript(word, index + 1 < expression.length() && expression[index + 1] == ')'));
 				} else {
 					result.push_back(Token::function_story_knot(word));
 				}

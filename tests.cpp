@@ -1580,11 +1580,26 @@ TEST_F(ListTests, ListContentTests) {
 	EXPECT_TEXT("Dr Eamonn is polishing his glasses.");
 	EXPECT_TEXT("Dr Denver appears to be taking the day off.");
 	EXPECT_TEXT("false");
+	EXPECT_TEXT("I smiled politely.");
+	EXPECT_TEXT("'Monsieur, really!' I cried. 'I know Englishmen are strange, but this is *incredible*!'");
 }
 
 TEST_F(ListTests, NiceListPrintFunction) {
 	STORY("21_lists/21o_nice_list_print.ink");
 	EXPECT_TEXT("My favourite dinosaurs are stegosaurs, anklyosaurus and pleiosaur.");
+}
+
+TEST_F(ListTests, ListQueries2) {
+	STORY("21_lists/21p_list_queries_2.ink");
+	EXPECT_TEXT("The doctors that work here are: Adams, Bernard, Cartwright, Denver, Eamonn");
+	EXPECT_TEXT("There are 5 doctors that work here.");
+	EXPECT_TEXT("Adams");
+	EXPECT_TEXT("eleven, thirteen, seventeen, nineteen");
+}
+
+TEST_F(ListTests, RefreshListType) {
+	STORY("21_lists/21q_refresh_list_type.ink");
+	EXPECT_TEXT("first_value, second_value, third_value");
 }
 #pragma endregion
 

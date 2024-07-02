@@ -132,7 +132,7 @@ struct StoryVariableInfo {
 		execute_variable_observers(variable, variables[variable]);
 	}
 
-	void add_list_definition(const std::string& name, const std::vector<InkListDefinition::Entry>& values) { defined_lists.add_list_definition(name, values); }
+	Uuid add_list_definition(const std::string& name, const std::vector<InkListDefinition::Entry>& values) { return defined_lists.add_list_definition(name, values); }
 	std::optional<Uuid> get_list_entry_origin(const std::string& entry) const { return defined_lists.get_list_entry_origin(entry); }
 
 private:
@@ -276,6 +276,9 @@ struct Token {
 			case Variant_String:
 				result.type = TokenType::LiteralString;
 				break;
+			case Variant_List:
+				result.type = TokenType::LiteralList;
+				break;
 			default: break;
 		}
 
@@ -334,8 +337,8 @@ struct Token {
 		return {.type = TokenType::Function, .value = function_name, .function_fetch_type = FunctionFetchType::StoryKnot, .function_argument_count = arg_count};
 	}
 
-	static Token function_list_subscript(const std::string& list_name) {
-		return {.type = TokenType::Function, .value = list_name, .function_fetch_type = FunctionFetchType::ListSubscript, .function_argument_count = 1};
+	static Token function_list_subscript(const std::string& list_name, bool empty) {
+		return {.type = TokenType::Function, .value = list_name, .function_fetch_type = FunctionFetchType::ListSubscript, .function_argument_count = empty ? (std::uint8_t)0 : (std::uint8_t)1};
 	}
 
 	static Token variable(const std::string& var_name) {

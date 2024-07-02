@@ -52,7 +52,7 @@ struct InkListDefinitionMap {
 	std::unordered_map<Uuid, InkListDefinition> defined_lists;
 	UuidValue current_list_definition_uuid = 0;
 
-	void add_list_definition(const std::string& name, const std::vector<InkListDefinition::Entry>& values);
+	Uuid add_list_definition(const std::string& name, const std::vector<InkListDefinition::Entry>& values);
 	std::optional<Uuid> get_list_entry_origin(const std::string& entry) const;
 	bool contains_list_name(const std::string& name) const;
 };
@@ -125,6 +125,8 @@ public:
 	void add_item(const InkListItem& item);
 	void remove_item(const std::string& item_name);
 	void remove_item(const InkListItem& item);
+
+	void add_origin(Uuid origin) { all_origins.insert(origin); }
 
 	InkList union_with(const InkList& other) const;
 	InkList intersect_with(const InkList& other) const;
