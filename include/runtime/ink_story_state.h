@@ -45,6 +45,7 @@ struct InkStoryState {
 
 	std::vector<KnotStatus> current_knots_stack;
 	Stitch* current_stitch = nullptr;
+	Stitch* next_stitch = nullptr;
 
 	bool should_end_story = false;
 
@@ -90,6 +91,7 @@ struct InkStoryState {
 	KnotStatus& previous_nonfunction_knot();
 	inline std::size_t current_knot_size() const { return current_knots_stack.back().knot->objects.size(); }
 	KnotStatus& current_nonchoice_knot();
+	void setup_next_stitch();
 
 	void update_local_knot_variables();
 

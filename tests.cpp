@@ -447,7 +447,7 @@ TEST_F(VaryingChoiceTests, ConditionalChoices) {
 	EXPECT_CHOICES("Choice 1", "Choice 2");
 
 	story.choose_choice_index(1);
-	EXPECT_TEXT("Hello 2", "Hello 3", "");
+	EXPECT_TEXT("Hello 2", "Hello 3");
 	EXPECT_CHOICES("Choice 1", "Choice 2", "Choice 3");
 }
 #pragma endregion
