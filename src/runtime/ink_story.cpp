@@ -206,6 +206,7 @@ std::string InkStory::continue_story() {
 		&& eval_result.has_any_contents(true)
 		&& (!story_state.current_nonchoice_knot().knot->is_function || story_state.current_nonchoice_knot().any_new_content || last_knot_had_newline)
 		&& current_object->stop_before_this(story_state)) {
+		//&& (story_state.function_call_stack.empty() || !story_state.function_call_stack.back()->function_prep_interpolation)) {
 			if (story_state.in_glue) {
 				story_state.in_glue = false;
 				eval_result.reached_newline = false;
@@ -247,7 +248,7 @@ std::string InkStory::continue_story() {
 						++story_state.current_thread_depth;
 
 						// still need to put something on the stack if a thread goes to the same knot, so it can return
-						if (target.knot == story_state.current_knot().knot) {
+						if (target.knot == story_state.current_nonchoice_knot().knot) {
 							switch (target.result_type) {
 								case WeaveContentType::Stitch: {
 									story_state.current_knots_stack.push_back({target.knot, target.stitch->index});
@@ -326,10 +327,10 @@ std::string InkStory::continue_story() {
 
 								story_state.variable_info.current_weave_uuid = target.stitch->uuid;
 								for (std::size_t i = 0; i < target.stitch->parameters.size(); ++i) {
-									story_state.variable_info.set_variable_value(target.knot->parameters[i].name, story_state.arguments_stack.back()[i].second);
-									if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
+									story_state.variable_info.set_variable_value(target.stitch->parameters[i].name, story_state.arguments_stack.back()[i].second);
+									if (target.stitch->parameters[i].by_ref && target.stitch->parameters[i].name != story_state.arguments_stack.back()[i].first) {
 										story_state.variable_info.redirects[target.stitch->uuid].insert({
-											target.knot->parameters[i].name,
+											target.stitch->parameters[i].name,
 											story_state.arguments_stack.back()[i].first,
 										});
 									}
@@ -367,6 +368,7 @@ std::string InkStory::continue_story() {
 					} break;
 
 					case DivertType::Function: {
+						bool from_interpolate = story_state.current_knot().knot->objects[story_state.current_knot().index]->get_id() == ObjectId::Interpolation;
 						story_state.current_knot().returning_from_function = true;
 						story_state.current_knots_stack.push_back({target.knot, 0});
 						story_state.story_tracking.increment_visit_count(target.knot);
@@ -388,6 +390,7 @@ std::string InkStory::continue_story() {
 
 						if (eval_result.imminent_function_prep) {
 							story_state.current_knot().knot->is_function_prep = true;
+							story_state.current_knot().knot->function_prep_interpolation = from_interpolate;
 						}
 
 						eval_result.imminent_function_prep = false;

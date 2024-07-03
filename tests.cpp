@@ -1601,6 +1601,47 @@ TEST_F(ListTests, RefreshListType) {
 	STORY("21_lists/21q_refresh_list_type.ink");
 	EXPECT_TEXT("first_value, second_value, third_value");
 }
+
+TEST_F(ListTests, TowerOfHanoi) {
+	STORY("21_lists/21r_tower_of_hanoi.ink");
+	EXPECT_TEXT("Staring down from the heavens you see your followers finishing construction of the last of the great temples, ready to begin the work.");
+	EXPECT_CHOICES("Regard the temples");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("You regard each of the temples in turn. On each is stacked the rings of stone. On the first temple, are the discs numbered one, two, three, four, five, six, seven. The second temple is empty. The third temple is empty.");
+	EXPECT_CHOICES(
+		"Move a ring from the first temple to the second temple",
+		"Move a ring from the first temple to the third temple",
+	);
+	
+	story.choose_choice_index(1);
+	EXPECT_TEXT("The priests far below construct a great harness, and after many years of work, the great stone ring is lifted up into the air, and swung over to the next of the temples.");
+	EXPECT_TEXT("The ropes are slashed, and in the blink of an eye it falls once more.");
+	EXPECT_CHOICES("Regard the temples");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("You regard each of the temples in turn. On each is stacked the rings of stone. On the first temple, are the discs numbered two, three, four, five, six, seven. The second temple is empty. The one ring lies on the third temple.");
+	EXPECT_CHOICES(
+		"Move a ring from the first temple to the second temple",
+		"Move a ring from the third temple to the first temple",
+		"Move a ring from the third temple to the second temple",
+	);
+
+	story.choose_choice_index(0);
+	EXPECT_TEXT("Your next decree is met with a great feast and many sacrifices. After the funeary smoke has cleared, work to shift the great stone ring begins in earnest. A generation grows and falls, and the ring falls into its ordained place.");
+	EXPECT_CHOICES("Regard the temples");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("You regard each of the temples in turn. On each is stacked the rings of stone. On the first temple, are the discs numbered three, four, five, six, seven. The two ring lies on the second temple. The one ring lies on the third temple.");
+	EXPECT_CHOICES(
+		"Move a ring from the second temple to the first temple",
+		"Move a ring from the third temple to the first temple",
+		"Move a ring from the third temple to the second temple",
+	);
+
+	story.choose_choice_index(1);
+	EXPECT_TEXT("Years pass as the ring is slowly moved.");
+	EXPECT_CHOICES("Regard the temples");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("You regard each of the temples in turn. On each is stacked the rings of stone. On the first temple, are the discs numbered one, three, four, five, six, seven. The two ring lies on the second temple. The third temple is empty.");
+}
 #pragma endregion
 
 #pragma region Miscellaneous Tests

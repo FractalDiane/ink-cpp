@@ -489,6 +489,11 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							new_knot.parameters = params;
 						}
 
+						// line break objects at the end of a knot are redundant and only cause problems
+						//if (!story_knots.back().objects.empty() && story_knots.back().objects.back()->get_id() == ObjectId::LineBreak) {
+						//	story_knots.back().objects.pop_back();
+						//}
+
 						// TODO: don't force it to parse all the parameters if the knot already exists
 						if (is_new_knot) {
 							story_knots.push_back(new_knot);

@@ -47,6 +47,9 @@ namespace {
 		{O::Greater, C(9)},
 		{O::LessEqual, C(9)},
 		{O::GreaterEqual, C(9)},
+		{O::Substring, C(9)},
+		{O::NotSubstring, C(9)},
+		{O::Intersect, C(9)},
 
 		{O::Equal, C(10)},
 		{O::NotEqual, C(10)},
@@ -485,19 +488,21 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 			} break;
 
 			case TokenType::ParenComma: {
-				switch (token.paren_comma_type) {
-					case ParenCommaType::Comma: {
-						++arg_count_stack.back().second;
-					} break;
+				if (!arg_count_stack.empty()) {
+					switch (token.paren_comma_type) {
+						case ParenCommaType::Comma: {
+							++arg_count_stack.back().second;
+						} break;
 
-					case ParenCommaType::RightParen: {
-						if (!arg_count_stack.empty()) {
-							arg_count_stack.back().first.get().function_argument_count = arg_count_stack.back().second;
-							arg_count_stack.pop_back();
-						}
-					} break;
+						case ParenCommaType::RightParen: {
+							if (!arg_count_stack.empty()) {
+								arg_count_stack.back().first.get().function_argument_count = arg_count_stack.back().second;
+								arg_count_stack.pop_back();
+							}
+						} break;
 
-					default: break;
+						default: break;
+					}
 				}
 			} break;
 

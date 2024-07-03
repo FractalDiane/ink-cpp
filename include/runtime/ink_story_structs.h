@@ -56,6 +56,7 @@ struct Knot : public InkWeaveContent {
 	bool is_function = false;
 	bool is_choice_result = false;
 	bool is_function_prep = false;
+	bool function_prep_interpolation = false;
 
 	Knot() : objects{}, stitches{}, gather_points{} {}
 	Knot(const std::vector<class InkObject*> objects) : objects{objects}, stitches{{}}, gather_points{{}} {}

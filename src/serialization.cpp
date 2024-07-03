@@ -28,7 +28,7 @@ std::uint16_t Deserializer<std::uint16_t>::operator()(const ByteVec& bytes, std:
 
 ByteVec Serializer<std::uint32_t>::operator()(std::uint32_t value) {
 	ByteVec result;
-	result.push_back(static_cast<std::uint8_t>(value & 0xff00u));
+	result.push_back(static_cast<std::uint8_t>(value & 0xffu));
 	result.push_back(static_cast<std::uint8_t>((value & 0xff00u) >> 8));
 	result.push_back(static_cast<std::uint8_t>((value & 0xff0000u) >> 16));
 	result.push_back(static_cast<std::uint8_t>((value & 0xff000000u) >> 24));
