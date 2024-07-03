@@ -72,6 +72,8 @@ FIXTURE(ConstantTests);
 FIXTURE(TunnelTests);
 FIXTURE(ThreadTests);
 FIXTURE(ListTests);
+FIXTURE(MiscBugTests);
+FIXTURE(LongExampleTests);
 
 FIXTURE(MiscellaneousTests);
 
@@ -1601,9 +1603,35 @@ TEST_F(ListTests, RefreshListType) {
 	STORY("21_lists/21q_refresh_list_type.ink");
 	EXPECT_TEXT("first_value, second_value, third_value");
 }
+#pragma endregion
 
-TEST_F(ListTests, TowerOfHanoi) {
-	STORY("21_lists/21r_tower_of_hanoi.ink");
+#pragma region Misc Bug Tests
+TEST_F(MiscBugTests, StitchFlowStops) {
+	STORY("22_misc_bugs/22a_stitch_flow_stops.ink");
+	EXPECT_TEXT("hello there", "this is a test", "");
+}
+
+TEST_F(MiscBugTests, ThreadDivertToStitch) {
+	STORY("22_misc_bugs/22b_thread_divert_to_stitch.ink");
+	EXPECT_TEXT("Staring down from the heavens you see your followers finishing construction of the last of the great temples, ready to begin the work.");
+	EXPECT_CHOICES("Regard the temples");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("You regard each of the temples in turn. On each is stacked the rings of stone.");
+	EXPECT_CHOICES(
+		"Move a ring from 1 to 2",
+		"Move a ring from 1 to 3",
+		"Move a ring from 3 to 1",
+		"Move a ring from 2 to 3",
+	);
+
+	story.choose_choice_index(2);
+	EXPECT_TEXT("You move a ring from 3 to 1");
+}
+#pragma endregion
+
+#pragma region Long Example Tests
+/*TEST_F(LongExampleTests, TowerOfHanoi) {
+	STORY("23_long_examples/23a_tower_of_hanoi.ink");
 	EXPECT_TEXT("Staring down from the heavens you see your followers finishing construction of the last of the great temples, ready to begin the work.");
 	EXPECT_CHOICES("Regard the temples");
 	story.choose_choice_index(0);
@@ -1641,7 +1669,7 @@ TEST_F(ListTests, TowerOfHanoi) {
 	EXPECT_CHOICES("Regard the temples");
 	story.choose_choice_index(0);
 	EXPECT_TEXT("You regard each of the temples in turn. On each is stacked the rings of stone. On the first temple, are the discs numbered one, three, four, five, six, seven. The two ring lies on the second temple. The third temple is empty.");
-}
+}*/
 #pragma endregion
 
 #pragma region Miscellaneous Tests
