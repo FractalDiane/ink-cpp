@@ -52,11 +52,27 @@ InkStoryState::KnotStatus& InkStoryState::current_nonchoice_knot() {
 	return current_knots_stack.front();
 }
 
-/*ExpressionParser::VariableMap InkStoryState::get_story_constants() {
-	ExpressionParser::VariableMap result = story_tracking.get_visit_count_variables(current_knot().knot, current_stitch);
-	result.insert(constants.begin(), constants.end());
-	return result;
-}*/
+void InkStoryState::setup_next_stitch() {
+	const KnotStatus& current = current_knot();
+	std::vector<Stitch>& stitches = current.knot->stitches;
+	if (current_stitch) {
+		for (auto stitch = stitches.begin(); stitch != stitches.end(); ++stitch) {
+			if (current_stitch == &*stitch) {
+				if (current_stitch != &stitches.back()) {
+					next_stitch = &*(stitch + 1);
+				} else {
+					next_stitch = nullptr;
+				}
+
+				return;
+			}
+		}
+	} else if (!stitches.empty()) {
+		next_stitch = &stitches[0];
+	} else {
+		next_stitch = nullptr;
+	}
+}
 
 void InkStoryState::update_local_knot_variables() {
 	story_tracking.update_visit_count_variables(current_knot().knot, current_stitch, variable_info);

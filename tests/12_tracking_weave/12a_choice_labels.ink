@@ -21,6 +21,7 @@ The guard frowns at you.
 
 === fight_guard ===
 You appear to be in trouble.
+-> throw_something
 = throw_something
 *	(rock) [Throw rock at guard] -> throw
 * 	(sand) [Throw sand at guard] -> throw
