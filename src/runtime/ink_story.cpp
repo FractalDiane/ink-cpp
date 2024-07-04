@@ -470,7 +470,9 @@ std::string InkStory::continue_story() {
 
 		// if we've run out of content in this knot, the story continues to the next gather point
 		while (!story_state.current_knots_stack.empty() && (!story_state.at_choice || story_state.current_knot().knot->is_function_prep) && story_state.index_in_knot() >= story_state.current_knot_size()) {
-			if (story_state.current_knot().knot->is_choice_result) {
+			if (story_state.should_wrap_up_thread) {
+				break;
+			} else if (story_state.current_knot().knot->is_choice_result) {
 				story_state.current_knots_stack.pop_back();
 
 				if (!story_state.current_knots_stack.empty()) {
