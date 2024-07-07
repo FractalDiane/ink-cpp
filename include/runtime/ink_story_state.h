@@ -35,6 +35,7 @@ struct InkStoryState {
 		struct InkChoiceEntry* choice_entry = nullptr;
 		std::size_t choice_index = 0;
 		Knot* containing_knot = nullptr;
+		Stitch* containing_stitch = nullptr;
 		std::size_t index_in_knot = 0;
 		std::vector<std::pair<std::string, ExpressionParserV2::Variant>> arguments;
 

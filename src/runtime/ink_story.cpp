@@ -561,17 +561,24 @@ void InkStory::choose_choice_index(std::size_t index) {
 		if (story_state.current_choices[index].from_thread) {
 			const InkStoryState::ThreadEntry& thread_entry = story_state.current_thread_entries[index];
 			story_state.current_knots_stack.back() = {thread_entry.containing_knot, thread_entry.index_in_knot};
+			story_state.setup_next_stitch();
 
-			story_state.variable_info.current_weave_uuid = thread_entry.containing_knot->uuid;
-			for (std::size_t i = 0; i < thread_entry.containing_knot->parameters.size(); ++i) {
-				story_state.variable_info.set_variable_value(thread_entry.containing_knot->parameters[i].name, thread_entry.arguments[i].second);
-				if (thread_entry.containing_knot->parameters[i].by_ref && thread_entry.containing_knot->parameters[i].name != thread_entry.arguments[i].first) {
-					story_state.variable_info.redirects[thread_entry.containing_knot->uuid].insert({
-						thread_entry.containing_knot->parameters[i].name,
+			InkWeaveContent* thread_target = thread_entry.containing_stitch
+											? static_cast<InkWeaveContent*>(thread_entry.containing_stitch)
+											: static_cast<InkWeaveContent*>(thread_entry.containing_knot);
+
+			story_state.variable_info.current_weave_uuid = thread_target->uuid;
+			for (std::size_t i = 0; i < thread_target->parameters.size(); ++i) {
+				story_state.variable_info.set_variable_value(thread_target->parameters[i].name, thread_entry.arguments[i].second);
+				if (thread_target->parameters[i].by_ref && thread_target->parameters[i].name != thread_entry.arguments[i].first) {
+					story_state.variable_info.redirects[thread_target->uuid].insert({
+						thread_target->parameters[i].name,
 						thread_entry.arguments[i].first,
 					});
 				}
 			}
+
+			story_state.should_wrap_up_thread = false;
 		} else {
 			--story_state.current_knots_stack.back().index;
 		}

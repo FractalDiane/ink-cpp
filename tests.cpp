@@ -1397,7 +1397,9 @@ TEST_F(ThreadTests, BasicThreads) {
 	EXPECT_CHOICES("\"What did you have for lunch today?\"", "\"Nice weather, we're having,\"", "Continue walking");
 	story.choose_choice_index(1);
 
-	EXPECT_TEXT("\"Nice weather, we're having,\" I said.", "\"I've seen better,\" he replied.", "Before long, we arrived at his house.");
+	EXPECT_TEXT("\"Nice weather, we're having,\" I said.");
+	EXPECT_TEXT("\"I've seen better,\" he replied.");
+	EXPECT_TEXT("Before long, we arrived at his house.");
 }
 
 TEST_F(ThreadTests, NestedThreads) {
