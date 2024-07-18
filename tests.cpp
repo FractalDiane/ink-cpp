@@ -1629,6 +1629,11 @@ TEST_F(MiscBugTests, ThreadDivertToStitch) {
 	story.choose_choice_index(2);
 	EXPECT_TEXT("You move a ring from 3 to 1");
 }
+
+TEST_F(MiscBugTests, DeeplyNestedFunctionContent) {
+	STORY("22_misc_bugs/22c_deeply_nested_function_content.ink");
+	EXPECT_TEXT("This is a test. On the first temple, are the discs numbered one, two, three, four, five, six, seven.");
+}
 #pragma endregion
 
 #pragma region Long Example Tests
