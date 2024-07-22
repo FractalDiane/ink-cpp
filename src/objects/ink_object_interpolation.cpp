@@ -32,7 +32,7 @@ void InkObjectInterpolation::execute(InkStoryState& story_state, InkStoryEvalRes
 		if (interpolate_result.has_value()) {
 			std::string result = interpolate_result->to_printable_string();
 			eval_result.result += result;
-			story_state.current_nonchoice_knot().any_new_content = !result.empty();
+			story_state.current_knot().any_new_content = !result.empty();
 		}
 	}
 }

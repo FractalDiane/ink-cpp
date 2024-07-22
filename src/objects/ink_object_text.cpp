@@ -19,7 +19,7 @@ void InkObjectText::execute(InkStoryState& story_state, InkStoryEvalResult& eval
 	if ((!story_state.selected_choice.has_value() && story_state.choice_mix_position != InkStoryState::ChoiceMixPosition::After)
 	|| (story_state.selected_choice.has_value() && story_state.choice_mix_position != InkStoryState::ChoiceMixPosition::In)) {
 		eval_result.result += text_contents;
-		story_state.current_nonchoice_knot().any_new_content = !text_contents.empty();
+		story_state.current_knot().any_new_content = !text_contents.empty();
 	}
 }
 

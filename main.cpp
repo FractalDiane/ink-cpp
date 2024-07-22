@@ -24,8 +24,8 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "22_long_examples"
-#define TEST_FILE "22b_crime_scene"
+#define TEST_FOLDER "22_misc_bugs"
+#define TEST_FILE "22c_deeply_nested_function_content"
 
 int main(int argc, char* argv[]) {
 	InkCompiler compiler;

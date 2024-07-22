@@ -7,6 +7,19 @@ VAR post3 = ()
 
 -> gameloop
 
+=== function postToPlace(postNum)
+    { postNum:
+        - 1: first
+        - 2: second
+        - 3: third
+    }
+
+=== function name(postNum)
+    the {postToPlace(postNum)} temple
+
+=== function Name(postNum)
+    The {postToPlace(postNum)} temple
+
 == function getListForTower(towerNum)
     { towerNum:
         - 1:    ~ return post1
@@ -28,3 +41,8 @@ VAR post3 = ()
 
 === gameloop ===
 This is a test. {describe_pillar(1)}
+//~ temp list = getListForTower(1)
+//On {name(1)}, are the discs numbered {list}.
+-> END
+
+// when we hit an interpolate, don't stop until there's more content and a newline???????

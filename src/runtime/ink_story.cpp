@@ -205,15 +205,26 @@ std::string InkStory::continue_story() {
 		// are we stopping here?
 		if (eval_result.reached_newline
 		&& eval_result.has_any_contents(true)
-		&& (!story_state.current_nonchoice_knot().knot->is_function || story_state.current_nonchoice_knot().any_new_content || last_knot_had_newline)
+		&& (!story_state.current_nonchoice_knot().knot->is_function || story_state.current_knot().any_new_content || last_knot_had_newline)
 		&& current_object->stop_before_this(story_state)) {
 		//&& (story_state.function_call_stack.empty() || !story_state.function_call_stack.back()->function_prep_interpolation)) {
-			if (story_state.in_glue) {
-				story_state.in_glue = false;
-				eval_result.reached_newline = false;
-			} else {
-				break;
-			}
+			/*if (auto& knot = story_state.previous_nonfunction_knot(); knot.knot->objects[knot.index]->get_id() == ObjectId::Interpolation) {
+				if (story_state.in_glue) {
+					story_state.in_glue = false;
+					eval_result.reached_newline = false;
+				} else if (!story_state.current_knots_stack[1].any_new_content || !story_state.current_knots_stack[1].reached_newline) {
+
+				} else {
+					break;
+				}
+			} else {*/
+				if (story_state.in_glue) {
+					story_state.in_glue = false;
+					eval_result.reached_newline = false;
+				} else {
+					break;
+				}
+			//}
 		}
 
 		current_object->execute(story_state, eval_result);
@@ -431,6 +442,7 @@ std::string InkStory::continue_story() {
 		}
 
 		// if we're returning from a function, we need to get it off the stack
+		bool function_has_return_value = false;
 		if (eval_result.reached_function_return) {
 			while (story_state.current_knot().knot != story_state.function_call_stack.back()) {
 				story_state.current_knots_stack.pop_back();
@@ -441,6 +453,7 @@ std::string InkStory::continue_story() {
 			story_state.arguments_stack.pop_back();
 
 			eval_result.reached_function_return = false;
+			function_has_return_value = true;
 			eval_result.reached_newline = false;
 			changed_knot = true;
 
@@ -498,7 +511,7 @@ std::string InkStory::continue_story() {
 					story_state.variable_info.current_weave_uuid = story_state.current_stitch ? story_state.current_stitch->uuid : story_state.current_nonchoice_knot().knot->uuid;
 
 					if (found_gather) {
-						eval_result.reached_newline = true;
+						eval_result.reached_newline = story_state.current_knot().reached_newline = true;
 					} else {
 						++story_state.current_knot().index;
 					}
@@ -512,6 +525,9 @@ std::string InkStory::continue_story() {
 				story_state.function_call_stack.pop_back();
 				story_state.arguments_stack.pop_back();
 				eval_result.reached_newline = false;
+				if (!function_has_return_value) {
+					eval_result.return_value = std::nullopt;
+				}
 
 				story_state.variable_info.current_weave_uuid = story_state.current_stitch ? story_state.current_stitch->uuid : story_state.current_nonchoice_knot().knot->uuid;
 			// ending a thread needs to keep the last knot on the stack to apply the choices to
