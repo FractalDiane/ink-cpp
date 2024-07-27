@@ -247,6 +247,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 	
 	if ((!do_choice_setup || select_choice_immediately) && story_state.current_thread_depth == 0) {
 		story_state.add_choice_taken(this, static_cast<std::size_t>(story_state.current_choice_indices[*story_state.selected_choice]));
+		++story_state.total_choices_taken;
 		InkChoiceEntry* selected_choice_struct = story_state.current_choice_structs[*story_state.selected_choice];
 
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
@@ -279,7 +280,6 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.current_choice_indices.clear();
 		story_state.current_thread_entries.clear();
 		story_state.selected_choice = std::nullopt;
-		++story_state.total_choices_taken;
 		story_state.at_choice = false;
 		story_state.choice_divert_index = std::nullopt;
 	}

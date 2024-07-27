@@ -24,8 +24,10 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "22_misc_bugs"
-#define TEST_FILE "22c_deeply_nested_function_content"
+//#define TEST_FOLDER "22_misc_bugs"
+//#define TEST_FILE "22c_deeply_nested_function_content"
+#define TEST_FOLDER "15_conditional_blocks"
+#define TEST_FILE "15i_multiline_alternatives"
 
 int main(int argc, char* argv[]) {
 	InkCompiler compiler;

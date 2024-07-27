@@ -201,18 +201,18 @@ std::string InkStory::continue_story() {
 
 		InkStoryState::KnotStatus& last_knot = story_state.previous_nonfunction_knot();
 		bool last_knot_had_newline = last_knot.index > 0 && last_knot.knot->objects[last_knot.index - 1]->get_id() == ObjectId::LineBreak;
-		
+
 		// are we stopping here?
 		if (eval_result.reached_newline
 		&& eval_result.has_any_contents(true)
 		&& (!story_state.current_nonchoice_knot().knot->is_function || story_state.current_knot().any_new_content || last_knot_had_newline)
 		&& current_object->stop_before_this(story_state)) {
 		//&& (story_state.function_call_stack.empty() || !story_state.function_call_stack.back()->function_prep_interpolation)) {
-			/*if (auto& knot = story_state.previous_nonfunction_knot(); knot.knot->objects[knot.index]->get_id() == ObjectId::Interpolation) {
+			/*if (const InkStoryState::KnotStatus& knot = story_state.previous_nonfunction_knot(); knot.knot->objects[knot.index]->get_id() == ObjectId::Interpolation) {
 				if (story_state.in_glue) {
 					story_state.in_glue = false;
 					eval_result.reached_newline = false;
-				} else if (!story_state.current_knots_stack[1].any_new_content || !story_state.current_knots_stack[1].reached_newline) {
+				} else if (const InkStoryState::KnotStatus& knot_above = story_state.previous_nonfunction_knot(true); !knot_above.any_new_content || !knot_above.reached_newline) {
 
 				} else {
 					break;
@@ -227,7 +227,11 @@ std::string InkStory::continue_story() {
 			//}
 		}
 
+		//std::string previous_content = eval_result.result;
 		current_object->execute(story_state, eval_result);
+		//if (eval_result.reached_newline && !story_state.current_knot().any_new_content) {
+		//	eval_result.reached_newline = false;
+		//}
 		
 		// after collecting the options from a choice, a thread returns to its origin
 		if (story_state.should_wrap_up_thread && story_state.current_thread_depth > 0) {
