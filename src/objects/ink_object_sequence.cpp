@@ -5,7 +5,7 @@
 ByteVec InkObjectSequence::to_bytes() const {
 	Serializer<std::uint8_t> s8;
 	Serializer<std::uint16_t> s16;
-	VectorSerializer<InkObject*> sobjects;
+	Serializer<Knot> sknot;
 
 	ByteVec result = s8(static_cast<std::uint8_t>(sequence_type));
 	ByteVec result2 = s8(static_cast<std::uint8_t>(multiline));
@@ -17,7 +17,7 @@ ByteVec InkObjectSequence::to_bytes() const {
 	result.insert(result.end(), result3.begin(), result3.end());
 
 	for (const auto& vec : items) {
-		ByteVec result_objects = sobjects(vec);
+		ByteVec result_objects = sknot(vec);
 		result.insert(result.end(), result_objects.begin(), result_objects.end());
 	}
 
@@ -44,7 +44,7 @@ InkObject* InkObjectSequence::populate_from_bytes(const ByteVec& bytes, std::siz
 
 InkObjectSequence::~InkObjectSequence() {
 	for (const auto& item : items) {
-		for (InkObject* object : item) {
+		for (InkObject* object : item.objects) {
 			delete object;
 		}
 	}
@@ -85,8 +85,12 @@ void InkObjectSequence::execute(InkStoryState& story_state, InkStoryEvalResult& 
 	}
 
 	if (sequence_type != InkSequenceType::OnceOnly || index < items.size()) {
-		for (InkObject* object : items[index]) {
-			object->execute(story_state, eval_result);
+		if (multiline) {
+			story_state.current_knots_stack.push_back({&(items[index]), 0});
+		} else {
+			for (InkObject* object : items[index].objects) {
+				object->execute(story_state, eval_result);
+			}
 		}
 
 		switch (sequence_type) {
@@ -106,5 +110,21 @@ void InkObjectSequence::execute(InkStoryState& story_state, InkStoryEvalResult& 
 
 			default: break;
 		}
+	}
+}
+
+bool InkObjectSequence::contributes_content_to_knot() const {
+	if (!multiline) {
+		return true;
+	} else {
+		for (const Knot& knot : items) {
+			for (const InkObject* object : knot.objects) {
+				if (object->contributes_content_to_knot()) {
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 }

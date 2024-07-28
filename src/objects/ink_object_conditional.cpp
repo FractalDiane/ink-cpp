@@ -118,3 +118,23 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 
 	story_state.current_knots_stack.push_back({&branch_else, 0});
 }
+
+bool InkObjectConditional::contributes_content_to_knot() const {
+	for (const Entry& branch : branches) {
+		for (const InkObject* object : branch.second.objects) {
+			if (object->contributes_content_to_knot()) {
+				return true;
+			}
+		}
+	}
+
+	if (!is_switch) {
+		for (const InkObject* object : branch_else.objects) {
+			if (object->contributes_content_to_knot()) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}

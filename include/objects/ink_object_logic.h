@@ -8,6 +8,8 @@ class InkObjectLogic : public InkObject {
 private:
 	struct ExpressionParserV2::ShuntedExpression contents_shunted_tokens;
 
+	friend class InkCompiler;
+
 public:
 	InkObjectLogic(const struct ExpressionParserV2::ShuntedExpression& contents_shunted_tokens) : contents_shunted_tokens{contents_shunted_tokens} {}
 

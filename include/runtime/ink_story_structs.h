@@ -56,10 +56,10 @@ struct Knot : public InkWeaveContent {
 	bool is_function = false;
 	bool is_choice_result = false;
 	bool is_function_prep = false;
-	bool function_prep_interpolation = false;
+	bool has_content = false;
 
 	Knot() : objects{}, stitches{}, gather_points{} {}
-	Knot(const std::vector<class InkObject*> objects) : objects{objects}, stitches{{}}, gather_points{{}} {}
+	Knot(const std::vector<class InkObject*>& objects) : objects{objects}, stitches{}, gather_points{} {}
 
 	std::string divert_target_to_global(const std::string& target) const;
 	std::vector<GatherPoint*> get_all_gather_points();

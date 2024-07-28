@@ -1101,19 +1101,31 @@ TEST_F(ConditionalBlockTests, MultilineAlternatives) {
 	EXPECT_TEXT("I entered the casino.");
 	std::string next = story.continue_story();
 	EXPECT_TRUE(next.starts_with("At the table, I drew a card."));
-	EXPECT_TEXT("I held my breath.", "Would my luck hold?");
-
+	if (next.contains("Diamonds")) {
+		EXPECT_TEXT("'You lose this time!' crowed the croupier.", "I held my breath.", "Would my luck hold?");
+	} else {
+		EXPECT_TEXT("I held my breath.", "Would my luck hold?");
+	}
+	
 	story.choose_choice_index(0);
 	EXPECT_TEXT("I entered the casino again.");
 	std::string next2 = story.continue_story();
 	EXPECT_TRUE(next2.starts_with("At the table, I drew a card."));
-	EXPECT_TEXT("I waited impatiently.", "Could I win the hand?");
+	if (next2.contains("Diamonds")) {
+		EXPECT_TEXT("'You lose this time!' crowed the croupier.", "I waited impatiently.", "Could I win the hand?");
+	} else {
+		EXPECT_TEXT("I waited impatiently.", "Could I win the hand?");
+	}
 
 	story.choose_choice_index(0);
 	EXPECT_TEXT("Once more, I went inside.");
 	std::string next3 = story.continue_story();
 	EXPECT_TRUE(next3.starts_with("At the table, I drew a card."));
-	EXPECT_TEXT("I paused.", "");
+	if (next3.contains("Diamonds")) {
+		EXPECT_TEXT("'You lose this time!' crowed the croupier.", "I paused.", "");
+	} else {
+		EXPECT_TEXT("I paused.", "");
+	}
 }
 
 TEST_F(ConditionalBlockTests, ModifiedShuffles) {

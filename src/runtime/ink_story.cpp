@@ -207,31 +207,15 @@ std::string InkStory::continue_story() {
 		&& eval_result.has_any_contents(true)
 		&& (!story_state.current_nonchoice_knot().knot->is_function || story_state.current_knot().any_new_content || last_knot_had_newline)
 		&& current_object->stop_before_this(story_state)) {
-		//&& (story_state.function_call_stack.empty() || !story_state.function_call_stack.back()->function_prep_interpolation)) {
-			/*if (const InkStoryState::KnotStatus& knot = story_state.previous_nonfunction_knot(); knot.knot->objects[knot.index]->get_id() == ObjectId::Interpolation) {
-				if (story_state.in_glue) {
-					story_state.in_glue = false;
-					eval_result.reached_newline = false;
-				} else if (const InkStoryState::KnotStatus& knot_above = story_state.previous_nonfunction_knot(true); !knot_above.any_new_content || !knot_above.reached_newline) {
-
-				} else {
-					break;
-				}
-			} else {*/
-				if (story_state.in_glue) {
-					story_state.in_glue = false;
-					eval_result.reached_newline = false;
-				} else {
-					break;
-				}
-			//}
+			if (story_state.in_glue) {
+				story_state.in_glue = false;
+				eval_result.reached_newline = false;
+			} else {
+				break;
+			}
 		}
 
-		//std::string previous_content = eval_result.result;
 		current_object->execute(story_state, eval_result);
-		//if (eval_result.reached_newline && !story_state.current_knot().any_new_content) {
-		//	eval_result.reached_newline = false;
-		//}
 		
 		// after collecting the options from a choice, a thread returns to its origin
 		if (story_state.should_wrap_up_thread && story_state.current_thread_depth > 0) {
@@ -393,7 +377,6 @@ std::string InkStory::continue_story() {
 					} break;
 
 					case DivertType::Function: {
-						bool from_interpolate = story_state.current_knot().knot->objects[story_state.current_knot().index]->get_id() == ObjectId::Interpolation;
 						story_state.current_knot().returning_from_function = true;
 						story_state.current_knots_stack.push_back({target.knot, 0});
 						story_state.story_tracking.increment_visit_count(target.knot);
@@ -415,7 +398,6 @@ std::string InkStory::continue_story() {
 
 						if (eval_result.imminent_function_prep) {
 							story_state.current_knot().knot->is_function_prep = true;
-							story_state.current_knot().knot->function_prep_interpolation = from_interpolate;
 						}
 
 						eval_result.imminent_function_prep = false;

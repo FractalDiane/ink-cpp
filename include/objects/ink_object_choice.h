@@ -50,6 +50,8 @@ public:
 	virtual std::string to_string() const override;
 	virtual ObjectId get_id() const override { return ObjectId::Choice; }
 
+	virtual bool contributes_content_to_knot() const override { return true; }
+
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 
 	virtual ByteVec to_bytes() const override;
