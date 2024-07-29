@@ -24,10 +24,10 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-//#define TEST_FOLDER "22_misc_bugs"
-//#define TEST_FILE "22c_deeply_nested_function_content"
-#define TEST_FOLDER "ink-proof"
-#define TEST_FILE "28_read_count_across_threads"
+#define TEST_FOLDER "22_misc_bugs"
+#define TEST_FILE "22c_deeply_nested_function_content"
+//#define TEST_FOLDER "23_long_examples"
+//#define TEST_FILE "23a_tower_of_hanoi"
 
 int main(int argc, char* argv[]) {
 	InkCompiler compiler;
@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(0);
+	/*story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
@@ -44,5 +44,5 @@ int main(int argc, char* argv[]) {
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
-	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;*/
 }

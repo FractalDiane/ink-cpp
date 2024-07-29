@@ -40,7 +40,12 @@ VAR post3 = ()
 
 
 === gameloop ===
-This is a test. {describe_pillar(1)}
+	Staring down from the heavens you see your followers finishing construction of the last of the great temples, ready to begin the work.
+- (top)
+ +  [ Regard the temples]
+        You regard each of the temples in turn. On each is stacked the rings of stone. {describe_pillar(1)} {describe_pillar(2)} {describe_pillar(3)}
+
+= test
 //~ temp list = getListForTower(1)
 //On {name(1)}, are the discs numbered {list}.
 -> END

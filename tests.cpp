@@ -1649,7 +1649,7 @@ TEST_F(MiscBugTests, DeeplyNestedFunctionContent) {
 #pragma endregion
 
 #pragma region Long Example Tests
-/*TEST_F(LongExampleTests, TowerOfHanoi) {
+TEST_F(LongExampleTests, TowerOfHanoi) {
 	STORY("23_long_examples/23a_tower_of_hanoi.ink");
 	EXPECT_TEXT("Staring down from the heavens you see your followers finishing construction of the last of the great temples, ready to begin the work.");
 	EXPECT_CHOICES("Regard the temples");
@@ -1688,7 +1688,7 @@ TEST_F(MiscBugTests, DeeplyNestedFunctionContent) {
 	EXPECT_CHOICES("Regard the temples");
 	story.choose_choice_index(0);
 	EXPECT_TEXT("You regard each of the temples in turn. On each is stacked the rings of stone. On the first temple, are the discs numbered one, three, four, five, six, seven. The two ring lies on the second temple. The third temple is empty.");
-}*/
+}
 #pragma endregion
 
 #pragma region Miscellaneous Tests
