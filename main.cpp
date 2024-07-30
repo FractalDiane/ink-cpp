@@ -25,7 +25,7 @@ void print_vector(const std::vector<T>& vector) {
 }
 
 #define TEST_FOLDER "22_misc_bugs"
-#define TEST_FILE "22c_deeply_nested_function_content"
+#define TEST_FILE "22d_interpolate_function_in_choice"
 //#define TEST_FOLDER "23_long_examples"
 //#define TEST_FILE "23a_tower_of_hanoi"
 

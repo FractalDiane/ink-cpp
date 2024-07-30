@@ -53,24 +53,24 @@ InkStoryState::KnotStatus& InkStoryState::current_nonchoice_knot() {
 }
 
 void InkStoryState::setup_next_stitch() {
-	const KnotStatus& current = current_knot();
+	KnotStatus& current = current_knot();
 	std::vector<Stitch>& stitches = current.knot->stitches;
 	if (current_stitch) {
 		for (auto stitch = stitches.begin(); stitch != stitches.end(); ++stitch) {
 			if (current_stitch == &*stitch) {
 				if (current_stitch != &stitches.back()) {
-					next_stitch = &*(stitch + 1);
+					current.next_stitch = &*(stitch + 1);
 				} else {
-					next_stitch = nullptr;
+					current.next_stitch = nullptr;
 				}
 
 				return;
 			}
 		}
 	} else if (!stitches.empty()) {
-		next_stitch = &stitches[0];
+		current.next_stitch = &stitches[0];
 	} else {
-		next_stitch = nullptr;
+		current.next_stitch = nullptr;
 	}
 }
 

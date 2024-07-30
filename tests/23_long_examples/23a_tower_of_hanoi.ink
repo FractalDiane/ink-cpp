@@ -26,11 +26,11 @@ VAR post3 = ()
     ~ from -= whichRingToMove
     ~ to += whichRingToMove
 
-=== function postToPlace(postNum)
-    { postNum:
-        - 1: first
-        - 2: second
-        - 3: third
+== function getListForTower(towerNum)
+    { towerNum:
+        - 1:    ~ return post1
+        - 2:    ~ return post2
+        - 3:    ~ return post3
     }
 
 === function name(postNum)
@@ -39,11 +39,11 @@ VAR post3 = ()
 === function Name(postNum)
     The {postToPlace(postNum)} temple
 
-== function getListForTower(towerNum)
-    { towerNum:
-        - 1:    ~ return post1
-        - 2:    ~ return post2
-        - 3:    ~ return post3
+=== function postToPlace(postNum)
+    { postNum:
+        - 1: first
+        - 2: second
+        - 3: third
     }
 
 === function describe_pillar(listNum) ==
@@ -63,16 +63,15 @@ VAR post3 = ()
 - (top)
     +  [ Regard the temples]
         You regard each of the temples in turn. On each is stacked the rings of stone. {describe_pillar(1)} {describe_pillar(2)} {describe_pillar(3)}
-    //<- move_post(1, 2, post1, post2)
-    ///<- move_post(2, 1, post2, post1)
-    //<- move_post(1, 3, post1, post3)
-    ///<- move_post(3, 1, post3, post1)
-   // <- move_post(3, 2, post3, post2)
-   // <- move_post(2, 3, post2, post3)
-   // -> DONE
-   -> END
+    <- move_post(1, 2, post1, post2)
+    <- move_post(2, 1, post2, post1)
+    <- move_post(1, 3, post1, post3)
+    <- move_post(3, 1, post3, post1)
+    <- move_post(3, 2, post3, post2)
+    <- move_post(2, 3, post2, post3)
+    -> DONE
 
-//= move_post(from_post_num, to_post_num, ref from_post_list, ref to_post_list)
+= move_post(from_post_num, to_post_num, ref from_post_list, ref to_post_list)
     +   { can_move(from_post_list, to_post_list) } [ Move a ring from {name(from_post_num)} to {name(to_post_num)} ]
         { move_ring(from_post_list, to_post_list) }
         { stopping:

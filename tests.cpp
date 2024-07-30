@@ -1646,6 +1646,14 @@ TEST_F(MiscBugTests, DeeplyNestedFunctionContent) {
 	STORY("22_misc_bugs/22c_deeply_nested_function_content.ink");
 	EXPECT_TEXT("This is a test. On the first temple, are the discs numbered one, two, three, four, five, six, seven.");
 }
+
+TEST_F(MiscBugTests, InterpolateFunctionInChoice) {
+	STORY("22_misc_bugs/22d_interpolate_function_in_choice.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("Choice number 4", "Choice number 5");
+	story.choose_choice_index(1);
+	EXPECT_TEXT("fife");
+}
 #pragma endregion
 
 #pragma region Long Example Tests

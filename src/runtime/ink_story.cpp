@@ -178,7 +178,8 @@ void InkStory::bind_ink_functions() {
 bool InkStory::can_continue() {
 	return !story_state.should_end_story
 	&& (!story_state.at_choice || story_state.selected_choice.has_value())
-	&& (!story_state.next_stitch || story_state.current_knot().index != story_state.next_stitch->index)
+	&& !story_state.current_knots_stack.empty()
+	&& (!story_state.current_knot().next_stitch || story_state.current_knot().index != story_state.current_knot().next_stitch->index)
 	&& !story_state.current_knots_stack.empty()
 	&& story_state.index_in_knot() < story_state.current_knot_size();
 }

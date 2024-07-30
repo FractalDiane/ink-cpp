@@ -29,6 +29,7 @@ struct InkStoryState {
 		Uuid current_function_prep_expression = UINT32_MAX;
 		bool any_new_content = false;
 		bool reached_newline = false;
+		Stitch* next_stitch = nullptr;
 	};
 
 	struct ThreadEntry {
@@ -47,7 +48,7 @@ struct InkStoryState {
 
 	std::vector<KnotStatus> current_knots_stack;
 	Stitch* current_stitch = nullptr;
-	Stitch* next_stitch = nullptr;
+	//Stitch* next_stitch = nullptr;
 
 	bool should_end_story = false;
 
