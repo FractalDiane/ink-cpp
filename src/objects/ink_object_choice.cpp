@@ -82,10 +82,6 @@ InkObjectChoice::~InkObjectChoice() {
 		for (InkObject* object : choice.result.objects) {
 			delete object;
 		}
-		
-		/*for (ExpressionParserV2::ShuntedExpression& condition : choice.conditions) {
-			condition.dealloc_tokens();
-		}*/
 	}
 }
 
@@ -178,7 +174,7 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 						} else if (choice_eval_result.imminent_function_prep) {
 							if (auto prepared_value = text_objects_fully_prepared.find(object); prepared_value != text_objects_fully_prepared.end()) {
 								choice_eval_result.result += prepared_value->second;
-								choice_eval_result.imminent_function_prep = false;
+								choice_eval_result.imminent_function_prep = FunctionPrepType::None;
 								story_state.current_knot().current_function_prep_expression = previous_preparation_uuid;
 							} else {
 								eval_result.target_knot = choice_eval_result.target_knot;
@@ -229,12 +225,9 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 
 		GetChoicesResult final_choices = get_choices(story_state, eval_result);
 		if (final_choices.function_prep_type != FunctionPrepType::None) {
-			eval_result.imminent_function_prep = true;
-			story_state.current_knot().knot->function_prep_type = final_choices.function_prep_type;
+			eval_result.imminent_function_prep = final_choices.function_prep_type;
 			return;
 		}
-
-		story_state.current_knot().knot->function_prep_type = FunctionPrepType::None;
 
 		bool in_thread = story_state.current_thread_depth > 0;
 		if (!in_thread) {
@@ -285,11 +278,10 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 				eval_result.target_knot = choice_eval_result.target_knot;
 				eval_result.divert_type = DivertType::Function;
 
-				eval_result.imminent_function_prep = true;
 				if (object->get_id() == ObjectId::Interpolation) {
-					story_state.current_knot().knot->function_prep_type = FunctionPrepType::ChoiceTextInterpolate;
+					eval_result.imminent_function_prep = FunctionPrepType::ChoiceTextInterpolate;
 				} else {
-					story_state.current_knot().knot->function_prep_type = FunctionPrepType::Generic;
+					eval_result.imminent_function_prep = FunctionPrepType::Generic;
 				}
 				
 				return;

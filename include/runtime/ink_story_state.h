@@ -108,7 +108,7 @@ struct InkStoryEvalResult {
 
 	std::string target_knot;
 	DivertType divert_type = DivertType::ToKnot;
-	bool imminent_function_prep = false;
+	FunctionPrepType imminent_function_prep = FunctionPrepType::None;
 	Uuid function_prep_expression = UINT32_MAX;
 	
 	std::size_t argument_count = 0;

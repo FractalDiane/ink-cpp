@@ -24,8 +24,8 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "17_functions"
-#define TEST_FILE "17b_functions_in_interpolation"
+#define TEST_FOLDER "22_misc_bugs"
+#define TEST_FILE "22d_interpolate_function_in_choice"
 //#define TEST_FOLDER "23_long_examples"
 //#define TEST_FILE "23a_tower_of_hanoi"
 

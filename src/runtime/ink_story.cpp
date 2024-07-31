@@ -397,11 +397,8 @@ std::string InkStory::continue_story() {
 						changed_knot = true;
 						function = true;
 
-						if (eval_result.imminent_function_prep && story_state.current_knot().knot->function_prep_type != FunctionPrepType::ChoiceTextInterpolate) {
-							story_state.current_knot().knot->function_prep_type = FunctionPrepType::Generic;
-						}
-
-						eval_result.imminent_function_prep = false;
+						story_state.current_knot().knot->function_prep_type = eval_result.imminent_function_prep;
+						eval_result.imminent_function_prep = FunctionPrepType::None;
 					} break;
 
 					default: {

@@ -175,7 +175,7 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 
 		eval_result.target_knot = static_cast<std::string>(nullopt_result.function.value);
 		eval_result.divert_type = DivertType::Function;
-		eval_result.imminent_function_prep = true;
+		eval_result.imminent_function_prep = FunctionPrepType::Generic;
 		story_state.current_knot().current_function_prep_expression = expression.uuid;
 		expression_entry.function_eval_index = nullopt_result.function_index;
 
