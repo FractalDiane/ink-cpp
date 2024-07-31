@@ -18,8 +18,18 @@ InkObject* InkObjectText::populate_from_bytes(const std::vector<std::uint8_t>& b
 void InkObjectText::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	if ((!story_state.selected_choice.has_value() && story_state.choice_mix_position != InkStoryState::ChoiceMixPosition::After)
 	|| (story_state.selected_choice.has_value() && story_state.choice_mix_position != InkStoryState::ChoiceMixPosition::In)) {
-		eval_result.result += text_contents;
-		story_state.current_knot().any_new_content = !text_contents.empty();
+		// if we're preparing an interpolate in the text of a choice, content is treated as a return value
+		// in EVERY OTHER CASE, it is simply run as a side effect
+		if (story_state.current_knot().knot->function_prep_type != FunctionPrepType::ChoiceTextInterpolate) {
+			eval_result.result += text_contents;
+			story_state.current_knot().any_new_content = !text_contents.empty();
+		} else {
+			if (eval_result.return_value.has_value()) {
+				*eval_result.return_value += text_contents;
+			} else {
+				eval_result.return_value = text_contents;
+			}
+		}
 	}
 }
 

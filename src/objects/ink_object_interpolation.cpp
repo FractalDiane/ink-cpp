@@ -31,8 +31,16 @@ void InkObjectInterpolation::execute(InkStoryState& story_state, InkStoryEvalRes
 
 		if (interpolate_result.has_value()) {
 			std::string result = interpolate_result->to_printable_string();
-			eval_result.result += result;
-			story_state.current_knot().any_new_content = !result.empty();
+			if (story_state.current_knot().knot->function_prep_type != FunctionPrepType::ChoiceTextInterpolate) {
+				eval_result.result += result;
+				story_state.current_knot().any_new_content = !result.empty();
+			} else {
+				if (eval_result.return_value.has_value()) {
+					*eval_result.return_value += result;
+				} else {
+					eval_result.return_value = result;
+				}
+			}
 		}
 	}
 }

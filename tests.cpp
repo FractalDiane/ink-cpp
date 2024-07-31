@@ -1650,7 +1650,7 @@ TEST_F(MiscBugTests, DeeplyNestedFunctionContent) {
 TEST_F(MiscBugTests, InterpolateFunctionInChoice) {
 	STORY("22_misc_bugs/22d_interpolate_function_in_choice.ink");
 	EXPECT_TEXT("");
-	EXPECT_CHOICES("Choice number 4", "Choice number 5");
+	EXPECT_CHOICES("Choice number fower", "Choice number fife");
 	story.choose_choice_index(1);
 	EXPECT_TEXT("fife");
 }

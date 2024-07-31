@@ -7,7 +7,6 @@ fower
 fife
 
 == main ==
-{four()}
 * [Choice number {four()}]
     fower
 * [Choice number {five()}]

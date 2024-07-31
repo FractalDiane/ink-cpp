@@ -35,7 +35,7 @@ public:
 	struct GetChoicesResult {
 		std::vector<ChoiceComponents> choices;
 		std::optional<std::size_t> fallback_index = 0;
-		bool need_to_prepare_function = false;
+		FunctionPrepType function_prep_type = FunctionPrepType::None;
 	};
 
 private:

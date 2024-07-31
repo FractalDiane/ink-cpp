@@ -397,8 +397,8 @@ std::string InkStory::continue_story() {
 						changed_knot = true;
 						function = true;
 
-						if (eval_result.imminent_function_prep) {
-							story_state.current_knot().knot->is_function_prep = true;
+						if (eval_result.imminent_function_prep && story_state.current_knot().knot->function_prep_type != FunctionPrepType::ChoiceTextInterpolate) {
+							story_state.current_knot().knot->function_prep_type = FunctionPrepType::Generic;
 						}
 
 						eval_result.imminent_function_prep = false;
@@ -429,7 +429,7 @@ std::string InkStory::continue_story() {
 		}
 
 		// if we're returning from a function, we need to get it off the stack
-		bool function_has_return_value = false;
+		bool function_has_return_value = eval_result.return_value.has_value();
 		if (eval_result.reached_function_return) {
 			while (story_state.current_knot().knot != story_state.function_call_stack.back()) {
 				story_state.current_knots_stack.pop_back();
@@ -469,7 +469,7 @@ std::string InkStory::continue_story() {
 		}
 
 		// if we've run out of content in this knot, the story continues to the next gather point
-		while (!story_state.current_knots_stack.empty() && (!story_state.at_choice || story_state.current_knot().knot->is_function_prep) && story_state.index_in_knot() >= story_state.current_knot_size()) {
+		while (!story_state.current_knots_stack.empty() && (!story_state.at_choice || story_state.current_knot().knot->function_prep_type != FunctionPrepType::None) && story_state.index_in_knot() >= story_state.current_knot_size()) {
 			if (story_state.should_wrap_up_thread) {
 				break;
 			} else if (story_state.current_knot().knot->is_choice_result) {
