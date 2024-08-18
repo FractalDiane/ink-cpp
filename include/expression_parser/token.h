@@ -118,7 +118,7 @@ struct StoryVariableInfo {
 	Uuid current_weave_uuid;
 
 	std::optional<Variant> get_variable_value(const std::string& variable) const;
-	void set_variable_value(const std::string& variable, const Variant& value);
+	void set_variable_value(const std::string& variable, const Variant& value, bool ignore_redirects = false);
 
 	void observe_variable(const std::string& variable_name, VariableObserverFunc callback);
 

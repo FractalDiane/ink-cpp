@@ -297,10 +297,7 @@ std::string InkStory::continue_story() {
 								for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
 									story_state.variable_info.set_variable_value(target.knot->parameters[i].name, story_state.arguments_stack.back()[i].second);
 									if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
-										story_state.variable_info.redirects[target.knot->uuid].insert({
-											target.knot->parameters[i].name,
-											story_state.arguments_stack.back()[i].first,
-										});
+										story_state.variable_info.redirects[target.knot->uuid][target.knot->parameters[i].name] = story_state.arguments_stack.back()[i].first;
 									}
 								}
 
@@ -336,12 +333,9 @@ std::string InkStory::continue_story() {
 
 								story_state.variable_info.current_weave_uuid = target.stitch->uuid;
 								for (std::size_t i = 0; i < target.stitch->parameters.size(); ++i) {
-									story_state.variable_info.set_variable_value(target.stitch->parameters[i].name, story_state.arguments_stack.back()[i].second);
+									story_state.variable_info.set_variable_value(target.stitch->parameters[i].name, story_state.arguments_stack.back()[i].second, true);
 									if (target.stitch->parameters[i].by_ref && target.stitch->parameters[i].name != story_state.arguments_stack.back()[i].first) {
-										story_state.variable_info.redirects[target.stitch->uuid].insert({
-											target.stitch->parameters[i].name,
-											story_state.arguments_stack.back()[i].first,
-										});
+										story_state.variable_info.redirects[target.stitch->uuid][target.stitch->parameters[i].name] = story_state.arguments_stack.back()[i].first;
 									}
 								}
 
@@ -386,10 +380,7 @@ std::string InkStory::continue_story() {
 						for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
 							story_state.variable_info.set_variable_value(target.knot->parameters[i].name, story_state.arguments_stack.back()[i].second);
 							if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
-								story_state.variable_info.redirects[target.knot->uuid].insert({
-									target.knot->parameters[i].name,
-									story_state.arguments_stack.back()[i].first,
-								});
+								story_state.variable_info.redirects[target.knot->uuid][target.knot->parameters[i].name] = story_state.arguments_stack.back()[i].first;
 							}
 						}
 
@@ -571,10 +562,7 @@ void InkStory::choose_choice_index(std::size_t index) {
 			for (std::size_t i = 0; i < thread_target->parameters.size(); ++i) {
 				story_state.variable_info.set_variable_value(thread_target->parameters[i].name, thread_entry.arguments[i].second);
 				if (thread_target->parameters[i].by_ref && thread_target->parameters[i].name != thread_entry.arguments[i].first) {
-					story_state.variable_info.redirects[thread_target->uuid].insert({
-						thread_target->parameters[i].name,
-						thread_entry.arguments[i].first,
-					});
+					story_state.variable_info.redirects[thread_target->uuid][thread_target->parameters[i].name] = thread_entry.arguments[i].first;
 				}
 			}
 

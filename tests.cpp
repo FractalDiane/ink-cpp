@@ -1654,6 +1654,12 @@ TEST_F(MiscBugTests, InterpolateFunctionInChoice) {
 	story.choose_choice_index(1);
 	EXPECT_TEXT("fife");
 }
+
+TEST_F(MiscBugTests, SameChoiceDifferentThreads) {
+	STORY("22_misc_bugs/22e_same_choice_different_threads.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("Move a ring from the first temple to the second temple", "Move a ring from the first temple to the third temple");
+}
 #pragma endregion
 
 #pragma region Long Example Tests

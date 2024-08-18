@@ -36,17 +36,19 @@ std::optional<Variant> StoryVariableInfo::get_variable_value(const std::string& 
 	return std::nullopt;
 }
 
-void StoryVariableInfo::set_variable_value(const std::string& variable, const Variant& value) {
+void StoryVariableInfo::set_variable_value(const std::string& variable, const Variant& value, bool ignore_redirects) {
 	const std::string* var = &variable;
-	while (true) {
-		if (auto weave_redirects = redirects.find(current_weave_uuid); weave_redirects != redirects.end()) {
-			if (auto redirect = weave_redirects->second.find(*var); redirect != weave_redirects->second.end()) {
-				var = &redirect->second;
+	if (!ignore_redirects) {
+		while (true) {
+			if (auto weave_redirects = redirects.find(current_weave_uuid); weave_redirects != redirects.end()) {
+				if (auto redirect = weave_redirects->second.find(*var); redirect != weave_redirects->second.end()) {
+					var = &redirect->second;
+				} else {
+					break;
+				}
 			} else {
 				break;
 			}
-		} else {
-			break;
 		}
 	}
 

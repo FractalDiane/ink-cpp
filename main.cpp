@@ -25,13 +25,19 @@ void print_vector(const std::vector<T>& vector) {
 }
 
 #define TEST_FOLDER "22_misc_bugs"
-#define TEST_FILE "22d_interpolate_function_in_choice"
+#define TEST_FILE "22e_same_choice_different_threads"
 //#define TEST_FOLDER "23_long_examples"
 //#define TEST_FILE "23a_tower_of_hanoi"
 
 int main(int argc, char* argv[]) {
 	InkCompiler compiler;
 	InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
