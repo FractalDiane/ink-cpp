@@ -29,6 +29,7 @@ struct InkStoryState {
 		Uuid current_function_prep_expression = UINT32_MAX;
 		bool any_new_content = false;
 		bool reached_newline = false;
+		Stitch* next_stitch = nullptr;
 	};
 
 	struct ThreadEntry {
@@ -47,7 +48,7 @@ struct InkStoryState {
 
 	std::vector<KnotStatus> current_knots_stack;
 	Stitch* current_stitch = nullptr;
-	Stitch* next_stitch = nullptr;
+	//Stitch* next_stitch = nullptr;
 
 	bool should_end_story = false;
 
@@ -90,7 +91,7 @@ struct InkStoryState {
 	void add_choice_taken(class InkObject* choice_object, std::size_t index);
 	inline std::size_t index_in_knot() const { return current_knots_stack.back().index; }
 	inline KnotStatus& current_knot() { return current_knots_stack.back(); }
-	KnotStatus& previous_nonfunction_knot();
+	KnotStatus& previous_nonfunction_knot(bool offset_by_one = false);
 	inline std::size_t current_knot_size() const { return current_knots_stack.back().knot->objects.size(); }
 	KnotStatus& current_nonchoice_knot();
 	void setup_next_stitch();
@@ -107,7 +108,7 @@ struct InkStoryEvalResult {
 
 	std::string target_knot;
 	DivertType divert_type = DivertType::ToKnot;
-	bool imminent_function_prep = false;
+	FunctionPrepType imminent_function_prep = FunctionPrepType::None;
 	Uuid function_prep_expression = UINT32_MAX;
 	
 	std::size_t argument_count = 0;

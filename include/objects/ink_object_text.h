@@ -19,6 +19,7 @@ public:
 	virtual ObjectId get_id() const override { return ObjectId::Text; }
 	virtual std::string to_string() const override { return text_contents; }
 	virtual bool has_any_contents(bool strip) const override;
+	virtual bool contributes_content_to_knot() const override { return true; }
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 

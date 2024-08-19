@@ -90,6 +90,7 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 			}
 			
 			if (condition_result.has_value() && (*condition_result)) {
+				entry.second.function_prep_type = story_state.current_knot().knot->function_prep_type;
 				story_state.current_knots_stack.push_back({&(entry.second), 0});
 				return;
 			}
@@ -109,6 +110,7 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 
 			if (condition_result.has_value()) {
 				if (*condition_result == result) {
+					entry.second.function_prep_type = story_state.current_knot().knot->function_prep_type;
 					story_state.current_knots_stack.push_back({&(entry.second), 0});
 					return;
 				}
@@ -116,5 +118,26 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 		}
 	}
 
+	branch_else.function_prep_type = story_state.current_knot().knot->function_prep_type;
 	story_state.current_knots_stack.push_back({&branch_else, 0});
+}
+
+bool InkObjectConditional::contributes_content_to_knot() const {
+	for (const Entry& branch : branches) {
+		for (const InkObject* object : branch.second.objects) {
+			if (object->contributes_content_to_knot()) {
+				return true;
+			}
+		}
+	}
+
+	if (!is_switch) {
+		for (const InkObject* object : branch_else.objects) {
+			if (object->contributes_content_to_knot()) {
+				return true;
+			}
+		}
+	}
+
+	return false;
 }

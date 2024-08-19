@@ -115,10 +115,12 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 	ExpressionParserV2::ShuntedExpression::StackEntry& expression_entry = expression.stack_back();
 
 	if (continuing_preparation) {
+		std::size_t size_lower_cap = 0;
 		if (eval_result.return_value.has_value()) {
 			ExpressionParserV2::Variant value = *eval_result.return_value;
 			function_return_values.push_back(value);
 			expression_entry.function_prepared_tokens[expression_entry.function_eval_index] = ExpressionParserV2::Token::from_variant(value);
+			size_lower_cap = 1;
 		} else {
 			expression_entry.function_prepared_tokens.erase(expression_entry.function_prepared_tokens.begin() + expression_entry.function_eval_index);
 		}
@@ -127,7 +129,7 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 
 		// thanks Ryan
 		std::size_t args_expected = expression_entry.argument_count;
-		while (args_expected > 0 && !expression_entry.function_prepared_tokens.empty()) {
+		while (args_expected > 0 && expression_entry.function_prepared_tokens.size() > size_lower_cap) {
 			ExpressionParserV2::Token& this_token = expression_entry.function_prepared_tokens[expression_entry.function_eval_index];
 			if (this_token.type == ExpressionParserV2::TokenType::Operator || this_token.type == ExpressionParserV2::TokenType::Function) {
 				++args_expected;
@@ -139,6 +141,7 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 			--expression_entry.function_eval_index;
 		}
 
+		eval_result.return_value = std::nullopt;
 		story_state.current_knot().returning_from_function = false;
 		story_state.current_knot().current_function_prep_expression = UINT32_MAX;
 	}
@@ -172,7 +175,13 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 
 		eval_result.target_knot = static_cast<std::string>(nullopt_result.function.value);
 		eval_result.divert_type = DivertType::Function;
-		eval_result.imminent_function_prep = true;
+
+		if (story_state.current_knot().knot->function_prep_type == FunctionPrepType::ChoiceTextInterpolate && get_id() == ObjectId::Interpolation) {
+			eval_result.imminent_function_prep = FunctionPrepType::ChoiceTextInterpolate;
+		} else {
+			eval_result.imminent_function_prep = FunctionPrepType::Generic;
+		}
+		
 		story_state.current_knot().current_function_prep_expression = expression.uuid;
 		expression_entry.function_eval_index = nullopt_result.function_index;
 

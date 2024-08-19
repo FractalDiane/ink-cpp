@@ -35,13 +35,15 @@ public:
 	struct GetChoicesResult {
 		std::vector<ChoiceComponents> choices;
 		std::optional<std::size_t> fallback_index = 0;
-		bool need_to_prepare_function = false;
+		FunctionPrepType function_prep_type = FunctionPrepType::None;
 	};
 
 private:
 	std::vector<InkChoiceEntry> choices;
 
 	std::unordered_set<Uuid> conditions_fully_prepared;
+	std::unordered_set<InkObject*> text_objects_being_prepared;
+	std::unordered_map<InkObject*, std::string> text_objects_fully_prepared;
 
 public:
 	InkObjectChoice(const std::vector<InkChoiceEntry>& choices) : choices{choices} {}
@@ -49,6 +51,8 @@ public:
 
 	virtual std::string to_string() const override;
 	virtual ObjectId get_id() const override { return ObjectId::Choice; }
+
+	virtual bool contributes_content_to_knot() const override { return true; }
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 

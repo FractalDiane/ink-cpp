@@ -82,10 +82,6 @@ InkObjectChoice::~InkObjectChoice() {
 		for (InkObject* object : choice.result.objects) {
 			delete object;
 		}
-		
-		/*for (ExpressionParserV2::ShuntedExpression& condition : choice.conditions) {
-			condition.dealloc_tokens();
-		}*/
 	}
 }
 
@@ -114,11 +110,12 @@ std::string InkObjectChoice::to_string() const {
 
 InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	GetChoicesResult choices_result;
-	//ExpressionParserV2::VariableMap story_constants = story_state.get_story_constants();
 	story_state.update_local_knot_variables();
 
 	if (!story_state.current_knot().returning_from_function) {
 		conditions_fully_prepared.clear();
+		text_objects_being_prepared.clear();
+		text_objects_fully_prepared.clear();
 	}
 
 	choices_result.fallback_index = std::nullopt;
@@ -133,7 +130,7 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 						if (!conditions_fully_prepared.contains(condition.uuid)) {
 							ExpressionParserV2::ExecuteResult condition_result = prepare_next_function_call(condition, story_state, eval_result, story_state.variable_info);
 							if (!condition_result.has_value() && condition_result.error().reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
-								choices_result.need_to_prepare_function = true;
+								choices_result.function_prep_type = FunctionPrepType::Generic;
 
 								for (std::size_t j = 0; j < choices_result.choices.size(); ++j) {
 									story_state.current_choices.pop_back();
@@ -157,22 +154,44 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 				
 					InkStoryEvalResult choice_eval_result;
 					choice_eval_result.result.reserve(50);
+					choice_eval_result.return_value = eval_result.return_value;
 					for (InkObject* object : this_choice.text) {
 						if (object->get_id() == ObjectId::ChoiceTextMix && static_cast<InkObjectChoiceTextMix*>(object)->is_end()) {
 							break;
 						}
 						
+						std::string result_before = choice_eval_result.result;
+						Uuid previous_preparation_uuid = story_state.current_knot().current_function_prep_expression;
 						object->execute(story_state, choice_eval_result);
-						if (choice_eval_result.imminent_function_prep) {
-							eval_result.target_knot = choice_eval_result.target_knot;
-							eval_result.divert_type = DivertType::Function;
-							choices_result.need_to_prepare_function = true;
+						if (text_objects_being_prepared.contains(object)) {
+							text_objects_being_prepared.erase(object);
+							
+							std::string object_added_text = choice_eval_result.result;
+							object_added_text.erase(object_added_text.begin(), object_added_text.begin() + result_before.size());
+							text_objects_fully_prepared.emplace(object, object_added_text);
 
-							for (std::size_t j = 0; j < choices_result.choices.size(); ++j) {
-								story_state.current_choices.pop_back();
+							eval_result.return_value = std::nullopt;
+						} else if (choice_eval_result.imminent_function_prep) {
+							if (auto prepared_value = text_objects_fully_prepared.find(object); prepared_value != text_objects_fully_prepared.end()) {
+								choice_eval_result.result += prepared_value->second;
+								choice_eval_result.imminent_function_prep = FunctionPrepType::None;
+								story_state.current_knot().current_function_prep_expression = previous_preparation_uuid;
+							} else {
+								eval_result.target_knot = choice_eval_result.target_knot;
+								eval_result.divert_type = DivertType::Function;
+								if (object->get_id() == ObjectId::Interpolation) {
+									choices_result.function_prep_type = FunctionPrepType::ChoiceTextInterpolate;
+								} else {
+									choices_result.function_prep_type = FunctionPrepType::Generic;
+								}
+
+								for (std::size_t j = 0; j < choices_result.choices.size(); ++j) {
+									story_state.current_choices.pop_back();
+								}
+
+								text_objects_being_prepared.insert(object);
+								return choices_result;
 							}
-
-							return choices_result;
 						}
 					}
 
@@ -187,7 +206,7 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 			} else {
 				choices_result.fallback_index = i;
 			}
-		}
+		}	
 	}
 
 	for (std::size_t i = 0; i < choices_result.choices.size(); ++i) {
@@ -205,10 +224,10 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.selected_choice = std::nullopt;
 
 		GetChoicesResult final_choices = get_choices(story_state, eval_result);
-		if (final_choices.need_to_prepare_function) {
+		if (final_choices.function_prep_type != FunctionPrepType::None) {
+			eval_result.imminent_function_prep = final_choices.function_prep_type;
 			return;
 		}
-
 
 		bool in_thread = story_state.current_thread_depth > 0;
 		if (!in_thread) {
@@ -247,6 +266,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 	
 	if ((!do_choice_setup || select_choice_immediately) && story_state.current_thread_depth == 0) {
 		story_state.add_choice_taken(this, static_cast<std::size_t>(story_state.current_choice_indices[*story_state.selected_choice]));
+		++story_state.total_choices_taken;
 		InkChoiceEntry* selected_choice_struct = story_state.current_choice_structs[*story_state.selected_choice];
 
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
@@ -257,10 +277,18 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			if (choice_eval_result.imminent_function_prep) {
 				eval_result.target_knot = choice_eval_result.target_knot;
 				eval_result.divert_type = DivertType::Function;
-				eval_result.imminent_function_prep = true;
+
+				if (object->get_id() == ObjectId::Interpolation) {
+					eval_result.imminent_function_prep = FunctionPrepType::ChoiceTextInterpolate;
+				} else {
+					eval_result.imminent_function_prep = FunctionPrepType::Generic;
+				}
+				
 				return;
 			}
 		}
+
+		story_state.current_knot().knot->function_prep_type = FunctionPrepType::None;
 
 		eval_result.result = choice_eval_result.result;
 		eval_result.reached_newline = !selected_choice_struct->immediately_continue_to_result && eval_result.has_any_contents(true);
@@ -279,7 +307,6 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.current_choice_indices.clear();
 		story_state.current_thread_entries.clear();
 		story_state.selected_choice = std::nullopt;
-		++story_state.total_choices_taken;
 		story_state.at_choice = false;
 		story_state.choice_divert_index = std::nullopt;
 	}

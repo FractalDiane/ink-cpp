@@ -24,6 +24,12 @@ enum class DivertType {
 	Thread,
 };
 
+enum FunctionPrepType {
+	None,
+	Generic,
+	ChoiceTextInterpolate,
+};
+
 struct InkWeaveContent {
 	std::string name;
 	Uuid uuid;
@@ -55,11 +61,11 @@ struct Knot : public InkWeaveContent {
 	std::vector<GatherPoint> gather_points;
 	bool is_function = false;
 	bool is_choice_result = false;
-	bool is_function_prep = false;
-	bool function_prep_interpolation = false;
+	FunctionPrepType function_prep_type = FunctionPrepType::None;
+	bool has_content = false;
 
 	Knot() : objects{}, stitches{}, gather_points{} {}
-	Knot(const std::vector<class InkObject*> objects) : objects{objects}, stitches{{}}, gather_points{{}} {}
+	Knot(const std::vector<class InkObject*>& objects) : objects{objects}, stitches{}, gather_points{} {}
 
 	std::string divert_target_to_global(const std::string& target) const;
 	std::vector<GatherPoint*> get_all_gather_points();

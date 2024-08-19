@@ -296,6 +296,7 @@ void InkCompiler::compile_file_to_file(const std::string& in_file_path, const st
 void InkCompiler::init_compiler() {
 	token_index = 0;
 	last_token_object = nullptr;
+	last_object = nullptr;
 
 	brace_level = 0;
 	in_choice_line = false;
@@ -345,25 +346,31 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 	while (token_index < token_stream.size()) {
 		const InkLexer::Token& this_token = token_stream[token_index];
 		if (InkObject* this_token_object = compile_token(token_stream, this_token, result_knots)) {
+			Knot& current_knot = result_knots[current_knot_index];
 			bool add_this_object = true;
 			if (!this_token_object->has_any_contents(false)) {
 				add_this_object = false;
-			} else if (this_token_object->get_id() == ObjectId::LineBreak && result_knots[current_knot_index].objects.empty()) {
+			} else if (this_token_object->get_id() == ObjectId::LineBreak && current_knot.objects.empty()) {
 				add_this_object = false;
 			}
 
 			bool appended_text = false;
 			if (add_this_object) {
 				if (this_token_object->get_id() == ObjectId::Text && last_token_object && last_token_object->get_id() == ObjectId::Text) {
-					static_cast<InkObjectText*>(result_knots[current_knot_index].objects.back())->append_text(static_cast<InkObjectText*>(this_token_object)->get_text_contents());
+					auto* last_text = static_cast<InkObjectText*>(current_knot.objects.back());
+					last_text->append_text(static_cast<InkObjectText*>(this_token_object)->get_text_contents());
+					if (this_token_object == last_object) {
+						last_object = last_text;
+					}
+
 					delete this_token_object;
 					this_token_object = nullptr;
 					appended_text = true;
-				} else if (!(this_token_object->get_id() == ObjectId::LineBreak && (result_knots[current_knot_index].objects.empty() || (last_token_object && last_token_object->get_id() == ObjectId::LineBreak)))) {
-					result_knots[current_knot_index].objects.push_back(this_token_object);
 				} else {
-					delete this_token_object;
-					this_token_object = nullptr;
+					current_knot.objects.push_back(this_token_object);
+					if (!current_knot.has_content && this_token_object->contributes_content_to_knot()) {
+						current_knot.has_content = true;
+					}
 				}
 			} else {
 				delete this_token_object;
@@ -391,10 +398,37 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 	switch (token.token) {
 		case InkToken::NewLine: {
-			result_object = new InkObjectLineBreak();
+			if (last_object) {
+				switch (last_object->get_id()) {
+					case ObjectId::Logic:
+						for (const ExpressionParserV2::Token& logic_token : static_cast<InkObjectLogic*>(last_object)->contents_shunted_tokens.tokens) {
+							if (logic_token.type == ExpressionParserV2::TokenType::Function) {
+								for (const Knot& knot : story_knots) {
+									if (knot.is_function && knot.has_content && knot.name == static_cast<std::string>(logic_token.value)) {
+										goto add_newline;
+									}
+								}
+							}
+						}
+
+						break;
+					case ObjectId::ChoiceTextMix:
+					case ObjectId::Text:
+					case ObjectId::Interpolation:
+					case ObjectId::Conditional:
+					case ObjectId::Sequence:
+					case ObjectId::Glue:
+					case ObjectId::Divert:
+					add_newline:
+						result_object = new InkObjectLineBreak();
+						break;
+					default:
+						break;
+				}
+			}
+
 			end_line = true;
 		} break;
-
 		case InkToken::Slash: {
 			result_object = new InkObjectText("/");
 		} break;
@@ -447,7 +481,6 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							++existing_index;
 						}
 
-						
 						new_knot.name = new_knot_name;
 						new_knot.uuid = Uuid(current_uuid++);
 						new_knot.type = WeaveContentType::Knot;
@@ -657,9 +690,17 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 									}
 								}
 
+								if (last_object == in_choice_object) {
+									last_object = nullptr;
+								}
+
 								delete in_choice_object;
 								continue;
 							} else if (in_result && in_choice_object->get_id() == ObjectId::LineBreak && choice_entry.result.objects.empty()) {
+								if (last_object == in_choice_object) {
+									last_object = nullptr;
+								}
+								
 								delete in_choice_object;
 								++token_index;
 								continue;
@@ -762,7 +803,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				}
 			}
 
-			std::vector<std::vector<InkObject*>> items = {{}};
+			std::vector<Knot> items = {Knot()};
 			std::vector<std::pair<ExpressionParserV2::ShuntedExpression, Knot>> items_conditions = {{{}, Knot()}};
 			Knot items_else;
 			std::vector<std::string> text_items;
@@ -801,8 +842,12 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							if (auto& current_condition = items_conditions.back().first; current_condition.tokens.empty()) {
 								std::string condition_string;
 								condition_string.reserve(50);
-								for (InkObject* object : items[0]) {
+								for (InkObject* object : items[0].objects) {
 									condition_string += object->to_string();
+									if (object == last_object) {
+										last_object = nullptr;
+									}
+
 									delete object;
 								}
 
@@ -916,27 +961,28 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						}
 
 						default: {
-							InkObject* compiled_object = compile_token(all_tokens, all_tokens[token_index], story_knots);
-							// HACK: get rid of whitespace in switch results if they're text
-							if (is_switch && compiled_object->get_id() == ObjectId::Text) {
-								const Knot& target_array = in_else ? items_else : items_conditions.back().second;
-								if (target_array.objects.empty()) {
-									InkObjectText* object_text = static_cast<InkObjectText*>(compiled_object);
-									object_text->set_text_contents(strip_string_edges(object_text->get_text_contents(), true, false, true));
+							if (InkObject* compiled_object = compile_token(all_tokens, all_tokens[token_index], story_knots)) {
+								// HACK: get rid of whitespace in switch results if they're text
+								if (is_switch && compiled_object->get_id() == ObjectId::Text) {
+									const Knot& target_array = in_else ? items_else : items_conditions.back().second;
+									if (target_array.objects.empty()) {
+										InkObjectText* object_text = static_cast<InkObjectText*>(compiled_object);
+										object_text->set_text_contents(strip_string_edges(object_text->get_text_contents(), true, false, true));
+									}
 								}
-							}
 
-							if (compiled_object->has_any_contents(false)) {
-								if (is_conditional) {
-									Knot& target_array = in_else ? items_else : items_conditions.back().second;
-									target_array.objects.push_back(compiled_object);
-								} else if (!items.empty()) {
-									items.back().push_back(compiled_object);
+								if (compiled_object->has_any_contents(false)) {
+									if (is_conditional) {
+										Knot& target_array = in_else ? items_else : items_conditions.back().second;
+										target_array.objects.push_back(compiled_object);
+									} else if (!items.empty()) {
+										items.back().objects.push_back(compiled_object);
+									} else {
+										delete compiled_object;
+									}
 								} else {
 									delete compiled_object;
 								}
-							} else {
-								delete compiled_object;
 							}
 						} break;
 					}
@@ -986,8 +1032,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			}
 
 			if (delete_items) {
-				for (auto& vec : items) {
-					for (InkObject* object : vec) {
+				for (auto& knot : items) {
+					for (InkObject* object : knot.objects) {
 						delete object;
 					}
 				}
@@ -1380,6 +1426,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 	at_line_start = end_line;
 
+	last_object = result_object;
 	return result_object;
 }
 

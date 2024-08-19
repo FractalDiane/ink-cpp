@@ -57,6 +57,7 @@ class InkCompiler {
 private:
 	std::size_t token_index = 0;
 	InkObject* last_token_object = nullptr;
+	InkObject* last_object = nullptr;
 	std::size_t current_knot_index = 0;
 	std::vector<Knot*> anonymous_knot_stack;
 

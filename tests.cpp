@@ -1101,19 +1101,31 @@ TEST_F(ConditionalBlockTests, MultilineAlternatives) {
 	EXPECT_TEXT("I entered the casino.");
 	std::string next = story.continue_story();
 	EXPECT_TRUE(next.starts_with("At the table, I drew a card."));
-	EXPECT_TEXT("I held my breath.", "Would my luck hold?");
-
+	if (next.contains("Diamonds")) {
+		EXPECT_TEXT("'You lose this time!' crowed the croupier.", "I held my breath.", "Would my luck hold?");
+	} else {
+		EXPECT_TEXT("I held my breath.", "Would my luck hold?");
+	}
+	
 	story.choose_choice_index(0);
 	EXPECT_TEXT("I entered the casino again.");
 	std::string next2 = story.continue_story();
 	EXPECT_TRUE(next2.starts_with("At the table, I drew a card."));
-	EXPECT_TEXT("I waited impatiently.", "Could I win the hand?");
+	if (next2.contains("Diamonds")) {
+		EXPECT_TEXT("'You lose this time!' crowed the croupier.", "I waited impatiently.", "Could I win the hand?");
+	} else {
+		EXPECT_TEXT("I waited impatiently.", "Could I win the hand?");
+	}
 
 	story.choose_choice_index(0);
 	EXPECT_TEXT("Once more, I went inside.");
 	std::string next3 = story.continue_story();
 	EXPECT_TRUE(next3.starts_with("At the table, I drew a card."));
-	EXPECT_TEXT("I paused.", "");
+	if (next3.contains("Diamonds")) {
+		EXPECT_TEXT("'You lose this time!' crowed the croupier.", "I paused.", "");
+	} else {
+		EXPECT_TEXT("I paused.", "");
+	}
 }
 
 TEST_F(ConditionalBlockTests, ModifiedShuffles) {
@@ -1634,10 +1646,24 @@ TEST_F(MiscBugTests, DeeplyNestedFunctionContent) {
 	STORY("22_misc_bugs/22c_deeply_nested_function_content.ink");
 	EXPECT_TEXT("This is a test. On the first temple, are the discs numbered one, two, three, four, five, six, seven.");
 }
+
+TEST_F(MiscBugTests, InterpolateFunctionInChoice) {
+	STORY("22_misc_bugs/22d_interpolate_function_in_choice.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("Choice number fower", "Choice number fife");
+	story.choose_choice_index(1);
+	EXPECT_TEXT("fife");
+}
+
+TEST_F(MiscBugTests, SameChoiceDifferentThreads) {
+	STORY("22_misc_bugs/22e_same_choice_different_threads.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("Move a ring from the first temple to the second temple", "Move a ring from the first temple to the third temple");
+}
 #pragma endregion
 
 #pragma region Long Example Tests
-/*TEST_F(LongExampleTests, TowerOfHanoi) {
+TEST_F(LongExampleTests, TowerOfHanoi) {
 	STORY("23_long_examples/23a_tower_of_hanoi.ink");
 	EXPECT_TEXT("Staring down from the heavens you see your followers finishing construction of the last of the great temples, ready to begin the work.");
 	EXPECT_CHOICES("Regard the temples");
@@ -1676,7 +1702,7 @@ TEST_F(MiscBugTests, DeeplyNestedFunctionContent) {
 	EXPECT_CHOICES("Regard the temples");
 	story.choose_choice_index(0);
 	EXPECT_TEXT("You regard each of the temples in turn. On each is stacked the rings of stone. On the first temple, are the discs numbered one, three, four, five, six, seven. The two ring lies on the second temple. The third temple is empty.");
-}*/
+}
 #pragma endregion
 
 #pragma region Miscellaneous Tests

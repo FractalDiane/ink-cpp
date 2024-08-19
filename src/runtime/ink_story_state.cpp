@@ -30,11 +30,11 @@ void InkStoryState::add_choice_taken(InkObject* choice_object, std::size_t index
 	choice_indices_taken.insert(index);
 }
 
-InkStoryState::KnotStatus& InkStoryState::previous_nonfunction_knot() {
+InkStoryState::KnotStatus& InkStoryState::previous_nonfunction_knot(bool offset_by_one) {
 	if (current_knots_stack.size() >= 2) {
 		for (auto it = current_knots_stack.rbegin() + 1; it != current_knots_stack.rend(); ++it) {
 			if (!it->knot->is_function && !it->knot->name.empty()) {
-				return *it;
+				return !offset_by_one ? *it : *(it - 1);
 			}
 		}
 	}
@@ -53,24 +53,24 @@ InkStoryState::KnotStatus& InkStoryState::current_nonchoice_knot() {
 }
 
 void InkStoryState::setup_next_stitch() {
-	const KnotStatus& current = current_knot();
+	KnotStatus& current = current_knot();
 	std::vector<Stitch>& stitches = current.knot->stitches;
 	if (current_stitch) {
 		for (auto stitch = stitches.begin(); stitch != stitches.end(); ++stitch) {
 			if (current_stitch == &*stitch) {
 				if (current_stitch != &stitches.back()) {
-					next_stitch = &*(stitch + 1);
+					current.next_stitch = &*(stitch + 1);
 				} else {
-					next_stitch = nullptr;
+					current.next_stitch = nullptr;
 				}
 
 				return;
 			}
 		}
 	} else if (!stitches.empty()) {
-		next_stitch = &stitches[0];
+		current.next_stitch = &stitches[0];
 	} else {
-		next_stitch = nullptr;
+		current.next_stitch = nullptr;
 	}
 }
 
