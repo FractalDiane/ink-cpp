@@ -295,7 +295,7 @@ std::string InkStory::continue_story() {
 
 								story_state.variable_info.current_weave_uuid = target.knot->uuid;
 								for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
-									story_state.variable_info.set_variable_value(target.knot->parameters[i].name, story_state.arguments_stack.back()[i].second);
+									story_state.variable_info.set_variable_value(target.knot->parameters[i].name, story_state.arguments_stack.back()[i].second, true);
 									if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
 										story_state.variable_info.redirects[target.knot->uuid][target.knot->parameters[i].name] = story_state.arguments_stack.back()[i].first;
 									}
@@ -378,7 +378,7 @@ std::string InkStory::continue_story() {
 
 						story_state.variable_info.current_weave_uuid = target.knot->uuid;
 						for (std::size_t i = 0; i < target.knot->parameters.size(); ++i) {
-							story_state.variable_info.set_variable_value(target.knot->parameters[i].name, story_state.arguments_stack.back()[i].second);
+							story_state.variable_info.set_variable_value(target.knot->parameters[i].name, story_state.arguments_stack.back()[i].second, true);
 							if (target.knot->parameters[i].by_ref && target.knot->parameters[i].name != story_state.arguments_stack.back()[i].first) {
 								story_state.variable_info.redirects[target.knot->uuid][target.knot->parameters[i].name] = story_state.arguments_stack.back()[i].first;
 							}
@@ -453,7 +453,7 @@ std::string InkStory::continue_story() {
 		if (!changed_knot) {
 			++story_state.current_knot().index;
 		} else {
-			story_state.variable_info.current_weave_uuid = story_state.current_stitch ? story_state.current_stitch->uuid : story_state.current_nonchoice_knot().knot->uuid;
+			//story_state.variable_info.current_weave_uuid = story_state.current_stitch ? story_state.current_stitch->uuid : story_state.current_nonchoice_knot().knot->uuid;
 		}
 
 		// if we've run out of content in this knot, the story continues to the next gather point
@@ -560,7 +560,7 @@ void InkStory::choose_choice_index(std::size_t index) {
 
 			story_state.variable_info.current_weave_uuid = thread_target->uuid;
 			for (std::size_t i = 0; i < thread_target->parameters.size(); ++i) {
-				story_state.variable_info.set_variable_value(thread_target->parameters[i].name, thread_entry.arguments[i].second);
+				story_state.variable_info.set_variable_value(thread_target->parameters[i].name, thread_entry.arguments[i].second, true);
 				if (thread_target->parameters[i].by_ref && thread_target->parameters[i].name != thread_entry.arguments[i].first) {
 					story_state.variable_info.redirects[thread_target->uuid][thread_target->parameters[i].name] = thread_entry.arguments[i].first;
 				}

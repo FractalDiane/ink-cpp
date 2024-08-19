@@ -21,7 +21,8 @@ VAR post3 = ()
 
     }
 
-=== function move_ring( ref from, ref to ) ===
+TODO: fix refs not working with a space before them
+=== function move_ring(ref from, ref to) ===
     ~ temp whichRingToMove = LIST_MIN(from)
     ~ from -= whichRingToMove
     ~ to += whichRingToMove
