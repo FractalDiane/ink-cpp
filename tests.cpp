@@ -1660,6 +1660,11 @@ TEST_F(MiscBugTests, SameChoiceDifferentThreads) {
 	EXPECT_TEXT("");
 	EXPECT_CHOICES("Move a ring from the first temple to the second temple", "Move a ring from the first temple to the third temple");
 }
+
+TEST_F(MiscBugTests, VariableShadowing) {
+	STORY("22_misc_bugs/22f_variable_shadowing.ink");
+	EXPECT_TEXT("20");
+}
 #pragma endregion
 
 #pragma region Long Example Tests
