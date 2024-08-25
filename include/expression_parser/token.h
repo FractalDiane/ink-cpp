@@ -106,6 +106,7 @@ struct StoryVariableInfo {
 	std::unordered_map<std::string, Variant> variables;
 	std::unordered_map<std::string, Variant> constants;
 	std::unordered_map<Uuid, std::unordered_map<std::string, std::string>> redirects;
+	std::vector<std::unordered_map<std::string, Variant>> function_arguments_stack;
 
 	// HACK: find some better way to store these+argument counts
 	std::unordered_map<std::string, std::pair<InkFunction, std::uint8_t>> builtin_functions;

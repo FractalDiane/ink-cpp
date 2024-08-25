@@ -157,10 +157,10 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 
 	const ExpressionParserV2::NulloptResult& nullopt_result = result.error();
 	if (nullopt_result.reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
-		story_state.arguments_stack.push_back({});
+		//story_state.arguments_stack.push_back({});
+		eval_result.divert_args.clear();
 		expression_entry.argument_count = nullopt_result.function.function_argument_count;
 		if (nullopt_result.function.function_argument_count > 0) {
-			std::vector<std::pair<std::string, ExpressionParserV2::Variant>>& args = story_state.arguments_stack.back();
 
 			for (const ExpressionParserV2::Token& token : nullopt_result.arguments) {
 				std::pair<std::string, ExpressionParserV2::Variant> arg;
@@ -169,7 +169,7 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 					arg.first = token.variable_name;
 				}
 
-				args.push_back(arg);
+				eval_result.divert_args.push_back(arg);
 			}
 		}
 

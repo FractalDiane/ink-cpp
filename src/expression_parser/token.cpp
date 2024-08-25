@@ -29,6 +29,12 @@ std::optional<Variant> StoryVariableInfo::get_variable_value(const std::string& 
 		return constant_value->second;
 	}
 
+	for (auto it = function_arguments_stack.rbegin(); it != function_arguments_stack.rend(); ++it) {
+		if (auto argument_value = it->find(*var); argument_value != it->end()) {
+			return argument_value->second;
+		}
+	}
+
 	if (auto variable_value = variables.find(*var); variable_value != variables.end()) {
 		return variable_value->second;
 	}
