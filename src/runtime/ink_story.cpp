@@ -259,6 +259,7 @@ std::string InkStory::continue_story() {
 			}
 
 			bool function = false;
+			bool any_parameters = false;
 			if (target.found_any) {
 				switch (eval_result.divert_type) {
 					case DivertType::Thread: {
@@ -315,6 +316,7 @@ std::string InkStory::continue_story() {
 								}
 
 								apply_knot_args(target.knot, eval_result);
+								any_parameters = !target.knot->parameters.empty();
 
 								// auto divert to the first stitch if there's no content outside of stitches
 								if (!target.knot->stitches.empty() && target.knot->stitches[0].index == 0) {
@@ -348,6 +350,7 @@ std::string InkStory::continue_story() {
 								story_state.setup_next_stitch();
 
 								apply_knot_args(target.stitch, eval_result);
+								any_parameters = !target.stitch->parameters.empty();
 
 								story_state.just_diverted_to_non_knot = true;
 							} break;
@@ -405,7 +408,7 @@ std::string InkStory::continue_story() {
 
 			eval_result.target_knot.clear();
 
-			if (!function && changed_knot) {
+			if (!function && !any_parameters && changed_knot) {
 				//story_state.arguments_stack.pop_back();
 				story_state.variable_info.function_arguments_stack.pop_back();
 			}

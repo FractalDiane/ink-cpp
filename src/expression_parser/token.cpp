@@ -58,6 +58,13 @@ void StoryVariableInfo::set_variable_value(const std::string& variable, const Va
 		}
 	}
 
+	for (auto it = function_arguments_stack.rbegin(); it != function_arguments_stack.rend(); ++it) {
+		if (auto argument_value = it->find(*var); argument_value != it->end()) {
+			argument_value->second = value;
+			return;
+		}
+	}
+
 	if (auto variable_value = variables.find(*var); variable_value != variables.end()) {
 		variable_value->second = value;
 		flag_variable_changed(variable);
