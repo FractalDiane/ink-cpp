@@ -281,15 +281,18 @@ std::string InkStory::continue_story() {
 						}
 
 						//std::vector<std::pair<std::string, ExpressionParserV2::Variant>> arguments = story_state.arguments_stack.back();
-						const std::unordered_map<std::string, ExpressionParserV2::Variant>& arguments = story_state.variable_info.function_arguments_stack.back();
 						std::vector<std::pair<std::string, ExpressionParserV2::Variant>> thread_args;
-						for (const auto& arg : arguments) {
-							std::pair<std::string, ExpressionParserV2::Variant> thread_arg = arg;
-							if (arg.second.index() == ExpressionParserV2::Variant_String) {
-								thread_arg.second = story_state.current_knot().knot->divert_target_to_global(arg.second);
-							}
 
-							thread_args.push_back(thread_arg);
+						if (const auto& args_stack = story_state.variable_info.function_arguments_stack; !args_stack.empty()) {
+							const std::unordered_map<std::string, ExpressionParserV2::Variant>& arguments = args_stack.back();
+							for (const auto& arg : arguments) {
+								std::pair<std::string, ExpressionParserV2::Variant> thread_arg = arg;
+								if (arg.second.index() == ExpressionParserV2::Variant_String) {
+									thread_arg.second = story_state.current_knot().knot->divert_target_to_global(arg.second);
+								}
+
+								thread_args.push_back(thread_arg);
+							}
 						}
 
 						story_state.thread_arguments_stack.push_back(thread_args);
