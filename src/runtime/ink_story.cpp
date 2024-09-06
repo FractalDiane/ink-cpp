@@ -283,8 +283,8 @@ std::string InkStory::continue_story() {
 						//std::vector<std::pair<std::string, ExpressionParserV2::Variant>> arguments = story_state.arguments_stack.back();
 						std::vector<std::pair<std::string, ExpressionParserV2::Variant>> thread_args;
 
-						if (const auto& args_stack = story_state.variable_info.function_arguments_stack; !args_stack.empty()) {
-							const std::unordered_map<std::string, ExpressionParserV2::Variant>& arguments = args_stack.back();
+						if (const auto& arguments = eval_result.divert_args; !arguments.empty()) {
+							//const std::unordered_map<std::string, ExpressionParserV2::Variant>& arguments = args_stack.back();
 							for (const auto& arg : arguments) {
 								std::pair<std::string, ExpressionParserV2::Variant> thread_arg = arg;
 								if (arg.second.index() == ExpressionParserV2::Variant_String) {

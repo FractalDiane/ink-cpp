@@ -24,10 +24,10 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-//#define TEST_FOLDER "22_misc_bugs"
-//#define TEST_FILE "22e_same_choice_different_threads"
-#define TEST_FOLDER "23_long_examples"
-#define TEST_FILE "23a_tower_of_hanoi"
+#define TEST_FOLDER "22_misc_bugs"
+#define TEST_FILE "22b_thread_divert_to_stitch"
+//#define TEST_FOLDER "23_long_examples"
+//#define TEST_FILE "23a_tower_of_hanoi"
 
 int main(int argc, char* argv[]) {
 	InkCompiler compiler;
