@@ -178,6 +178,7 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 								story_state.current_knot().current_function_prep_expression = previous_preparation_uuid;
 							} else {
 								eval_result.target_knot = choice_eval_result.target_knot;
+								eval_result.divert_args = choice_eval_result.divert_args;
 								eval_result.divert_type = DivertType::Function;
 								if (object->get_id() == ObjectId::Interpolation) {
 									choices_result.function_prep_type = FunctionPrepType::ChoiceTextInterpolate;
