@@ -176,11 +176,18 @@ void InkStory::bind_ink_functions() {
 void InkStory::apply_knot_args(const InkWeaveContent* target, InkStoryEvalResult& eval_result) {
 	story_state.variable_info.current_weave_uuid = target->uuid;
 	story_state.variable_info.function_arguments_stack.push_back({});
+	story_state.variable_info.redirects_stack.push_back({});
 	std::unordered_map<std::string, ExpressionParserV2::Variant>& args = story_state.variable_info.function_arguments_stack.back();
+	std::unordered_map<std::string, std::string>& redirects = story_state.variable_info.redirects_stack.back();
 	for (std::size_t i = 0; i < target->parameters.size(); ++i) {
 		args[target->parameters[i].name] = eval_result.divert_args[i].second;
 		if (target->parameters[i].by_ref) {
-			story_state.variable_info.redirects[target->uuid][target->parameters[i].name] = eval_result.divert_args[i].first;
+			//story_state.variable_info.redirects[target->uuid][target->parameters[i].name] = eval_result.divert_args[i].first;
+			const std::string& lhs = target->parameters[i].name;
+			const std::string& rhs = eval_result.divert_args[i].first;
+			if (lhs != rhs) {
+				redirects[lhs] = rhs;
+			}
 		}
 	}
 
@@ -414,6 +421,7 @@ std::string InkStory::continue_story() {
 			if (!function && !any_parameters && changed_knot) {
 				//story_state.arguments_stack.pop_back();
 				story_state.variable_info.function_arguments_stack.pop_back();
+				story_state.variable_info.redirects_stack.pop_back();
 			}
 			
 			eval_result.divert_type = DivertType::ToKnot;
@@ -440,6 +448,7 @@ std::string InkStory::continue_story() {
 			story_state.function_call_stack.pop_back();
 			//story_state.arguments_stack.pop_back();
 			story_state.variable_info.function_arguments_stack.pop_back();
+			story_state.variable_info.redirects_stack.pop_back();
 
 			eval_result.reached_function_return = false;
 			function_has_return_value = true;
@@ -515,6 +524,7 @@ std::string InkStory::continue_story() {
 				story_state.function_call_stack.pop_back();
 				//story_state.arguments_stack.pop_back();
 				story_state.variable_info.function_arguments_stack.pop_back();
+				story_state.variable_info.redirects_stack.pop_back();
 				eval_result.reached_newline = false;
 				if (!function_has_return_value) {
 					eval_result.return_value = std::nullopt;
@@ -578,7 +588,7 @@ void InkStory::choose_choice_index(std::size_t index) {
 			for (std::size_t i = 0; i < thread_target->parameters.size(); ++i) {
 				story_state.variable_info.set_variable_value(thread_target->parameters[i].name, thread_entry.arguments[i].second, true);
 				if (thread_target->parameters[i].by_ref && thread_target->parameters[i].name != thread_entry.arguments[i].first) {
-					story_state.variable_info.redirects[thread_target->uuid][thread_target->parameters[i].name] = thread_entry.arguments[i].first;
+					//story_state.variable_info.redirects[thread_target->uuid][thread_target->parameters[i].name] = thread_entry.arguments[i].first;
 				}
 			}
 
