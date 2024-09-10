@@ -24,8 +24,10 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
+//#define TEST_FOLDER "ink-proof"
+//#define TEST_FILE "8_temp_global_conflict"
 //#define TEST_FOLDER "22_misc_bugs"
-//#define TEST_FILE "22e_same_choice_different_threads"
+//#define TEST_FILE "22g_basic_scope"
 #define TEST_FOLDER "23_long_examples"
 #define TEST_FILE "23a_tower_of_hanoi"
 

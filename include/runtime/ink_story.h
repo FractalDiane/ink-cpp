@@ -25,6 +25,8 @@ private:
 	void init_story();
 	void bind_ink_functions();
 
+	void apply_knot_args(const InkWeaveContent* target, InkStoryEvalResult& eval_result);
+
 public:
 	explicit InkStory() : story_data{nullptr} {}
 	explicit InkStory(InkStoryData* data) : story_data{data} { init_story(); }

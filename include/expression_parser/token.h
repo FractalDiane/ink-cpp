@@ -105,7 +105,10 @@ typedef void (*VariableObserverFunc)(const std::string&, const Variant&);
 struct StoryVariableInfo {
 	std::unordered_map<std::string, Variant> variables;
 	std::unordered_map<std::string, Variant> constants;
-	std::unordered_map<Uuid, std::unordered_map<std::string, std::string>> redirects;
+	//std::unordered_map<Uuid, std::unordered_map<std::string, std::string>> redirects;
+	//std::unordered_map<std::string, std::pair<std::size_t, std::string>> redirects;
+	std::vector<std::unordered_map<std::string, Variant>> function_arguments_stack;
+	std::vector<std::unordered_map<std::string, std::string>> redirects_stack;
 
 	// HACK: find some better way to store these+argument counts
 	std::unordered_map<std::string, std::pair<InkFunction, std::uint8_t>> builtin_functions;
@@ -137,6 +140,7 @@ struct StoryVariableInfo {
 
 private:
 	void execute_variable_observers(const std::string& variable, const Variant& new_value);
+	std::string resolve_redirects(const std::string& start_var) const;
 };
 
 enum class TokenType {

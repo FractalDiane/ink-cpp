@@ -178,6 +178,7 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 								story_state.current_knot().current_function_prep_expression = previous_preparation_uuid;
 							} else {
 								eval_result.target_knot = choice_eval_result.target_knot;
+								eval_result.divert_args = choice_eval_result.divert_args;
 								eval_result.divert_type = DivertType::Function;
 								if (object->get_id() == ObjectId::Interpolation) {
 									choices_result.function_prep_type = FunctionPrepType::ChoiceTextInterpolate;
@@ -236,7 +237,11 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		
 		for (const ChoiceComponents& choice : final_choices.choices) {
 			if (in_thread) {
-				story_state.current_thread_entries.emplace_back(choice.text, choice.entry, choice.index, story_state.current_knot().knot, story_state.current_stitch, story_state.current_knot().index, story_state.thread_arguments_stack.back());
+				story_state.current_thread_entries.emplace_back(
+					choice.text, choice.entry, choice.index,
+					story_state.current_knot().knot, story_state.current_stitch, story_state.current_knot().index,
+					story_state.thread_arguments_stack.back()
+				);
 			} else {
 				story_state.current_choices.emplace_back(choice.text, false);
 				story_state.current_choice_structs.push_back(choice.entry);
@@ -277,6 +282,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			if (choice_eval_result.imminent_function_prep) {
 				eval_result.target_knot = choice_eval_result.target_knot;
 				eval_result.divert_type = DivertType::Function;
+				eval_result.divert_args = choice_eval_result.divert_args;
 
 				if (object->get_id() == ObjectId::Interpolation) {
 					eval_result.imminent_function_prep = FunctionPrepType::ChoiceTextInterpolate;

@@ -12,24 +12,19 @@ using namespace ExpressionParserV2;
 #define v std::get
 
 std::optional<Variant> StoryVariableInfo::get_variable_value(const std::string& variable) const {
-	const std::string* var = &variable;
-	while (true) {
-		if (auto weave_redirects = redirects.find(current_weave_uuid); weave_redirects != redirects.end()) {
-			if (auto redirect = weave_redirects->second.find(*var); redirect != weave_redirects->second.end()) {
-				var = &redirect->second;
-			} else {
-				break;
-			}
-		} else {
-			break;
-		}
-	}
+	std::string final_var = resolve_redirects(variable);
 
-	if (auto constant_value = constants.find(*var); constant_value != constants.end()) {
+	if (auto constant_value = constants.find(final_var); constant_value != constants.end()) {
 		return constant_value->second;
 	}
 
-	if (auto variable_value = variables.find(*var); variable_value != variables.end()) {
+	for (auto it = function_arguments_stack.rbegin(); it != function_arguments_stack.rend(); ++it) {
+		if (auto argument_value = it->find(final_var); argument_value != it->end()) {
+			return argument_value->second;
+		}
+	}
+
+	if (auto variable_value = variables.find(final_var); variable_value != variables.end()) {
 		return variable_value->second;
 	}
 
@@ -37,22 +32,16 @@ std::optional<Variant> StoryVariableInfo::get_variable_value(const std::string& 
 }
 
 void StoryVariableInfo::set_variable_value(const std::string& variable, const Variant& value, bool ignore_redirects) {
-	const std::string* var = &variable;
-	if (!ignore_redirects) {
-		while (true) {
-			if (auto weave_redirects = redirects.find(current_weave_uuid); weave_redirects != redirects.end()) {
-				if (auto redirect = weave_redirects->second.find(*var); redirect != weave_redirects->second.end()) {
-					var = &redirect->second;
-				} else {
-					break;
-				}
-			} else {
-				break;
-			}
+	std::string final_var = ignore_redirects ? variable : resolve_redirects(variable);
+
+	for (auto it = function_arguments_stack.rbegin(); it != function_arguments_stack.rend(); ++it) {
+		if (auto argument_value = it->find(final_var); argument_value != it->end()) {
+			argument_value->second = value;
+			return;
 		}
 	}
 
-	if (auto variable_value = variables.find(*var); variable_value != variables.end()) {
+	if (auto variable_value = variables.find(final_var); variable_value != variables.end()) {
 		variable_value->second = value;
 		flag_variable_changed(variable);
 	} else {
@@ -96,6 +85,26 @@ void StoryVariableInfo::execute_variable_observers(const std::string& variable, 
 			(observer)(variable, new_value);
 		}
 	}
+}
+
+std::string StoryVariableInfo::resolve_redirects(const std::string& start_var) const {
+	const std::string* var = &start_var;
+	while (true) {
+		bool found_any = false;
+		for (auto it = redirects_stack.rbegin(); it != redirects_stack.rend(); ++it) {
+			if (auto redirect = it->find(*var); redirect != it->end()) {
+				var = &redirect->second;
+				found_any = true;
+				break;
+			}
+		}
+
+		if (!found_any) {
+			break;
+		}
+	}
+	
+	return *var;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
