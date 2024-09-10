@@ -98,10 +98,6 @@ TEST_F(NonStoryFunctionTests, InkListFunctions) {
 	InkList all2 = best_days.all_possible_items();
 	EXPECT_EQ(all, all2);
 
-	InkList inverse{{"monday", "tuesday", "wednesday", "thursday"}, definition_map};
-	InkList inverse2 = best_days.inverted();
-	EXPECT_EQ(inverse, inverse2);
-
 	InkList combined_list{{"red", "yellow", "tuesday"}, definition_map};
 	EXPECT_FALSE(combined_list.contains(weekends));
 
@@ -113,9 +109,19 @@ TEST_F(NonStoryFunctionTests, InkListFunctions) {
 	InkList all2_c = combined_list.all_possible_items();
 	EXPECT_EQ(all_c, all2_c);
 	
+	// advanced operations
+	InkList inverse{{"monday", "tuesday", "wednesday", "thursday"}, definition_map};
+	InkList inverse2 = best_days.inverted();
+	EXPECT_EQ(inverse, inverse2);
+
 	InkList inverse_c{{"orange", "monday", "wednesday", "thursday", "friday", "saturday", "sunday"}, definition_map};
 	InkList inverse2_c = combined_list.inverted();
 	EXPECT_EQ(inverse_c, inverse2_c);
+
+	EXPECT_FALSE(weekends > best_days);
+	EXPECT_TRUE(weekends >= best_days);
+	EXPECT_FALSE(weekends < best_days);
+	EXPECT_TRUE(weekends <= best_days);
 }
 #pragma endregion
 
@@ -1603,6 +1609,15 @@ TEST_F(ListTests, ListQueries2) {
 TEST_F(ListTests, RefreshListType) {
 	STORY("21_lists/21q_refresh_list_type.ink");
 	EXPECT_TEXT("first_value, second_value, third_value");
+}
+
+TEST_F(ListTests, AdvancedListOperations) {
+	STORY("21_lists/21r_advanced_list_operations.ink");
+	EXPECT_TEXT(
+		"self_belief",
+		"The new president has at least one desirable quality.",
+		"Correction, the new president has only one desirable quality. It's the scary one.",
+	);
 }
 #pragma endregion
 

@@ -729,6 +729,7 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(
 
 					OP_BIN_F(Substring, contains);
 					OP_BIN_F(NotSubstring, not_contains);
+					OP_BIN_F(Intersect, intersect);
 
 					OP_BIN(And, &&);
 					OP_BIN(Or, ||);

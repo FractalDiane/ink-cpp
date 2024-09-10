@@ -156,10 +156,10 @@ public:
 
 	bool operator==(const InkList& other) const { return current_values == other.current_values; }
 	bool operator!=(const InkList& other) const { return current_values != other.current_values; }
-	bool operator<(const InkList& other) const { return min_item().value < other.min_item().value; }
-	bool operator>(const InkList& other) const { return max_item().value > other.max_item().value; }
-	bool operator<=(const InkList& other) const { return min_item().value <= other.min_item().value; }
-	bool operator>=(const InkList& other) const { return max_item().value >= other.max_item().value; }
+	bool operator<(const InkList& other) const { return max_item().value < other.min_item().value; }
+	bool operator>(const InkList& other) const { return min_item().value > other.max_item().value; }
+	bool operator<=(const InkList& other) const { return min_item().value <= other.min_item().value && max_item().value <= other.max_item().value; }
+	bool operator>=(const InkList& other) const { return min_item().value >= other.min_item().value && max_item().value >= other.max_item().value; }
 
 	InkList operator+(const InkList& other) const { return union_with(other); }
 	InkList operator-(const InkList& other) const { return without(other); }
@@ -168,7 +168,7 @@ public:
 	InkList operator+(std::int64_t amount) const;
 	InkList operator-(std::int64_t amount) const;
 
-	// TODO: MAKE THESE LESS BAD
+	// HACK: MAKE THESE LESS BAD
 	InkList& operator+=(const InkList& other) { *this = *this + other; return *this; }
 	InkList& operator-=(const InkList& other) { *this = *this - other; return *this; }
 	InkList& operator^=(const InkList& other) { *this = *this ^ other; return *this; }
