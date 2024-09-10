@@ -80,19 +80,6 @@ FIXTURE(MiscellaneousTests);
 FIXTURE(InkProof);
 
 #pragma region NonStoryFunctionTests
-/*TEST_F(NonStoryFunctionTests, DeinkifyExpression) {
-	EXPECT_EQ(deinkify_expression("true and true"), "true && true");
-	EXPECT_EQ(deinkify_expression("true or false"), "true || false");
-	EXPECT_EQ(deinkify_expression("not true"), "! true");
-
-	EXPECT_EQ(deinkify_expression("-> my_story"), "\"my_story\"");
-
-	EXPECT_EQ(deinkify_expression("var++"), "var = var + 1");
-	EXPECT_EQ(deinkify_expression("++var"), "var = var + 1");
-	EXPECT_EQ(deinkify_expression("var--"), "var = var - 1");
-	EXPECT_EQ(deinkify_expression("--var"), "var = var - 1");
-}*/
-
 TEST_F(NonStoryFunctionTests, InkListFunctions) {
 	InkListDefinitionMap definition_map;
 	definition_map.add_list_definition("colors", {{"red", 1}, {"orange", 2}, {"yellow", 3}});

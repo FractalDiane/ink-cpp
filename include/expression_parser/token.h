@@ -105,8 +105,6 @@ typedef void (*VariableObserverFunc)(const std::string&, const Variant&);
 struct StoryVariableInfo {
 	std::unordered_map<std::string, Variant> variables;
 	std::unordered_map<std::string, Variant> constants;
-	//std::unordered_map<Uuid, std::unordered_map<std::string, std::string>> redirects;
-	//std::unordered_map<std::string, std::pair<std::size_t, std::string>> redirects;
 	std::vector<std::unordered_map<std::string, Variant>> function_arguments_stack;
 	std::vector<std::unordered_map<std::string, std::string>> redirects_stack;
 
@@ -230,8 +228,6 @@ enum class FunctionFetchType {
 	StoryKnot,
 	ListSubscript,
 };
-
-//using TokenValue = std::variant<KeywordType, i64, double, std::string, OperatorType, ParenCommaType>;
 
 struct Token {
 	TokenType type;

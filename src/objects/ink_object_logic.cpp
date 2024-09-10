@@ -17,7 +17,7 @@ InkObject* InkObjectLogic::populate_from_bytes(const ByteVec& bytes, std::size_t
 }
 
 InkObjectLogic::~InkObjectLogic() {
-	//contents_shunted_tokens.dealloc_tokens();
+	
 }
 
 void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {

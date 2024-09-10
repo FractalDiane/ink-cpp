@@ -182,7 +182,6 @@ void InkStory::apply_knot_args(const InkWeaveContent* target, InkStoryEvalResult
 	for (std::size_t i = 0; i < target->parameters.size(); ++i) {
 		args[target->parameters[i].name] = eval_result.divert_args[i].second;
 		if (target->parameters[i].by_ref) {
-			//story_state.variable_info.redirects[target->uuid][target->parameters[i].name] = eval_result.divert_args[i].first;
 			const std::string& lhs = target->parameters[i].name;
 			const std::string& rhs = eval_result.divert_args[i].first;
 			if (lhs != rhs) {
@@ -287,11 +286,8 @@ std::string InkStory::continue_story() {
 							}
 						}
 
-						//std::vector<std::pair<std::string, ExpressionParserV2::Variant>> arguments = story_state.arguments_stack.back();
 						std::vector<std::pair<std::string, ExpressionParserV2::Variant>> thread_args;
-
 						if (const auto& arguments = eval_result.divert_args; !arguments.empty()) {
-							//const std::unordered_map<std::string, ExpressionParserV2::Variant>& arguments = args_stack.back();
 							for (const auto& arg : arguments) {
 								std::pair<std::string, ExpressionParserV2::Variant> thread_arg = arg;
 								if (arg.second.index() == ExpressionParserV2::Variant_String) {
@@ -419,7 +415,6 @@ std::string InkStory::continue_story() {
 			eval_result.target_knot.clear();
 
 			if (!function && !any_parameters && changed_knot) {
-				//story_state.arguments_stack.pop_back();
 				story_state.variable_info.function_arguments_stack.pop_back();
 				story_state.variable_info.redirects_stack.pop_back();
 			}
@@ -446,7 +441,6 @@ std::string InkStory::continue_story() {
 			
 			story_state.current_knots_stack.pop_back();
 			story_state.function_call_stack.pop_back();
-			//story_state.arguments_stack.pop_back();
 			story_state.variable_info.function_arguments_stack.pop_back();
 			story_state.variable_info.redirects_stack.pop_back();
 
@@ -476,9 +470,7 @@ std::string InkStory::continue_story() {
 
 		if (advance_knot_index) {
 			++story_state.current_knot().index;
-		}/* else {
-			//story_state.variable_info.current_weave_uuid = story_state.current_stitch ? story_state.current_stitch->uuid : story_state.current_nonchoice_knot().knot->uuid;
-		}*/
+		}
 
 		// if we've run out of content in this knot, the story continues to the next gather point
  		while (!story_state.current_knots_stack.empty() && (!story_state.at_choice || story_state.current_knot().knot->function_prep_type != FunctionPrepType::None) && story_state.index_in_knot() >= story_state.current_knot_size()) {
@@ -522,7 +514,6 @@ std::string InkStory::continue_story() {
 				
 				story_state.current_knots_stack.pop_back();
 				story_state.function_call_stack.pop_back();
-				//story_state.arguments_stack.pop_back();
 				story_state.variable_info.function_arguments_stack.pop_back();
 				story_state.variable_info.redirects_stack.pop_back();
 				eval_result.reached_newline = false;

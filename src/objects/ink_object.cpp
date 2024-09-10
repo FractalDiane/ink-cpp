@@ -157,7 +157,6 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 
 	const ExpressionParserV2::NulloptResult& nullopt_result = result.error();
 	if (nullopt_result.reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
-		//story_state.arguments_stack.push_back({});
 		eval_result.divert_args.clear();
 		expression_entry.argument_count = nullopt_result.function.function_argument_count;
 		if (nullopt_result.function.function_argument_count > 0) {

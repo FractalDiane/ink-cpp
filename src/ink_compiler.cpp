@@ -522,11 +522,6 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							new_knot.parameters = params;
 						}
 
-						// line break objects at the end of a knot are redundant and only cause problems
-						//if (!story_knots.back().objects.empty() && story_knots.back().objects.back()->get_id() == ObjectId::LineBreak) {
-						//	story_knots.back().objects.pop_back();
-						//}
-
 						// TODO: don't force it to parse all the parameters if the knot already exists
 						if (is_new_knot) {
 							story_knots.push_back(new_knot);
@@ -636,7 +631,6 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						label.name = all_tokens[token_index + 1].text_contents;
 						label.uuid = Uuid(current_uuid++);
 						label.type = WeaveContentType::GatherPoint;
-						//label.index = static_cast<std::uint16_t>(story_knots[current_knot_index].objects.size());
 						label.in_choice = true;
 						label.choice_index = static_cast<std::uint16_t>(choice_options.size());
 						choice_stack.back().label = label;
@@ -1156,7 +1150,6 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				GatherPoint new_gather_point;
 				new_gather_point.uuid = Uuid(current_uuid++);
 				new_gather_point.type = WeaveContentType::GatherPoint;
-				//new_gather_point.index = static_cast<std::uint16_t>(story_knots[current_knot_index].objects.size());
 				new_gather_point.index = static_cast<std::uint16_t>(gather_point_knot.objects.size());
 				new_gather_point.level = token.count;
 

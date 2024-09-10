@@ -64,8 +64,6 @@ InkObject* InkObjectConditional::populate_from_bytes(const ByteVec& bytes, std::
 
 InkObjectConditional::~InkObjectConditional() {
 	for (auto& entry : branches) {
-		//entry.first.dealloc_tokens();
-
 		for (InkObject* object : entry.second.objects) {
 			delete object;
 		}
@@ -74,12 +72,9 @@ InkObjectConditional::~InkObjectConditional() {
 	for (InkObject* object : branch_else.objects) {
 		delete object;
 	}
-
-	//switch_expression.dealloc_tokens();
 }
 
 void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	//ExpressionParser::VariableMap story_constants = story_state.get_story_constants();
 	story_state.update_local_knot_variables();
 	
 	if (!is_switch) {

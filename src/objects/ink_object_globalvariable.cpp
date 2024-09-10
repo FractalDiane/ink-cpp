@@ -32,7 +32,7 @@ InkObject* InkObjectGlobalVariable::populate_from_bytes(const ByteVec& bytes, st
 }
 
 InkObjectGlobalVariable::~InkObjectGlobalVariable() {
-	//value_shunted_tokens.dealloc_tokens();
+	
 }
 
 void InkObjectGlobalVariable::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {

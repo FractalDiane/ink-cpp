@@ -16,7 +16,7 @@ InkObject* InkObjectInterpolation::populate_from_bytes(const ByteVec& bytes, std
 }
 
 InkObjectInterpolation::~InkObjectInterpolation() {
-	//what_to_interpolate.dealloc_tokens();
+	
 }
 
 void InkObjectInterpolation::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
