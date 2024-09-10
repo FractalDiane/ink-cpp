@@ -1619,6 +1619,42 @@ TEST_F(ListTests, AdvancedListOperations) {
 		"Correction, the new president has only one desirable quality. It's the scary one.",
 	);
 }
+
+TEST_F(ListTests, MultiListLists) {
+	STORY("21_lists/21s_multi_list_lists.ink");
+	EXPECT_TEXT(
+		"ballroom:",
+		"Alfred is here, standing quietly in a corner. Batman's presence dominates all. On one table, a headline blares out WHO IS THE BATMAN? AND *WHO* IS HIS BARELY-REMEMBERED ASSISTANT?",
+		"hallway:",
+		"Robin is all but forgotten. A champagne glass lies discarded on the floor.",
+		"To reiterate, Batman and Alfred are in the ballroom.",
+	);
+}
+
+TEST_F(ListTests, ChangeStateFunction) {
+	STORY("21_lists/21t_change_state_function.ink");
+	EXPECT_TEXT("cold, off", "off, hot");
+}
+
+TEST_F(ListTests, MultiListQueries) {
+	STORY("21_lists/21u_multi_list_queries.ink");
+	EXPECT_TEXT(
+		"a, one, b, two, c, three",
+		"3",
+		"a",
+	);
+
+	std::string next = story.continue_story();
+	EXPECT_TRUE(next == "three" || next == "c");
+
+	EXPECT_TEXT(
+		"false",
+		"a, c",
+		"true",
+		"false",
+		"one, b, two",
+	);
+}
 #pragma endregion
 
 #pragma region Misc Bug Tests
@@ -1666,6 +1702,11 @@ TEST_F(MiscBugTests, SameChoiceDifferentThreads) {
 TEST_F(MiscBugTests, VariableShadowing) {
 	STORY("22_misc_bugs/22f_variable_shadowing.ink");
 	EXPECT_TEXT("20");
+}
+
+TEST_F(MiscBugTests, ConsecutiveInterpolatesAndLogic) {
+	STORY("22_misc_bugs/22h_consecutive_interpolates_and_logic.ink");
+	EXPECT_TEXT("5", "6");
 }
 #pragma endregion
 

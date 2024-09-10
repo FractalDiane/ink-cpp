@@ -516,7 +516,11 @@ std::string InkStory::continue_story() {
 				story_state.function_call_stack.pop_back();
 				story_state.variable_info.function_arguments_stack.pop_back();
 				story_state.variable_info.redirects_stack.pop_back();
-				eval_result.reached_newline = false;
+
+				if (story_state.current_knot().knot->objects[story_state.current_knot().index]->get_id() != ObjectId::Logic) {
+					eval_result.reached_newline = false;
+				}
+
 				if (!function_has_return_value) {
 					eval_result.return_value = std::nullopt;
 				}
