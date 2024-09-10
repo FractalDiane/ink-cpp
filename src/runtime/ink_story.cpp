@@ -585,10 +585,17 @@ void InkStory::choose_choice_index(std::size_t index) {
 											: static_cast<InkWeaveContent*>(thread_entry.containing_knot);
 
 			story_state.variable_info.current_weave_uuid = thread_target->uuid;
+
+			story_state.variable_info.redirects_stack.push_back({});
+			std::unordered_map<std::string, std::string>& redirects = story_state.variable_info.redirects_stack.back();
 			for (std::size_t i = 0; i < thread_target->parameters.size(); ++i) {
 				story_state.variable_info.set_variable_value(thread_target->parameters[i].name, thread_entry.arguments[i].second, true);
-				if (thread_target->parameters[i].by_ref && thread_target->parameters[i].name != thread_entry.arguments[i].first) {
-					//story_state.variable_info.redirects[thread_target->uuid][thread_target->parameters[i].name] = thread_entry.arguments[i].first;
+				if (thread_target->parameters[i].by_ref) {
+					const std::string& lhs = thread_target->parameters[i].name;
+					const std::string& rhs = thread_entry.arguments[i].first;
+					if (lhs != rhs) {
+						redirects[lhs] = rhs;
+					}
 				}
 			}
 

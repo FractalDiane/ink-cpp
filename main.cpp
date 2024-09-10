@@ -24,12 +24,12 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "ink-proof"
-#define TEST_FILE "8_temp_global_conflict"
+//#define TEST_FOLDER "ink-proof"
+//#define TEST_FILE "8_temp_global_conflict"
 //#define TEST_FOLDER "22_misc_bugs"
 //#define TEST_FILE "22g_basic_scope"
-//#define TEST_FOLDER "23_long_examples"
-//#define TEST_FILE "23a_tower_of_hanoi"
+#define TEST_FOLDER "23_long_examples"
+#define TEST_FILE "23a_tower_of_hanoi"
 
 int main(int argc, char* argv[]) {
 	InkCompiler compiler;
