@@ -1708,6 +1708,11 @@ TEST_F(MiscBugTests, ConsecutiveInterpolatesAndLogic) {
 	STORY("22_misc_bugs/22h_consecutive_interpolates_and_logic.ink");
 	EXPECT_TEXT("5", "6");
 }
+
+TEST_F(MiscBugTests, CrimeSceneChecks) {
+	STORY("22_misc_bugs/22i_crime_scene_checks.ink");
+	EXPECT_TEXT("false", "false");
+}
 #pragma endregion
 
 #pragma region Long Example Tests
@@ -1750,6 +1755,111 @@ TEST_F(LongExampleTests, TowerOfHanoi) {
 	EXPECT_CHOICES("Regard the temples");
 	story.choose_choice_index(0);
 	EXPECT_TEXT("You regard each of the temples in turn. On each is stacked the rings of stone. On the first temple, are the discs numbered one, three, four, five, six, seven. The two ring lies on the second temple. The third temple is empty.");
+}
+
+TEST_F(LongExampleTests, CrimeScene) {
+	STORY("23_long_examples/23b_crime_scene.ink");
+	EXPECT_TEXT("The bedroom. This is where it happened. Now to look for clues.");
+	EXPECT_CHOICES("The bed...", "The desk...", "The window...");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("The bed was low to the ground, but not so low something might not roll underneath. It was still neatly made.");
+	EXPECT_CHOICES("Lift the bedcover", "Test the bed", "Look under the bed");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT("I pushed the bed with spread fingers. It creaked a little, but not so much as to be obnoxious.");
+	EXPECT_CHOICES("Lift the bedcover", "Look under the bed");
+	story.choose_choice_index(1);
+	
+	EXPECT_TEXT("Lying down, I peered under the bed, but could make nothing out.");
+	EXPECT_CHOICES("Lift the bedcover", "Something else?");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT("I took a step back from the bed and looked around.");
+	EXPECT_CHOICES("The desk...", "The window...");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT("I went over to the window and peered out. A dismal view of the little brook that ran down beside the house.");
+	EXPECT_CHOICES("Look down at the brook", "Look at the glass", "Something else?");
+	story.choose_choice_index(2);
+
+	EXPECT_TEXT("I looked away from the dreary glass.");
+	EXPECT_CHOICES("The desk...");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT(
+		"I turned my attention to the desk. A lamp sat in one corner, a neat, empty in-tray in the other. There was nothing else out.",
+		"Leaning against the desk was a wooden cane.",
+	);
+
+	EXPECT_CHOICES("Pick up the cane", "Turn on the lamp", "Look at the in-tray", "Open a drawer");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT("I flicked the light switch. The light gleamed on the polished tabletop.");
+	EXPECT_CHOICES("Pick up the cane", "Look at the in-tray", "Open a drawer", "Something else?");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("I picked up the wooden cane. It was heavy, and unmarked.");
+	EXPECT_CHOICES("Look at the in-tray", "Open a drawer", "Something else?");
+	story.choose_choice_index(2);
+
+	EXPECT_TEXT("I took a step away from the desk once more.");
+	EXPECT_CHOICES("Move the light to the floor", "Swoosh the cane");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("I picked the light up and set it down on the floor.");
+	EXPECT_CHOICES("Look under the bed", "Swoosh the cane", "Leave the room");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("I peered under the bed. Something glinted back at me.");
+	EXPECT_CHOICES("Reach for it", "Knock it with the cane");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT("Positioning the cane above the carpet, I gave the glinting thing a sharp tap. It slid out from the under the foot of the bed.");
+	EXPECT_CHOICES("Stand up", "Look under the bed once more");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("Satisfied, I stood up, and saw I had knocked free a bloodied knife.");
+	EXPECT_CHOICES("Move the light back to the desk", "Pick up the knife", "Leave the room");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT("Careful not to touch the handle, I lifted the blade from the carpet.");
+	EXPECT_CHOICES("Move the light back to the desk", "Look at the knife", "Leave the room");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT("The blood was dry enough. Dry enough to show up partial prints on the hilt!");
+	EXPECT_CHOICES("Move the light back to the desk", "Leave the room");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT(
+		"I'd seen enough. I switched off the lamp, then turned and left the room.",
+		"My police contact, Joe, was waiting in the hall. 'So?' he demanded. 'Did you find anything interesting?'",
+	);
+
+	EXPECT_CHOICES("'Nothing.'", "'I found the murder weapon.'");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT(
+		"'I found the murder weapon.'",
+		"'Good going!' Joe replied with a grin. 'We thought the murderer had gotten rid of it. I'll bag that for you now.'",
+	);
+
+	EXPECT_CHOICES("'There are prints on the blade.'", "'That's it.'");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT(
+		"'There are prints on the blade,' I told him.",
+		"He regarded them carefully.",
+		"'Hrm. Not very complete. It'll be hard to get a match from these.'",
+	);
+
+	EXPECT_CHOICES("'That's it.'");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT(
+		"'That's it.'",
+		"'All right. It's a start,' Joe replied. 'I'll run those prints as best I can.'",
+	);
 }
 #pragma endregion
 

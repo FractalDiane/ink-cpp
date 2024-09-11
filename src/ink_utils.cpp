@@ -14,7 +14,7 @@ std::string strip_string_edges(const std::string& string, bool left, bool right,
 	std::size_t last_right_index = 0;
 	for (std::size_t i = 0; i < string.length(); ++i) {
 		char chr = string[i];
-		bool whitespace = chr < 32 + include_spaces;
+		bool whitespace = chr < ' ' + include_spaces;
 		if (!left || stripped_left) {
 			result += chr;
 		} else if (!whitespace) {
@@ -75,7 +75,7 @@ std::vector<std::string> split_string(const std::string& string, char delimiter,
 				if (ignore_delim_spaces) {
 					do {
 						++chr;
-					} while (*chr <= 32);
+					} while (*chr <= ' ');
 
 					--chr;
 				}

@@ -26,10 +26,10 @@ void print_vector(const std::vector<T>& vector) {
 
 //#define TEST_FOLDER "ink-proof"
 //#define TEST_FILE "8_temp_global_conflict"
-#define TEST_FOLDER "21_lists"
-#define TEST_FILE "21t_change_state_function"
-//#define TEST_FOLDER "23_long_examples"
-//#define TEST_FILE "23a_tower_of_hanoi"
+//#define TEST_FOLDER "22_misc_bugs"
+//#define TEST_FILE "22i_list_between_function"
+#define TEST_FOLDER "23_long_examples"
+#define TEST_FILE "23b_crime_scene"
 
 int main(int argc, char* argv[]) {
 	InkCompiler compiler;

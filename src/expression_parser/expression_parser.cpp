@@ -180,7 +180,17 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 		}
 
 		if (!found_result) {
-			if (index < expression.length() - 1 && expression[index] == '(') {
+			bool paren_next = false;
+			for (std::size_t i = index; i < expression.length(); ++i) {
+				if (expression[i] == '(') {
+					paren_next = true;
+					break;
+				} else if (expression[i] > ' ') {
+					break;
+				}
+			}
+
+			if (paren_next) {
 				if (story_var_info.defined_lists.contains_list_name(word)) {
 					result.push_back(Token::function_list_subscript(word, index + 1 < expression.length() && expression[index + 1] == ')'));
 				} else {
@@ -190,7 +200,6 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 				found_result = true;
 			}
 		}
-		
 
 		if (!found_result) {
 			if (in_knot_name) {
@@ -289,7 +298,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 			switch (this_char) {
 				case '+': {
 					if (next_char(expression, index) == '+') {
-						if (next_char(expression, index + 1) <= 32) {
+						if (next_char(expression, index + 1) <= ' ') {
 							TRY_ADD_WORD();
 							result.push_back(Token::operat(OperatorType::Increment, UnaryType::Postfix));
 						} else {
@@ -308,7 +317,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 
 				case '-': {
 					if (next_char(expression, index) == '-') {
-						if (next_char(expression, index + 1) <= 32) {
+						if (next_char(expression, index + 1) <= ' ') {
 							TRY_ADD_WORD();
 							result.push_back(Token::operat(OperatorType::Decrement, UnaryType::Postfix));
 						} else {
@@ -324,7 +333,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 						result.push_back(Token::operat(OperatorType::MinusAssign, UnaryType::NotUnary));
 						++index;
 					} else {
-						if (next_char(expression, index) > 32 && (result.empty() || result.back().type == TokenType::Operator)) {
+						if (next_char(expression, index) > ' ' && (result.empty() || result.back().type == TokenType::Operator)) {
 							result.push_back(Token::operat(OperatorType::Negative, UnaryType::Prefix));
 						} else {
 							result.push_back(Token::operat(OperatorType::Minus, UnaryType::NotUnary));
@@ -404,7 +413,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 					} else if (next_char(expression, index) == '?') {
 						result.push_back(Token::operat(OperatorType::NotSubstring, UnaryType::NotUnary));
 						++index;
-					} else if (next_char(expression, index) > 32) {
+					} else if (next_char(expression, index) > ' ') {
 						result.push_back(Token::operat(OperatorType::Not, UnaryType::Prefix));
 					}
 				} break;
@@ -453,7 +462,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 				} break;
 
 				default: {
-					if (this_char > 32) {
+					if (this_char > ' ') {
 						current_word.push_back(this_char);
 					} else {
 						TRY_ADD_WORD();

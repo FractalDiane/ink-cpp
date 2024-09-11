@@ -132,7 +132,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 					std::size_t whitespace_skipped = 0;
 					while (true) {
 						char inner_chr = script_text[index];
-						if (inner_chr > 32 || inner_chr == '\n') {
+						if (inner_chr > ' ' || inner_chr == '\n') {
 							if (inner_chr == chr) {
 								++this_token.count;
 							} else {
@@ -164,7 +164,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 					++index;
 					while (true) {
 						char inner_chr = script_text[index];
-						if (inner_chr > 32 || inner_chr == '\n') {
+						if (inner_chr > ' ' || inner_chr == '\n') {
 							if (inner_chr == chr) {
 								++this_token.count;
 							} else {
@@ -212,7 +212,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 			default: {
 				if (auto token_char = TokenChars.find(chr); token_char != TokenChars.end()) {
 					this_token.token = token_char->second;
-				} else if (any_tokens_this_line || !current_text.empty() || chr > 32) {
+				} else if (any_tokens_this_line || !current_text.empty() || chr > ' ') {
 					current_text += chr;
 					end_text = false;
 					at_line_start = false;
@@ -1228,7 +1228,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			} else {
 				result_object = new InkObjectText("&");
 			}
-		}
+		} break;
 
 		case InkToken::Pipe: {
 			if (false) {
