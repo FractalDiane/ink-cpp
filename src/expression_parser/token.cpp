@@ -1698,6 +1698,10 @@ Variant Variant::operator!() const {
 			return !v<double>(value);
 		} break;
 
+		case Variant_List: {
+			return v<InkList>(value).empty();
+		} break;
+
 		default: {
 			return Variant();
 		} break;

@@ -76,19 +76,27 @@ InkObjectConditional::~InkObjectConditional() {
 
 void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	story_state.update_local_knot_variables();
+
+	if (!story_state.current_knot().returning_from_function) {
+		conditions_fully_prepared.clear();
+	}
 	
 	if (!is_switch) {
 		for (Entry& entry : branches) {
-			ExpressionParserV2::ExecuteResult condition_result = prepare_next_function_call(entry.first, story_state, eval_result, story_state.variable_info);
-			if (!condition_result.has_value() && condition_result.error().reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
-				return;
-			}
-			
-			if (condition_result.has_value() && (*condition_result)) {
-				entry.second.function_prep_type = story_state.current_knot().knot->function_prep_type;
-				story_state.current_knots_stack.push_back({&(entry.second), 0});
-				return;
-			}
+			if (!conditions_fully_prepared.contains(entry.first.uuid)) {
+				ExpressionParserV2::ExecuteResult condition_result = prepare_next_function_call(entry.first, story_state, eval_result, story_state.variable_info);
+				if (!condition_result.has_value() && condition_result.error().reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
+					return;
+				}
+
+				conditions_fully_prepared.insert(entry.first.uuid);
+
+				if (condition_result.has_value() && *condition_result) {
+					entry.second.function_prep_type = story_state.current_knot().knot->function_prep_type;
+					story_state.current_knots_stack.push_back({&(entry.second), 0});
+					return;
+				}
+			}	
 		}
 	} else {
 		// TODO: this might be redundant and strictly worse performance than the above version

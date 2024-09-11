@@ -147,7 +147,7 @@ public:
 	InkList at(std::size_t index) const;
 	InkList all_possible_items() const;
 	InkList range(std::int64_t from, std::int64_t to) const;
-	InkList range(const std::string& from, const std::string& to) const;
+	InkList range(const InkList& from, const InkList& to) const;
 
 	auto begin() { return current_values.begin(); }
 	auto end() { return current_values.end(); }

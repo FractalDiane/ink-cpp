@@ -255,13 +255,25 @@ InkListItem InkList::max_item() const {
 
 InkList InkList::min() const {
 	InkList result{owning_definition_map};
-	result.add_item(min_item());
+	if (!current_values.empty()) {
+		InkListItem minimum = min_item();
+		if (!minimum.label.empty()) {
+			result.add_item(minimum);
+		}
+	}
+	
 	return result;
 }
 
 InkList InkList::max() const {
 	InkList result{owning_definition_map};
-	result.add_item(max_item());
+	if (!current_values.empty()) {
+		InkListItem maximum = max_item();
+		if (!maximum.label.empty()) {
+			result.add_item(maximum);
+		}
+	}
+	
 	return result;
 }
 
@@ -298,19 +310,21 @@ InkList InkList::range(std::int64_t from, std::int64_t to) const {
 	return result;
 }
 
-InkList InkList::range(const std::string& from, const std::string& to) const {
+InkList InkList::range(const InkList& from, const InkList& to) const {
 	InkList result{owning_definition_map};
 
 	bool in_range = false;
 	std::optional<std::int64_t> minimum = std::nullopt;
 	std::optional<std::int64_t> maximum = std::nullopt;
+	InkListItem from_item = from.single_item();
+	InkListItem to_item = to.single_item();
 	for (const InkListItem& item : current_values) {
-		if (item.label == from) {
+		if (item.label == from_item.label) {
 			in_range = true;
 			result.add_item(item);
 		}
 
-		if (item.label == to) {
+		if (item.label == to_item.label) {
 			result.add_item(item);
 			break;
 		}

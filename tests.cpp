@@ -1711,7 +1711,7 @@ TEST_F(MiscBugTests, ConsecutiveInterpolatesAndLogic) {
 
 TEST_F(MiscBugTests, CrimeSceneChecks) {
 	STORY("22_misc_bugs/22i_crime_scene_checks.ink");
-	EXPECT_TEXT("false", "false");
+	EXPECT_TEXT("false", "false", "neatly_made");
 }
 #pragma endregion
 

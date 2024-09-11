@@ -27,7 +27,7 @@ void print_vector(const std::vector<T>& vector) {
 //#define TEST_FOLDER "ink-proof"
 //#define TEST_FILE "8_temp_global_conflict"
 //#define TEST_FOLDER "22_misc_bugs"
-//#define TEST_FILE "22i_list_between_function"
+//#define TEST_FILE "22i_crime_scene_checks"
 #define TEST_FOLDER "23_long_examples"
 #define TEST_FILE "23b_crime_scene"
 
@@ -39,7 +39,10 @@ int main(int argc, char* argv[]) {
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(1);
 	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(1);
+	/*story.choose_choice_index(1);
+	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
-	std::cout << story.continue_story() << std::endl;
+	std::cout << story.continue_story() << std::endl;*/
 }

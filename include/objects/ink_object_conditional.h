@@ -3,6 +3,7 @@
 #include "objects/ink_object.h"
 
 #include <string>
+#include <unordered_set>
 
 class InkObjectConditional : public InkObject {
 public:
@@ -14,6 +15,8 @@ private:
 	Knot branch_else;
 
 	ExpressionParserV2::ShuntedExpression switch_expression;
+
+	std::unordered_set<Uuid> conditions_fully_prepared;
 
 public:
 	InkObjectConditional(const std::vector<std::pair<struct ExpressionParserV2::ShuntedExpression, Knot>>& branches, const Knot& objects_else)

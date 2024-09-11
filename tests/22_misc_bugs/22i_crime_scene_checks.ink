@@ -28,10 +28,39 @@ VAR knowledgeState = ()
 
 -> main
 
+=== function pop(ref list)
+   ~ temp x = LIST_MIN(list) 
+   ~ list -= x 
+   ~ return x
+
+=== function reached (x) 
+   ~ return knowledgeState ? x 
+
+=== function reach(statesToSet) 
+   ~ temp x = pop(statesToSet)
+   {
+   - not x: 
+      ~ return false 
+
+   - not reached(x):
+      ~ temp chain = LIST_ALL(x)
+      ~ temp statesGained = LIST_RANGE(chain, LIST_MIN(chain), x)
+      ~ knowledgeState += statesGained
+      ~ reach (statesToSet) 	// set any other states left to set
+      ~ return true  	       // and we set this state, so true
+ 
+    - else:
+      ~ return false || reach(statesToSet) 
+    }	
+
 === function between(x, y) 
    ~ return knowledgeState? x && not (knowledgeState ^ y)
 
 === main
 { between ((fingerprints_on_glass, prints_on_knife),     fingerprints_on_glass_match_knife) }
 {(Inventory ? cane)}
+~ reach (neatly_made)
+
+~ temp chain = LIST_ALL(neatly_made)
+{LIST_RANGE(chain, LIST_MIN(chain), neatly_made)}
 -> END

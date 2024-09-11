@@ -163,8 +163,8 @@ void InkStory::bind_ink_functions() {
 
 		if (minimum.index() == Variant_Int && maximum.index() == Variant_Int) {
 			return list.range(static_cast<std::int64_t>(minimum), static_cast<std::int64_t>(maximum));
-		} else if (minimum.index() == Variant_String && maximum.index() == Variant_String) {
-			return list.range(static_cast<std::string>(minimum), static_cast<std::string>(maximum));
+		} else if (minimum.index() == Variant_List && maximum.index() == Variant_List) {
+			return list.range(static_cast<InkList>(minimum), static_cast<InkList>(maximum));
 		} else {
 			return list;
 		}
