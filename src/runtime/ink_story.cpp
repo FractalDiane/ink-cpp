@@ -95,7 +95,7 @@ void InkStory::bind_ink_functions() {
 	EXP_FUNC("TURNS_SINCE", 1, {
 		const Variant& knot = arguments[0];
 
-		if (GetContentResult content = story_data->get_content(static_cast<std::string>(knot), story_state.current_nonchoice_knot().knot, story_state.current_stitch); content.found_any) {
+		if (GetContentResult content = story_data->get_content(static_cast<std::string>(knot), story_state.current_knots_stack, story_state.current_stitch); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
 			if (story_state.story_tracking.get_content_stats(content.get_target(), stats)) {
 				return stats.turns_since_visited;
@@ -221,7 +221,7 @@ std::string InkStory::continue_story() {
 		bool advance_knot_index = true;
 		InkObject* current_object = story_state.current_knot().knot->objects[story_state.index_in_knot()];
 
-		InkStoryState::KnotStatus& last_knot = story_state.previous_nonfunction_knot();
+		KnotStatus& last_knot = story_state.previous_nonfunction_knot();
 		bool last_knot_had_newline = last_knot.index > 0 && last_knot.knot->objects[last_knot.index - 1]->get_id() == ObjectId::LineBreak;
 
 		// are we stopping here?
@@ -257,10 +257,10 @@ std::string InkStory::continue_story() {
 
 		// diverts
 		if (!eval_result.target_knot.empty()) {
-			GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_nonchoice_knot().knot, story_state.current_stitch);
+			GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_knots_stack, story_state.current_stitch);
 			if (!target.found_any) {
 				if (std::optional<ExpressionParserV2::Variant> target_var = story_state.variable_info.get_variable_value(eval_result.target_knot); target_var.has_value()) {
-					target = story_data->get_content(*target_var, story_state.current_nonchoice_knot().knot, story_state.current_stitch);
+					target = story_data->get_content(*target_var, story_state.current_knots_stack, story_state.current_stitch);
 				}
 			}
 
@@ -363,12 +363,13 @@ std::string InkStory::continue_story() {
 
 							case WeaveContentType::GatherPoint:
 							default: {
+								Knot* previous_knot = story_state.current_knots_stack.back().knot;
 								if (eval_result.divert_type == DivertType::ToTunnel) {
 									story_state.current_knots_stack.push_back({target.knot, target.gather_point->index});
 								} else {
-									while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+									/*while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
 										story_state.current_knots_stack.pop_back();
-									}
+									}*/
 
 									story_state.current_knots_stack.back() = {target.knot, target.gather_point->index};
 									if (target.gather_point->in_choice) {
@@ -381,7 +382,7 @@ std::string InkStory::continue_story() {
 									story_state.setup_next_stitch();
 								}
 
-								if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
+								if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot || story_state.current_knots_stack.back().knot == previous_knot) {
 									advance_knot_index = false;
 								}
 
@@ -482,7 +483,7 @@ std::string InkStory::continue_story() {
 				if (!story_state.current_knots_stack.empty()) {
 					GatherPoint* found_gather = nullptr;
 					while (true) {
-						InkStoryState::KnotStatus& this_knot = story_state.current_knots_stack.back();
+						KnotStatus& this_knot = story_state.current_knots_stack.back();
 						for (GatherPoint* gather_point : this_knot.knot->get_all_gather_points()) {
 							if (gather_point->level <= story_state.current_knots_stack.size() && gather_point->index > this_knot.index) {
 								story_state.current_knot().index = gather_point->index;

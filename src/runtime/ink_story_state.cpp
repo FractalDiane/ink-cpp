@@ -30,7 +30,7 @@ void InkStoryState::add_choice_taken(InkObject* choice_object, std::size_t index
 	choice_indices_taken.insert(index);
 }
 
-InkStoryState::KnotStatus& InkStoryState::previous_nonfunction_knot(bool offset_by_one) {
+KnotStatus& InkStoryState::previous_nonfunction_knot(bool offset_by_one) {
 	if (current_knots_stack.size() >= 2) {
 		for (auto it = current_knots_stack.rbegin() + 1; it != current_knots_stack.rend(); ++it) {
 			if (!it->knot->is_function && !it->knot->name.empty()) {
@@ -42,7 +42,7 @@ InkStoryState::KnotStatus& InkStoryState::previous_nonfunction_knot(bool offset_
 	return current_knots_stack.front();
 }
 
-InkStoryState::KnotStatus& InkStoryState::current_nonchoice_knot() {
+KnotStatus& InkStoryState::current_nonchoice_knot() {
 	for (auto it = current_knots_stack.rbegin(); it != current_knots_stack.rend(); ++it) {
 		if (!it->knot->name.empty()) {
 			return *it;
@@ -75,7 +75,7 @@ void InkStoryState::setup_next_stitch() {
 }
 
 void InkStoryState::update_local_knot_variables() {
-	story_tracking.update_visit_count_variables(current_knot().knot, current_stitch, variable_info);
+	story_tracking.update_visit_count_variables(current_knots_stack, current_stitch, variable_info);
 }
 
 void InkStoryState::apply_thread_choices() {

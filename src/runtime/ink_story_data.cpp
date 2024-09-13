@@ -1,5 +1,7 @@
 #include "runtime/ink_story_data.h"
 
+#include "runtime/ink_story_state.h"
+
 #include <format>
 
 #include <iostream>
@@ -63,7 +65,7 @@ void InkStoryData::print_info() const {
 	}
 }
 
-GetContentResult InkStoryData::get_content(const std::string& path, Knot* current_knot, Stitch* current_stitch) {
+GetContentResult InkStoryData::get_content(const std::string& path, const std::vector<KnotStatus>& knots_stack, Stitch* current_stitch) {
 	std::string first;
 	first.reserve(10);
 	std::string second;
@@ -94,7 +96,7 @@ GetContentResult InkStoryData::get_content(const std::string& path, Knot* curren
 			if (current_stitch) {
 				for (GatherPoint& gather_point : current_stitch->gather_points) {
 					if (gather_point.name == first) {
-						result.knot = current_knot;
+						result.knot = knots_stack.back().knot;
 						result.stitch = current_stitch;
 						result.gather_point = &gather_point;
 						result.result_type = WeaveContentType::GatherPoint;
@@ -103,11 +105,11 @@ GetContentResult InkStoryData::get_content(const std::string& path, Knot* curren
 					}
 				}
 			}
-			
-			if (current_knot) {
-				for (Stitch& stitch : current_knot->stitches) {
+
+			for (auto it = knots_stack.rbegin(); it != knots_stack.rend(); ++it) {
+				for (Stitch& stitch : it->knot->stitches) {
 					if (stitch.name == first) {
-						result.knot = current_knot;
+						result.knot = it->knot;
 						result.stitch = &stitch;
 						result.result_type = WeaveContentType::Stitch;
 						result.found_any = true;
@@ -115,9 +117,9 @@ GetContentResult InkStoryData::get_content(const std::string& path, Knot* curren
 					}
 				}
 
-				for (GatherPoint& gather_point : current_knot->gather_points) {
+				for (GatherPoint& gather_point : it->knot->gather_points) {
 					if (gather_point.name == first) {
-						result.knot = current_knot;
+						result.knot = it->knot;
 						result.gather_point = &gather_point;
 						result.result_type = WeaveContentType::GatherPoint;
 						result.found_any = true;

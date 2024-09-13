@@ -22,7 +22,7 @@ struct InkStoryState {
 		After,
 	};
 
-	struct KnotStatus {
+	/*struct KnotStatus {
 		Knot* knot;
 		std::size_t index = 0;
 		bool returning_from_function = false;
@@ -30,7 +30,7 @@ struct InkStoryState {
 		bool any_new_content = false;
 		bool reached_newline = false;
 		Stitch* next_stitch = nullptr;
-	};
+	};*/
 
 	struct ThreadEntry {
 		std::string choice_text;

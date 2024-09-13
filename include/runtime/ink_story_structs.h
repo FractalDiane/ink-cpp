@@ -73,6 +73,16 @@ struct Knot : public InkWeaveContent {
 	void append_knot(const Knot& other);
 };
 
+struct KnotStatus {
+	Knot* knot;
+	std::size_t index = 0;
+	bool returning_from_function = false;
+	Uuid current_function_prep_expression = UINT32_MAX;
+	bool any_new_content = false;
+	bool reached_newline = false;
+	Stitch* next_stitch = nullptr;
+};
+
 template <>
 struct Serializer<InkWeaveContent::Parameter> {
 	ByteVec operator()(const InkWeaveContent::Parameter& parameter);

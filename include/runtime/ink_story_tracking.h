@@ -9,6 +9,8 @@
 
 #include "expression_parser/expression_parser.h"
 
+struct InkStoryState;
+
 struct InkStoryTracking {
 	struct SubKnotStats {
 		std::string name;
@@ -34,6 +36,6 @@ struct InkStoryTracking {
 
 	void increment_visit_count(Knot* knot, Stitch* stitch = nullptr, GatherPoint* gather_point = nullptr);
 	void increment_turns_since();
-	void update_visit_count_variables(Knot* current_knot, Stitch* current_stitch, ExpressionParserV2::StoryVariableInfo& story_variable_info);
+	void update_visit_count_variables(const std::vector<KnotStatus>& knots_stack, Stitch* current_stitch, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 	bool get_content_stats(InkWeaveContent* content, InkStoryTracking::SubKnotStats& result);
 };

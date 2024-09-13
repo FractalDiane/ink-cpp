@@ -45,5 +45,5 @@ public:
 
 	void print_info() const;
 
-	GetContentResult get_content(const std::string& path, Knot* current_knot, Stitch* current_stitch);
+	GetContentResult get_content(const std::string& path, const std::vector<KnotStatus>& knots_stack, Stitch* current_stitch);
 };

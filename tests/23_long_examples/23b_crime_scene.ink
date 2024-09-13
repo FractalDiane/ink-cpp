@@ -2,15 +2,7 @@
 // Set up the game
 //
 
-VAR bedroomLightState = (off, on_desk)
-
-VAR knifeState = (under_bed)
-
-
-//
-// Knowledge chains
-//
-
+// TODO: parse lists and consts before anything else
 
 LIST BedKnowledge = neatly_made, crumpled_duvet, hastily_remade, body_on_bed, murdered_in_bed, murdered_while_asleep
 
@@ -27,6 +19,15 @@ LIST BedState = (made_up), covers_shifted, covers_off, bloodstain_visible
 LIST Supporters = on_desk, on_floor, on_bed, under_bed, held, with_joe
 
 LIST Inventory = (none), cane, knife
+
+VAR bedroomLightState = (off, on_desk)
+
+VAR knifeState = (under_bed)
+
+
+//
+// Knowledge chains
+//
 
 VAR knowledgeState = ()
 
