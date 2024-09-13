@@ -52,6 +52,17 @@ int main(int argc, char* argv[]) {
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(1);
 	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(2);
+	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(0);
+	std::cout << story.continue_story() << std::endl;
+	story.choose_choice_index(1);
+	std::cout << story.continue_story() << std::endl;
+
 	/*story.choose_choice_index(1);
 	std::cout << story.continue_story() << std::endl;
 	std::cout << story.continue_story() << std::endl;

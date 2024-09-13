@@ -173,6 +173,19 @@ void InkStory::bind_ink_functions() {
 	#undef EXP_FUNC
 }
 
+void InkStory::try_remove_upper_knots(const GetContentResult& target) {
+	for (int i = story_state.current_knots_stack.size() - 1; i >= 0; --i) {
+		const Knot* this_knot = story_state.current_knots_stack[i].knot;
+		if (this_knot == target.knot) {
+			while (story_state.current_knots_stack.back().knot != this_knot) {
+				story_state.current_knots_stack.pop_back();
+			}
+
+			break;
+		}
+	}
+}
+
 void InkStory::apply_knot_args(const InkWeaveContent* target, InkStoryEvalResult& eval_result) {
 	story_state.variable_info.current_weave_uuid = target->uuid;
 	story_state.variable_info.function_arguments_stack.push_back({});
@@ -325,10 +338,21 @@ std::string InkStory::continue_story() {
 								if (eval_result.divert_type == DivertType::ToTunnel || eval_result.divert_type == DivertType::Thread) {
 									story_state.current_knots_stack.push_back({target.knot, 0});
 								} else {
-									while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+									/*while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
 										story_state.current_knots_stack.pop_back();
-									}
+									}*/
 
+									/*for (auto it = story_state.current_knots_stack.rbegin(); it != story_state.current_knots_stack.rend(); ++it) {
+										if (it->knot == target.knot) {
+											while (story_state.current_knots_stack.back().knot != it->knot) {
+												story_state.current_knots_stack.pop_back();
+											}
+
+											break;
+										}
+									}*/
+
+									try_remove_upper_knots(target);
 									story_state.current_knots_stack.back() = {target.knot, 0};
 								}
 								
@@ -356,10 +380,21 @@ std::string InkStory::continue_story() {
 								if (eval_result.divert_type == DivertType::ToTunnel) {
 									story_state.current_knots_stack.push_back({target.knot, target.stitch->index});
 								} else {
-									while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+									/*while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
 										story_state.current_knots_stack.pop_back();
-									}
+									}*/
 
+									/*for (auto it = story_state.current_knots_stack.rbegin(); it != story_state.current_knots_stack.rend(); ++it) {
+										if (it->knot == target.knot) {
+											while (story_state.current_knots_stack.back().knot != it->knot) {
+												story_state.current_knots_stack.pop_back();
+											}
+
+											break;
+										}
+									}*/
+
+									try_remove_upper_knots(target);
 									story_state.current_knots_stack.back() = {target.knot, target.stitch->index};
 								}
 								
@@ -387,6 +422,17 @@ std::string InkStory::continue_story() {
 										story_state.current_knots_stack.pop_back();
 									}*/
 
+									/*for (auto it = story_state.current_knots_stack.rbegin(); it != story_state.current_knots_stack.rend(); ++it) {
+										if (it->knot == target.knot) {
+											while (story_state.current_knots_stack.back().knot != it->knot) {
+												story_state.current_knots_stack.pop_back();
+											}
+
+											break;
+										}
+									}*/
+
+									try_remove_upper_knots(target);
 									story_state.current_knots_stack.back() = {target.knot, target.gather_point->index};
 									if (target.gather_point->in_choice) {
 										story_state.choice_divert_index = target.gather_point->choice_index;
