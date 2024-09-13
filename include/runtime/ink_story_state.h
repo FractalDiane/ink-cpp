@@ -94,8 +94,6 @@ struct InkStoryState {
 	KnotStatus& current_nonchoice_knot();
 	void setup_next_stitch();
 
-	void update_local_knot_variables();
-
 	void apply_thread_choices();
 };
 

@@ -21,4 +21,6 @@ public:
 	virtual InkObject* populate_from_bytes(const ByteVec& bytes, std::size_t& index) override;
 
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
+
+	virtual ExpressionsVec get_all_expressions() override { return {&contents_shunted_tokens}; }
 };

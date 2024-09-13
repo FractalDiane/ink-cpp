@@ -150,6 +150,22 @@ GetContentResult InkStoryData::get_content(const std::string& path, const std::v
 						return result;
 					}
 				}
+			} else {
+				for (auto it = knots_stack.rbegin(); it != knots_stack.rend(); ++it) {
+					for (Stitch& stitch : it->knot->stitches) {
+						if (stitch.name == first) {
+							for (GatherPoint& gather_point : stitch.gather_points) {
+								if (gather_point.name == second) {
+									result.knot = it->knot;
+									result.gather_point = &gather_point;
+									result.result_type = WeaveContentType::GatherPoint;
+									result.found_any = true;
+									return result;
+								}
+							}
+						}
+					}
+				}
 			}
 		} break;
 

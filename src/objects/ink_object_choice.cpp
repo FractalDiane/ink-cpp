@@ -108,9 +108,26 @@ std::string InkObjectChoice::to_string() const {
 	return result;
 }
 
+InkObject::ExpressionsVec InkObjectChoice::get_all_expressions() {
+	ExpressionsVec result;
+	for (InkChoiceEntry& entry : choices) {
+		for (ExpressionParserV2::ShuntedExpression& condition : entry.conditions) {
+			result.push_back(&condition);
+		}
+
+		for (InkObject* object : entry.text) {
+			ExpressionsVec object_expressions = object->get_all_expressions();
+			if (!object_expressions.empty()) {
+				result.insert(result.end(), object_expressions.begin(), object_expressions.end());
+			}
+		}
+	}
+
+	return result;
+}
+
 InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	GetChoicesResult choices_result;
-	story_state.update_local_knot_variables();
 
 	if (!story_state.current_knot().returning_from_function) {
 		conditions_fully_prepared.clear();

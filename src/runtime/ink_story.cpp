@@ -193,6 +193,21 @@ void InkStory::apply_knot_args(const InkWeaveContent* target, InkStoryEvalResult
 	eval_result.divert_args.clear();
 }
 
+void InkStory::update_visit_count_variables(std::vector<ExpressionParserV2::ShuntedExpression*>&& expressions) {
+	for (ExpressionParserV2::ShuntedExpression* expression : expressions) {
+		for (ExpressionParserV2::Token& token : expression->tokens) {
+			if (token.type == ExpressionParserV2::TokenType::Variable) {
+				GetContentResult content = story_data->get_content(token.variable_name, story_state.current_knots_stack, story_state.current_stitch);
+				if (content.found_any) {
+					InkStoryTracking::SubKnotStats target_count;
+					story_state.story_tracking.get_content_stats(content.get_target(), target_count);
+					story_state.variable_info.constants[token.variable_name] = target_count.times_visited;
+				}
+			}
+		}
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 bool InkStory::can_continue() {
@@ -237,6 +252,7 @@ std::string InkStory::continue_story() {
 			}
 		}
 
+		update_visit_count_variables(current_object->get_all_expressions());
 		current_object->execute(story_state, eval_result);
 		
 		// after collecting the options from a choice, a thread returns to its origin

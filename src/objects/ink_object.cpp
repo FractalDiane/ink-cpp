@@ -21,9 +21,7 @@ std::vector<std::uint8_t> InkObject::to_bytes() const {
 }
 
 InkObject::~InkObject() {
-	/*for (ExpressionParser::Token* token : function_return_values) {
-		delete token;
-	}*/
+	
 }
 
 InkObject* InkObject::populate_from_bytes(const std::vector<std::uint8_t>& bytes, std::size_t& index) {
@@ -118,7 +116,6 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 		std::size_t size_lower_cap = 0;
 		if (eval_result.return_value.has_value()) {
 			ExpressionParserV2::Variant value = *eval_result.return_value;
-			function_return_values.push_back(value);
 			expression_entry.function_prepared_tokens[expression_entry.function_eval_index] = ExpressionParserV2::Token::from_variant(value);
 			size_lower_cap = 1;
 		} else {

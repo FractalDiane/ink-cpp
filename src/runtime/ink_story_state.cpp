@@ -74,10 +74,6 @@ void InkStoryState::setup_next_stitch() {
 	}
 }
 
-void InkStoryState::update_local_knot_variables() {
-	story_tracking.update_visit_count_variables(current_knots_stack, current_stitch, variable_info);
-}
-
 void InkStoryState::apply_thread_choices() {
 	for (ThreadEntry& entry : current_thread_entries) {
 		if (!entry.applied) {

@@ -26,6 +26,7 @@ private:
 	void bind_ink_functions();
 
 	void apply_knot_args(const InkWeaveContent* target, InkStoryEvalResult& eval_result);
+	void update_visit_count_variables(std::vector<ExpressionParserV2::ShuntedExpression*>&& expressions);
 
 public:
 	explicit InkStory() : story_data{nullptr} {}

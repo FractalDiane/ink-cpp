@@ -21,8 +21,6 @@ InkObjectLogic::~InkObjectLogic() {
 }
 
 void InkObjectLogic::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	story_state.update_local_knot_variables();
-
 	ExpressionParserV2::ExecuteResult logic_result = prepare_next_function_call(contents_shunted_tokens, story_state, eval_result, story_state.variable_info);
 	if (!logic_result.has_value() && logic_result.error().reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
 		return;

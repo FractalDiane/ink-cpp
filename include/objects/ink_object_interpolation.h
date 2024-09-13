@@ -23,4 +23,6 @@ public:
 	virtual InkObject* populate_from_bytes(const ByteVec& bytes, std::size_t& index) override;
 
 	virtual bool stop_before_this(const InkStoryState& story_state) const override { return what_to_interpolate.stack_empty() || what_to_interpolate.preparation_stack.back().function_eval_index == SIZE_MAX; }
+
+	virtual ExpressionsVec get_all_expressions() { return {&what_to_interpolate}; }
 };
