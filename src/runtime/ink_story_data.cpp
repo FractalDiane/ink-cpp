@@ -83,6 +83,7 @@ GetContentResult InkStoryData::get_content(const std::string& path, const std::v
 		}
 	}
 
+	// TODO: this is trash, just, somehow make this less bad please
 	GetContentResult result;
 	switch (dots) {
 		case 0: {
@@ -95,7 +96,7 @@ GetContentResult InkStoryData::get_content(const std::string& path, const std::v
 
 			if (current_stitch) {
 				for (GatherPoint& gather_point : current_stitch->gather_points) {
-					if (gather_point.name == first) {
+					if (!gather_point.in_choice && gather_point.name == first) {
 						result.knot = knots_stack.back().knot;
 						result.stitch = current_stitch;
 						result.gather_point = &gather_point;
@@ -117,7 +118,7 @@ GetContentResult InkStoryData::get_content(const std::string& path, const std::v
 					}
 
 					for (GatherPoint& gather_point : stitch.gather_points) {
-						if (gather_point.name == first) {
+						if (!gather_point.in_choice && gather_point.name == first) {
 							result.knot = it->knot;
 							result.stitch = &stitch;
 							result.gather_point = &gather_point;
@@ -129,13 +130,53 @@ GetContentResult InkStoryData::get_content(const std::string& path, const std::v
 				}
 
 				for (GatherPoint& gather_point : it->knot->gather_points) {
-					if (gather_point.name == first) {
+					if (!gather_point.in_choice && gather_point.name == first) {
 						result.knot = it->knot;
 						result.gather_point = &gather_point;
 						result.result_type = WeaveContentType::GatherPoint;
 						result.found_any = true;
 						return result;
 					}
+				}
+			}
+
+			for (const ChoiceLabelData& choice_label : current_stitch->choice_labels) {
+				if (choice_label.label->name == first) {
+					result.knot = choice_label.containing_knot;
+					result.stitch = current_stitch;
+					result.gather_point = choice_label.label;
+					result.result_type = WeaveContentType::GatherPoint;
+					result.choice_label = choice_label;
+					result.found_any = true;
+					result.is_choice_label = true;
+					return result;
+				}
+			}
+
+			for (Stitch& stitch : knots_stack.front().knot->stitches) {
+				for (const ChoiceLabelData& choice_label : stitch.choice_labels) {
+					if (choice_label.label->name == first) {
+						result.knot = choice_label.containing_knot;
+						result.stitch = &stitch;
+						result.gather_point = choice_label.label;
+						result.result_type = WeaveContentType::GatherPoint;
+						result.choice_label = choice_label;
+						result.found_any = true;
+						result.is_choice_label = true;
+						return result;
+					}
+				}
+			}
+
+			for (const ChoiceLabelData& choice_label : knots_stack.front().knot->choice_labels) {
+				if (choice_label.label->name == first) {
+					result.knot = choice_label.containing_knot;
+					result.gather_point = choice_label.label;
+					result.result_type = WeaveContentType::GatherPoint;
+					result.choice_label = choice_label;
+					result.found_any = true;
+					result.is_choice_label = true;
+					return result;
 				}
 			}
 		} break;

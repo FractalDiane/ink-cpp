@@ -643,6 +643,13 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 						label.index = static_cast<std::uint16_t>(gather_point_knot.objects.size());
 						gather_points.push_back(label);
+
+						/*std::vector<GatherPoint>& gather_points_outer =
+						!story_knots.back().stitches.empty() && story_knots.back().objects.size() >= story_knots.back().stitches[0].index
+						? story_knots.back().stitches.back().gather_points
+						: story_knots.back().gather_points;
+
+						gather_points_outer.push_back(label);*/
 						
 						token_index += 3;
 					}

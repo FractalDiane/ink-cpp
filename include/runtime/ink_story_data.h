@@ -14,6 +14,8 @@ struct GetContentResult {
 	Stitch* stitch = nullptr;
 	GatherPoint* gather_point = nullptr;
 	bool found_any = false;
+	bool is_choice_label = false;
+	ChoiceLabelData choice_label;
 
 	InkWeaveContent* get_target() {
 		switch (result_type) {
