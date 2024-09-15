@@ -193,6 +193,19 @@ GetContentResult InkStoryData::get_content(const std::string& path, const std::v
 						result.found_any = true;
 						return result;
 					}
+
+					for (ChoiceLabelData& choice_label : stitch.choice_labels) {
+						if (choice_label.label->name == second) {
+							result.knot = &knot->second;
+							result.stitch = &stitch;
+							result.gather_point = choice_label.label;
+							result.result_type = WeaveContentType::GatherPoint;
+							result.choice_label = choice_label;
+							result.found_any = true;
+							result.is_choice_label = true;
+							return result;
+						}
+					}
 				}
 
 				for (GatherPoint& gather_point : knot->second.gather_points) {
@@ -201,6 +214,18 @@ GetContentResult InkStoryData::get_content(const std::string& path, const std::v
 						result.gather_point = &gather_point;
 						result.result_type = WeaveContentType::GatherPoint;
 						result.found_any = true;
+						return result;
+					}
+				}
+
+				for (ChoiceLabelData& choice_label : knot->second.choice_labels) {
+					if (choice_label.label->name == second) {
+						result.knot = &knot->second;
+						result.gather_point = choice_label.label;
+						result.result_type = WeaveContentType::GatherPoint;
+						result.choice_label = choice_label;
+						result.found_any = true;
+						result.is_choice_label = true;
 						return result;
 					}
 				}

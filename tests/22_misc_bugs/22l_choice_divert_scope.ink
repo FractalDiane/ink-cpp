@@ -11,6 +11,6 @@
 = two
 * (oneone) [1] hi3
 * (twotwo) [2]
-    { test: -> oneone | -> main1.oneone }
+    { test: -> oneone | -> one.oneone }
 -
 -> END

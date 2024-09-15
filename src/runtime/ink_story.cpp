@@ -277,6 +277,21 @@ std::string InkStory::continue_story() {
 		KnotStatus& last_knot = story_state.previous_nonfunction_knot();
 		bool last_knot_had_newline = last_knot.index > 0 && last_knot.knot->objects[last_knot.index - 1]->get_id() == ObjectId::LineBreak;
 
+		// any gather points hit need to have their visit counts incremented
+		std::vector<GatherPoint> no_current_stitch;
+		std::vector<GatherPoint>& other_gathers = story_state.current_stitch ? story_state.current_stitch->gather_points : no_current_stitch;
+		auto joint_gather_view = std::vector{
+			std::views::all(story_state.current_knot().knot->gather_points),
+			std::views::all(other_gathers),
+		} | std::views::join;
+
+		for (GatherPoint& gather_point : joint_gather_view) {
+			if (!changed_knot && !gather_point.in_choice && gather_point.index == story_state.index_in_knot() && !gather_point.name.empty()) {
+				story_state.story_tracking.increment_visit_count(story_state.current_knot().knot, story_state.current_stitch, &gather_point);
+				break;
+			}
+		}
+
 		// are we stopping here?
 		if (eval_result.reached_newline
 		&& eval_result.has_any_contents(true)
@@ -546,21 +561,6 @@ std::string InkStory::continue_story() {
 			advance_knot_index = false;
 
 			story_state.variable_info.current_weave_uuid = story_state.current_stitch ? story_state.current_stitch->uuid : story_state.current_nonchoice_knot().knot->uuid;
-		}
-
-		// any gather points hit need to have their visit counts incremented
-		std::vector<GatherPoint> no_current_stitch;
-		std::vector<GatherPoint>& other_gathers = story_state.current_stitch ? story_state.current_stitch->gather_points : no_current_stitch;
-		auto joint_gather_view = std::vector{
-			std::views::all(story_state.current_knot().knot->gather_points),
-			std::views::all(other_gathers),
-		} | std::views::join;
-
-		for (GatherPoint& gather_point : joint_gather_view) {
-			if (!changed_knot && !gather_point.in_choice && gather_point.index == story_state.index_in_knot() && !gather_point.name.empty()) {
-				story_state.story_tracking.increment_visit_count(story_state.current_knot().knot, story_state.current_stitch, &gather_point);
-				break;
-			}
 		}
 
 		if (advance_knot_index) {

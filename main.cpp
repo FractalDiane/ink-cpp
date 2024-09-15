@@ -24,18 +24,18 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "8_variable_text"
-#define TEST_FILE "8k_conditional_text"
+//#define TEST_FOLDER "ink-proof"
+//#define TEST_FILE "8_temp_global_conflict"
 //#define TEST_FOLDER "22_misc_bugs"
 //#define TEST_FILE "22l_choice_divert_scope"
-//#define TEST_FOLDER "23_long_examples"
-//#define TEST_FILE "23b_crime_scene"
+#define TEST_FOLDER "23_long_examples"
+#define TEST_FILE "23b_crime_scene"
 
 int main(int argc, char* argv[]) {
 	InkCompiler compiler;
 	InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
 	std::cout << story.continue_story() << std::endl;
-	story.choose_choice_index(1);
+	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(1);
 	std::cout << story.continue_story() << std::endl;
