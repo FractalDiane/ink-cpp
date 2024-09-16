@@ -619,7 +619,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					past_choice_initial_braces = false;
 					++token_index;
 
-					choice_stack.push_back(InkChoiceEntry(current_choice_sticky));
+					choice_stack.push_back(InkChoiceEntry(choice_options.size(), current_choice_sticky));
 					anonymous_knot_stack.push_back(&choice_stack.back().result);
 
 					while (all_tokens[token_index].token == InkToken::Text && !all_tokens[token_index].escaped && strip_string_edges(all_tokens[token_index].get_text_contents(), true, true, true).empty()) {

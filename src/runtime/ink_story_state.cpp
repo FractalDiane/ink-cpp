@@ -79,7 +79,6 @@ void InkStoryState::apply_thread_choices() {
 		if (!entry.applied) {
 			current_choices.emplace_back(entry.choice_text, true);
 			current_choice_structs.emplace_back(entry.choice_entry);
-			current_choice_indices.push_back(entry.choice_index);
 
 			entry.applied = true;
 		}

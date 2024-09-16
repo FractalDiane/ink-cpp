@@ -10,6 +10,7 @@
 
 struct InkChoiceEntry {
 	std::vector<InkObject*> text;
+	std::size_t index;
 	Knot result;
 	bool sticky = false;
 	std::vector<ExpressionParserV2::ShuntedExpression> conditions;
@@ -19,7 +20,7 @@ struct InkChoiceEntry {
 	GatherPoint label;
 
 	InkChoiceEntry() { result.is_choice_result = true; }
-	InkChoiceEntry(bool sticky) : sticky(sticky) {
+	InkChoiceEntry(std::size_t index, bool sticky) : index(index), sticky(sticky) {
 		result.is_choice_result = true;
 	}
 };

@@ -60,7 +60,6 @@ struct InkStoryState {
 
 	std::vector<StoryChoice> current_choices;
 	std::vector<struct InkChoiceEntry*> current_choice_structs;
-	std::vector<std::size_t> current_choice_indices;
 	std::optional<std::size_t> selected_choice = std::nullopt;
 	ChoiceMixPosition choice_mix_position = ChoiceMixPosition::Before;
 	std::unordered_map<Knot*, std::unordered_map<class InkObject*, std::unordered_set<std::size_t>>> choices_taken;

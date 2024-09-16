@@ -15,20 +15,22 @@ ByteVec Serializer<InkChoiceEntry>::operator()(const InkChoiceEntry& entry) {
 	VectorSerializer<ExpressionParserV2::Token> stokens;
 
 	ByteVec result = sobjects(entry.text);
-	ByteVec result2 = sknot(entry.result);
-	ByteVec result3 = s8(static_cast<std::uint8_t>(entry.sticky));
-	ByteVec result4 = s8(static_cast<std::uint8_t>(entry.fallback));
-	ByteVec result5 = s8(static_cast<std::uint8_t>(entry.immediately_continue_to_result));
-	ByteVec result6 = sgatherpoint(entry.label);
+	ByteVec result2 = s8(static_cast<std::uint8_t>(entry.index));
+	ByteVec result3 = sknot(entry.result);
+	ByteVec result4 = s8(static_cast<std::uint8_t>(entry.sticky));
+	ByteVec result5 = s8(static_cast<std::uint8_t>(entry.fallback));
+	ByteVec result6 = s8(static_cast<std::uint8_t>(entry.immediately_continue_to_result));
+	ByteVec result7 = sgatherpoint(entry.label);
 
 	result.insert(result.end(), result2.begin(), result2.end());
 	result.insert(result.end(), result3.begin(), result3.end());
 	result.insert(result.end(), result4.begin(), result4.end());
 	result.insert(result.end(), result5.begin(), result5.end());
 	result.insert(result.end(), result6.begin(), result6.end());
-
-	ByteVec result7 = s16(static_cast<std::uint16_t>(entry.conditions.size()));
 	result.insert(result.end(), result7.begin(), result7.end());
+
+	ByteVec result8 = s16(static_cast<std::uint16_t>(entry.conditions.size()));
+	result.insert(result.end(), result8.begin(), result8.end());
 
 	for (const auto& vec : entry.conditions) {
 		ByteVec result_tokens = stokens(vec.tokens);
@@ -48,6 +50,7 @@ InkChoiceEntry Deserializer<InkChoiceEntry>::operator()(const ByteVec& bytes, st
 
 	InkChoiceEntry result;
 	result.text = dsobjects(bytes, index);
+	result.index = static_cast<std::size_t>(ds8(bytes, index));
 	result.result = dsknot(bytes, index);
 	result.sticky = static_cast<bool>(ds8(bytes, index));
 	result.fallback = static_cast<bool>(ds8(bytes, index));
@@ -169,7 +172,7 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 			if (!this_choice.fallback) {
 				bool include_choice = true;
 				std::vector<ExpressionParserV2::ShuntedExpression>& conditions = this_choice.conditions;
-				if (!conditions.empty()) {
+				if (!conditions.empty() && story_state.choice_divert_index != i) {
 					for (ExpressionParserV2::ShuntedExpression& condition : conditions) {
 						if (!conditions_fully_prepared.contains(condition.uuid)) {
 							ExpressionParserV2::ExecuteResult condition_result = prepare_next_function_call(condition, story_state, eval_result, story_state.variable_info);
@@ -289,7 +292,6 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			} else {
 				story_state.current_choices.emplace_back(choice.text, false);
 				story_state.current_choice_structs.push_back(choice.entry);
-				story_state.current_choice_indices.push_back(choice.index);
 			}
 		}
 
@@ -314,9 +316,18 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 	}
 	
 	if ((!do_choice_setup || select_choice_immediately) && story_state.current_thread_depth == 0) {
-		story_state.add_choice_taken(this, static_cast<std::size_t>(story_state.current_choice_indices[*story_state.selected_choice]));
-		++story_state.total_choices_taken;
 		InkChoiceEntry* selected_choice_struct = story_state.current_choice_structs[*story_state.selected_choice];
+		if (story_state.choice_divert_index.has_value()) {
+			for (InkChoiceEntry* choice : story_state.current_choice_structs) {
+				if (choice->index == *story_state.choice_divert_index) {
+					selected_choice_struct = choice;
+					break;
+				}
+			}
+		}
+
+		story_state.add_choice_taken(this, selected_choice_struct->index);
+		++story_state.total_choices_taken;
 
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 		InkStoryEvalResult choice_eval_result;
@@ -354,7 +365,6 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 
 		story_state.current_choices.clear();
 		story_state.current_choice_structs.clear();
-		story_state.current_choice_indices.clear();
 		story_state.current_thread_entries.clear();
 		story_state.selected_choice = std::nullopt;
 		story_state.at_choice = false;
