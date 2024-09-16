@@ -1716,7 +1716,7 @@ TEST_F(MiscBugTests, CrimeSceneChecks) {
 
 TEST_F(MiscBugTests, KnotDeeplyNestedLabels) {
 	STORY("22_misc_bugs/22j_knot_deeply_nested_labels.ink");
-	EXPECT_TEXT("hi", "hi2", "hi3");
+	EXPECT_TEXT("hi", "hi2", "hi3", "and then a gather point");
 }
 
 TEST_F(MiscBugTests, DivertFromDeepNest) {
