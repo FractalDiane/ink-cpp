@@ -129,7 +129,7 @@ InkObject::ExpressionsVec InkObjectChoice::get_all_expressions() {
 	return result;
 }
 
-std::vector<ChoiceLabelData> InkObjectChoice::get_choice_labels(Knot* containing_knot, std::size_t index_in_knot) {
+/*std::vector<ChoiceLabelData> InkObjectChoice::get_choice_labels(Knot* containing_knot, std::size_t index_in_knot) {
 	std::vector<ChoiceLabelData> result;
 	populate_choice_labels_recursive(this, containing_knot, index_in_knot, result);
 	return result;
@@ -154,6 +154,28 @@ void InkObjectChoice::populate_choice_labels_recursive(InkObjectChoice* object, 
 			}
 		}
 	}
+}*/
+
+std::vector<GatherPoint*> InkObjectChoice::get_choice_labels() {
+	std::vector<GatherPoint*> result;
+	for (InkChoiceEntry& choice : choices) {
+		if (!choice.label.name.empty()) {
+			result.push_back(&choice.label);
+		}
+	}
+
+	return result;
+}
+
+std::vector<Knot*> InkObjectChoice::get_choice_result_knots() {
+	std::vector<Knot*> result;
+	for (InkChoiceEntry& choice : choices) {
+		if (!choice.result.objects.empty()) {
+			result.push_back(&choice.result);
+		}
+	}
+
+	return result;
 }
 
 InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
@@ -316,7 +338,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 	}
 	
 	if ((!do_choice_setup || select_choice_immediately) && story_state.current_thread_depth == 0) {
-		InkChoiceEntry* selected_choice_struct = story_state.current_choice_structs[*story_state.selected_choice];
+		InkChoiceEntry* selected_choice_struct = nullptr;
 		if (story_state.choice_divert_index.has_value()) {
 			for (InkChoiceEntry* choice : story_state.current_choice_structs) {
 				if (choice->index == *story_state.choice_divert_index) {
@@ -324,6 +346,8 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 					break;
 				}
 			}
+		} else {
+			selected_choice_struct = story_state.current_choice_structs[*story_state.selected_choice];
 		}
 
 		story_state.add_choice_taken(this, selected_choice_struct->index);

@@ -60,14 +60,14 @@ struct GatherPoint : public InkWeaveContent {
 struct Stitch : public InkWeaveContent {
 	std::uint16_t index = 0;
 	std::vector<GatherPoint> gather_points;
-	std::vector<ChoiceLabelData> choice_labels;
+	//std::vector<ChoiceLabelData> choice_labels;
 };
 
 struct Knot : public InkWeaveContent {
 	std::vector<class InkObject*> objects;
 	std::vector<Stitch> stitches;
 	std::vector<GatherPoint> gather_points;
-	std::vector<ChoiceLabelData> choice_labels;
+	//std::vector<ChoiceLabelData> choice_labels;
 	bool is_function = false;
 	bool is_choice_result = false;
 	FunctionPrepType function_prep_type = FunctionPrepType::None;

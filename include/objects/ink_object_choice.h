@@ -62,14 +62,16 @@ public:
 
 	GetChoicesResult get_choices(InkStoryState& story_state, InkStoryEvalResult& eval_result);
 	//std::vector<std::pair<std::size_t, GatherPoint*>> get_choice_labels();
-	std::vector<ChoiceLabelData> get_choice_labels(Knot* containing_knot, std::size_t index_in_knot);
+	//std::vector<ChoiceLabelData> get_choice_labels(Knot* containing_knot, std::size_t index_in_knot);
+	std::vector<GatherPoint*> get_choice_labels();
+	std::vector<Knot*> get_choice_result_knots();
 
 	virtual bool stop_before_this(const InkStoryState& story_state) const override { return story_state.choice_divert_index.has_value(); }
 
 	virtual ExpressionsVec get_all_expressions() override;
 
 private:
-	static void populate_choice_labels_recursive(InkObjectChoice* object, Knot* containing_knot, std::size_t index_in_knot, std::vector<ChoiceLabelData>& all_labels);
+	//static void populate_choice_labels_recursive(InkObjectChoice* object, Knot* containing_knot, std::size_t index_in_knot, std::vector<ChoiceLabelData>& all_labels);
 };
 
 template <>

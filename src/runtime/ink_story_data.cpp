@@ -65,7 +65,127 @@ void InkStoryData::print_info() const {
 	}
 }
 
-GetContentResult InkStoryData::get_content(const std::string& path, const std::vector<KnotStatus>& knots_stack, Stitch* current_stitch) {
+#include "objects/ink_object_choice.h"
+
+GetContentResult find_gather_point_recursive(const std::string& path, std::size_t dots, Knot* topmost_knot, std::vector<KnotStatus>& knots_stack, Knot* new_knot, Stitch* enclosing_stitch, Stitch* current_story_stitch, bool use_stitch, bool update_stack, bool top) {
+	KnotStatus* this_knot_status = nullptr;
+	if (update_stack && !top) {
+		knots_stack.push_back({new_knot, 0});
+		this_knot_status = &knots_stack.back();
+	} else {
+		bool found_knot = false;
+		for (KnotStatus& knot : knots_stack) {
+			if (knot.knot == topmost_knot) {
+				this_knot_status = &knot;
+				found_knot = true;
+				break;
+			}
+		}
+
+		if (!found_knot) {
+			knots_stack.clear();
+			knots_stack.push_back({topmost_knot, 0});
+			this_knot_status = &knots_stack.front();
+		}
+	}
+
+	//std::vector<std::pair<GetContentResult, Stitch*>> candidates;
+	GetContentResult non_stitch_result;
+
+	std::vector<GatherPoint>& gather_points = use_stitch ? current_story_stitch->gather_points : new_knot->gather_points;
+	for (GatherPoint& gather_point : gather_points) {
+		if (!gather_point.in_choice && !gather_point.name.empty() && gather_point.name == path) {
+			GetContentResult result;
+			result.knot = new_knot;
+			if (use_stitch) {
+				result.stitch = current_story_stitch;
+			}
+
+			result.gather_point = &gather_point;
+			result.result_type = WeaveContentType::GatherPoint;
+			result.found_any = true;
+
+			if (dots > 0 || enclosing_stitch == current_story_stitch) {
+				return result;
+			} else if (!enclosing_stitch) {
+				non_stitch_result = result;
+			}
+
+			//if (!current_story_stitch) {
+				//return result;
+			//} else {
+			//	candidates.emplace_back(result, enclosing_stitch);
+			//}
+		}
+	}
+	
+	//std::size_t object_index = 0;
+	std::size_t i = use_stitch ? current_story_stitch->index : 0;
+	while (i < new_knot->objects.size()) {
+	//for (InkObject* object : new_knot->objects) {
+		InkObject* object = new_knot->objects[i];
+		if (object->get_id() == ObjectId::Choice) {
+			InkObjectChoice* choice_object = static_cast<InkObjectChoice*>(object);
+			std::vector<GatherPoint*> choice_labels = choice_object->get_choice_labels();
+			for (GatherPoint* gather_point : choice_labels) {
+				if (gather_point->name == path) {
+					GetContentResult result;
+					result.knot = new_knot;
+					result.gather_point = gather_point;
+					result.result_type = WeaveContentType::GatherPoint;
+					result.is_choice_label = true;
+					result.found_any = true;
+
+					if (dots > 0 || enclosing_stitch == current_story_stitch) {
+						return result;
+					} else if (!enclosing_stitch) {
+						non_stitch_result = result;
+					}
+
+					//return result;
+				}
+			}
+
+			std::vector<Knot*> choice_results = choice_object->get_choice_result_knots();
+			for (Knot* knot : choice_results) {
+				GetContentResult result = find_gather_point_recursive(path, dots, topmost_knot, knots_stack, knot, enclosing_stitch, current_story_stitch, false, update_stack, false);
+				if (result.found_any) {
+					if (update_stack) {
+						this_knot_status->index = i;
+					}
+
+					return result;
+				}
+			}
+		}
+
+		++i;
+		/*for (Stitch& stitch : new_knot->stitches) {
+			if ()
+		}*/
+
+		for (auto stitch = new_knot->stitches.rbegin(); stitch != new_knot->stitches.rend(); ++stitch) {
+			if (stitch->index <= i) {
+				enclosing_stitch = &*stitch;
+				break;
+			}
+		}
+	}
+
+	if (update_stack && !top) {
+		knots_stack.pop_back();
+	}
+
+	return non_stitch_result;
+}
+
+GetContentResult find_gather_point(const std::string& path, std::size_t dots, Knot* topmost_knot, std::vector<KnotStatus>& knots_stack, Stitch* current_story_stitch, bool use_stitch, bool update_stack) {
+	return find_gather_point_recursive(path, dots, topmost_knot, knots_stack,
+	topmost_knot, !topmost_knot->stitches.empty() && topmost_knot->stitches[0].index == 0 ? &topmost_knot->stitches[0] : nullptr,
+	current_story_stitch, use_stitch, update_stack, true);
+}
+
+GetContentResult InkStoryData::get_content(const std::string& path, Knot* topmost_knot, std::vector<KnotStatus>& knots_stack, Stitch* current_stitch, bool update_stack) {
 	std::string first;
 	first.reserve(10);
 	std::string second;
@@ -83,7 +203,6 @@ GetContentResult InkStoryData::get_content(const std::string& path, const std::v
 		}
 	}
 
-	// TODO: this is trash, just, somehow make this less bad please
 	GetContentResult result;
 	switch (dots) {
 		case 0: {
@@ -93,94 +212,18 @@ GetContentResult InkStoryData::get_content(const std::string& path, const std::v
 				result.found_any = true;
 				return result;
 			}
-
-			if (current_stitch) {
-				for (GatherPoint& gather_point : current_stitch->gather_points) {
-					if (!gather_point.in_choice && gather_point.name == first) {
-						result.knot = knots_stack.back().knot;
-						result.stitch = current_stitch;
-						result.gather_point = &gather_point;
-						result.result_type = WeaveContentType::GatherPoint;
-						result.found_any = true;
-						return result;
-					}
-				}
-			}
-
-			for (auto it = knots_stack.rbegin(); it != knots_stack.rend(); ++it) {
-				for (Stitch& stitch : it->knot->stitches) {
-					if (stitch.name == first) {
-						result.knot = it->knot;
-						result.stitch = &stitch;
-						result.result_type = WeaveContentType::Stitch;
-						result.found_any = true;
-						return result;
-					}
-
-					for (GatherPoint& gather_point : stitch.gather_points) {
-						if (!gather_point.in_choice && gather_point.name == first) {
-							result.knot = it->knot;
-							result.stitch = &stitch;
-							result.gather_point = &gather_point;
-							result.result_type = WeaveContentType::GatherPoint;
-							result.found_any = true;
-							return result;
-						}
-					}
-				}
-
-				for (GatherPoint& gather_point : it->knot->gather_points) {
-					if (!gather_point.in_choice && gather_point.name == first) {
-						result.knot = it->knot;
-						result.gather_point = &gather_point;
-						result.result_type = WeaveContentType::GatherPoint;
-						result.found_any = true;
-						return result;
-					}
-				}
-			}
-
-			if (current_stitch) {
-				for (const ChoiceLabelData& choice_label : current_stitch->choice_labels) {
-					if (choice_label.label->name == first) {
-						result.knot = choice_label.containing_knot;
-						result.stitch = current_stitch;
-						result.gather_point = choice_label.label;
-						result.result_type = WeaveContentType::GatherPoint;
-						result.choice_label = choice_label;
-						result.found_any = true;
-						result.is_choice_label = true;
-						return result;
-					}
-				}
-			}
-
-			for (Stitch& stitch : knots_stack.front().knot->stitches) {
-				for (const ChoiceLabelData& choice_label : stitch.choice_labels) {
-					if (choice_label.label->name == first) {
-						result.knot = choice_label.containing_knot;
-						result.stitch = &stitch;
-						result.gather_point = choice_label.label;
-						result.result_type = WeaveContentType::GatherPoint;
-						result.choice_label = choice_label;
-						result.found_any = true;
-						result.is_choice_label = true;
-						return result;
-					}
-				}
-			}
-
-			for (const ChoiceLabelData& choice_label : knots_stack.front().knot->choice_labels) {
-				if (choice_label.label->name == first) {
-					result.knot = choice_label.containing_knot;
-					result.gather_point = choice_label.label;
-					result.result_type = WeaveContentType::GatherPoint;
-					result.choice_label = choice_label;
+			
+			for (Stitch& stitch : topmost_knot->stitches) {
+				if (stitch.name == first) {
+					result.knot = topmost_knot;
+					result.stitch = &stitch;
+					result.result_type = WeaveContentType::Stitch;
 					result.found_any = true;
-					result.is_choice_label = true;
 					return result;
 				}
 			}
+
+			return find_gather_point(first, 0, topmost_knot, knots_stack, current_stitch, false, update_stack);
 		} break;
 
 		case 1: {
@@ -193,56 +236,13 @@ GetContentResult InkStoryData::get_content(const std::string& path, const std::v
 						result.found_any = true;
 						return result;
 					}
-
-					for (ChoiceLabelData& choice_label : stitch.choice_labels) {
-						if (choice_label.label->name == second) {
-							result.knot = &knot->second;
-							result.stitch = &stitch;
-							result.gather_point = choice_label.label;
-							result.result_type = WeaveContentType::GatherPoint;
-							result.choice_label = choice_label;
-							result.found_any = true;
-							result.is_choice_label = true;
-							return result;
-						}
-					}
 				}
 
-				for (GatherPoint& gather_point : knot->second.gather_points) {
-					if (gather_point.name == second) {
-						result.knot = &knot->second;
-						result.gather_point = &gather_point;
-						result.result_type = WeaveContentType::GatherPoint;
-						result.found_any = true;
-						return result;
-					}
-				}
-
-				for (ChoiceLabelData& choice_label : knot->second.choice_labels) {
-					if (choice_label.label->name == second) {
-						result.knot = &knot->second;
-						result.gather_point = choice_label.label;
-						result.result_type = WeaveContentType::GatherPoint;
-						result.choice_label = choice_label;
-						result.found_any = true;
-						result.is_choice_label = true;
-						return result;
-					}
-				}
+				return find_gather_point(second, 1, &knot->second, knots_stack, current_stitch, false, update_stack);
 			} else {
-				for (auto it = knots_stack.rbegin(); it != knots_stack.rend(); ++it) {
-					for (Stitch& stitch : it->knot->stitches) {
-						if (stitch.name == first) {
-							for (GatherPoint& gather_point : stitch.gather_points) {
-								if (gather_point.name == second) {
-									result.knot = it->knot;
-									result.gather_point = &gather_point;
-									result.result_type = WeaveContentType::GatherPoint;
-									result.found_any = true;
-									return result;
-								}
-							}
-						}
+				for (Stitch& stitch : topmost_knot->stitches) {
+					if (stitch.name == first) {
+						return find_gather_point(second, 1, topmost_knot, knots_stack, &stitch, true, update_stack);
 					}
 				}
 			}
@@ -262,6 +262,8 @@ GetContentResult InkStoryData::get_content(const std::string& path, const std::v
 								return result;
 							}
 						}
+
+						return find_gather_point(third, 2, &knot->second, knots_stack, &stitch, true, update_stack);
 					}
 				}
 			}
