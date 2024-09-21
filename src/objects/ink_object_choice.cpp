@@ -207,11 +207,16 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 
 								return choices_result;
 							} else {
-								conditions_fully_prepared.insert(condition.uuid);
+								conditions_fully_prepared.insert({condition.uuid, static_cast<bool>(*condition_result)});
 							}
 
 							if (!*condition_result) {
 								include_choice = false;
+								break;
+							}
+						} else {
+							include_choice &= conditions_fully_prepared[condition.uuid];
+							if (!include_choice) {
 								break;
 							}
 						}

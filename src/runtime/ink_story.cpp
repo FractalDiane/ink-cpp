@@ -286,7 +286,7 @@ std::string InkStory::continue_story() {
 		} | std::views::join;
 
 		for (GatherPoint& gather_point : joint_gather_view) {
-			if (!changed_knot && !gather_point.in_choice && gather_point.index == story_state.index_in_knot() && !gather_point.name.empty()) {
+			if (!changed_knot && !gather_point.in_choice && !story_state.current_knot().returning_from_function && gather_point.index == story_state.index_in_knot() && !gather_point.name.empty()) {
 				story_state.story_tracking.increment_visit_count(story_state.current_knot().knot, story_state.current_stitch, &gather_point);
 				break;
 			}

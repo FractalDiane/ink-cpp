@@ -42,7 +42,7 @@ public:
 private:
 	std::vector<InkChoiceEntry> choices;
 
-	std::unordered_set<Uuid> conditions_fully_prepared;
+	std::unordered_map<Uuid, bool> conditions_fully_prepared;
 	std::unordered_set<InkObject*> text_objects_being_prepared;
 	std::unordered_map<InkObject*, std::string> text_objects_fully_prepared;
 
