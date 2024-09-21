@@ -14,6 +14,8 @@ struct GetContentResult {
 	Stitch* stitch = nullptr;
 	GatherPoint* gather_point = nullptr;
 	bool found_any = false;
+	bool is_choice_label = false;
+	ChoiceLabelData choice_label;
 
 	InkWeaveContent* get_target() {
 		switch (result_type) {
@@ -45,5 +47,5 @@ public:
 
 	void print_info() const;
 
-	GetContentResult get_content(const std::string& path, const std::vector<KnotStatus>& knots_stack, Stitch* current_stitch);
+	GetContentResult get_content(const std::string& path, Knot* topmost_knot, std::vector<KnotStatus>& knots_stack, Stitch* current_stitch, bool update_stack);
 };

@@ -57,7 +57,6 @@ std::string InkObjectDivert::get_target(InkStoryState& story_state, const Expres
 }
 
 void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	story_state.update_local_knot_variables();
 	std::string target = get_target(story_state, story_state.variable_info);
 
 	bool is_done = target == "DONE";

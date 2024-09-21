@@ -25,8 +25,8 @@ enum class ObjectId {
 };
 
 class InkObject {
-protected:
-	std::vector<class ExpressionParserV2::Variant> function_return_values;
+public:
+	typedef std::vector<struct ExpressionParserV2::ShuntedExpression*> ExpressionsVec;
 
 public:
 	virtual ~InkObject();
@@ -41,6 +41,8 @@ public:
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) = 0;
 
 	virtual bool stop_before_this(const InkStoryState& story_state) const { return false; }
+
+	virtual ExpressionsVec get_all_expressions() { return {}; }
 	
 	ByteVec get_serialized_bytes() const;
 

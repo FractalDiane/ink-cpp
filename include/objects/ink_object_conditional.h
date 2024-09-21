@@ -33,6 +33,8 @@ public:
 
 	virtual bool contributes_content_to_knot() const override;
 
+	virtual ExpressionsVec get_all_expressions() override;
+
 	virtual ByteVec to_bytes() const override;
 	InkObject* populate_from_bytes(const ByteVec& bytes, std::size_t& index);
 };

@@ -15,20 +15,22 @@ ByteVec Serializer<InkChoiceEntry>::operator()(const InkChoiceEntry& entry) {
 	VectorSerializer<ExpressionParserV2::Token> stokens;
 
 	ByteVec result = sobjects(entry.text);
-	ByteVec result2 = sknot(entry.result);
-	ByteVec result3 = s8(static_cast<std::uint8_t>(entry.sticky));
-	ByteVec result4 = s8(static_cast<std::uint8_t>(entry.fallback));
-	ByteVec result5 = s8(static_cast<std::uint8_t>(entry.immediately_continue_to_result));
-	ByteVec result6 = sgatherpoint(entry.label);
+	ByteVec result2 = s8(static_cast<std::uint8_t>(entry.index));
+	ByteVec result3 = sknot(entry.result);
+	ByteVec result4 = s8(static_cast<std::uint8_t>(entry.sticky));
+	ByteVec result5 = s8(static_cast<std::uint8_t>(entry.fallback));
+	ByteVec result6 = s8(static_cast<std::uint8_t>(entry.immediately_continue_to_result));
+	ByteVec result7 = sgatherpoint(entry.label);
 
 	result.insert(result.end(), result2.begin(), result2.end());
 	result.insert(result.end(), result3.begin(), result3.end());
 	result.insert(result.end(), result4.begin(), result4.end());
 	result.insert(result.end(), result5.begin(), result5.end());
 	result.insert(result.end(), result6.begin(), result6.end());
-
-	ByteVec result7 = s16(static_cast<std::uint16_t>(entry.conditions.size()));
 	result.insert(result.end(), result7.begin(), result7.end());
+
+	ByteVec result8 = s16(static_cast<std::uint16_t>(entry.conditions.size()));
+	result.insert(result.end(), result8.begin(), result8.end());
 
 	for (const auto& vec : entry.conditions) {
 		ByteVec result_tokens = stokens(vec.tokens);
@@ -48,6 +50,7 @@ InkChoiceEntry Deserializer<InkChoiceEntry>::operator()(const ByteVec& bytes, st
 
 	InkChoiceEntry result;
 	result.text = dsobjects(bytes, index);
+	result.index = static_cast<std::size_t>(ds8(bytes, index));
 	result.result = dsknot(bytes, index);
 	result.sticky = static_cast<bool>(ds8(bytes, index));
 	result.fallback = static_cast<bool>(ds8(bytes, index));
@@ -108,9 +111,75 @@ std::string InkObjectChoice::to_string() const {
 	return result;
 }
 
+InkObject::ExpressionsVec InkObjectChoice::get_all_expressions() {
+	ExpressionsVec result;
+	for (InkChoiceEntry& entry : choices) {
+		for (ExpressionParserV2::ShuntedExpression& condition : entry.conditions) {
+			result.push_back(&condition);
+		}
+
+		for (InkObject* object : entry.text) {
+			ExpressionsVec object_expressions = object->get_all_expressions();
+			if (!object_expressions.empty()) {
+				result.insert(result.end(), object_expressions.begin(), object_expressions.end());
+			}
+		}
+	}
+
+	return result;
+}
+
+/*std::vector<ChoiceLabelData> InkObjectChoice::get_choice_labels(Knot* containing_knot, std::size_t index_in_knot) {
+	std::vector<ChoiceLabelData> result;
+	populate_choice_labels_recursive(this, containing_knot, index_in_knot, result);
+	return result;
+}
+
+void InkObjectChoice::populate_choice_labels_recursive(InkObjectChoice* object, Knot* containing_knot, std::size_t index_in_knot, std::vector<ChoiceLabelData>& all_labels) {
+	for (std::size_t i = 0; i < object->choices.size(); ++i) {
+		InkChoiceEntry& entry = object->choices[i];
+		if (entry.label.in_choice) {
+			ChoiceLabelData label;
+			label.label = &entry.label;
+			label.containing_knot = containing_knot;
+			label.choice_index_in_knot = index_in_knot;
+			label.choice_option_index = i;
+			all_labels.push_back(label);
+		}
+
+		for (std::size_t j = 0; j < entry.result.objects.size(); ++j) {
+			InkObject* subobject = entry.result.objects[j];
+			if (subobject->get_id() == ObjectId::Choice) {
+				populate_choice_labels_recursive(static_cast<InkObjectChoice*>(subobject), &entry.result, j, all_labels);
+			}
+		}
+	}
+}*/
+
+std::vector<GatherPoint*> InkObjectChoice::get_choice_labels() {
+	std::vector<GatherPoint*> result;
+	for (InkChoiceEntry& choice : choices) {
+		if (!choice.label.name.empty()) {
+			result.push_back(&choice.label);
+		}
+	}
+
+	return result;
+}
+
+std::vector<Knot*> InkObjectChoice::get_choice_result_knots() {
+	std::vector<Knot*> result;
+	for (InkChoiceEntry& choice : choices) {
+		if (!choice.result.objects.empty()) {
+			result.push_back(&choice.result);
+		}
+	}
+
+	return result;
+}
+
 InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	GetChoicesResult choices_result;
-	story_state.update_local_knot_variables();
 
 	if (!story_state.current_knot().returning_from_function) {
 		conditions_fully_prepared.clear();
@@ -125,7 +194,7 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 			if (!this_choice.fallback) {
 				bool include_choice = true;
 				std::vector<ExpressionParserV2::ShuntedExpression>& conditions = this_choice.conditions;
-				if (!conditions.empty()) {
+				if (!conditions.empty() && story_state.choice_divert_index != i) {
 					for (ExpressionParserV2::ShuntedExpression& condition : conditions) {
 						if (!conditions_fully_prepared.contains(condition.uuid)) {
 							ExpressionParserV2::ExecuteResult condition_result = prepare_next_function_call(condition, story_state, eval_result, story_state.variable_info);
@@ -138,11 +207,16 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 
 								return choices_result;
 							} else {
-								conditions_fully_prepared.insert(condition.uuid);
+								conditions_fully_prepared.insert({condition.uuid, static_cast<bool>(*condition_result)});
 							}
 
 							if (!*condition_result) {
 								include_choice = false;
+								break;
+							}
+						} else {
+							include_choice &= conditions_fully_prepared[condition.uuid];
+							if (!include_choice) {
 								break;
 							}
 						}
@@ -245,7 +319,6 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			} else {
 				story_state.current_choices.emplace_back(choice.text, false);
 				story_state.current_choice_structs.push_back(choice.entry);
-				story_state.current_choice_indices.push_back(choice.index);
 			}
 		}
 
@@ -270,9 +343,20 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 	}
 	
 	if ((!do_choice_setup || select_choice_immediately) && story_state.current_thread_depth == 0) {
-		story_state.add_choice_taken(this, static_cast<std::size_t>(story_state.current_choice_indices[*story_state.selected_choice]));
+		InkChoiceEntry* selected_choice_struct = nullptr;
+		if (story_state.choice_divert_index.has_value()) {
+			for (InkChoiceEntry* choice : story_state.current_choice_structs) {
+				if (choice->index == *story_state.choice_divert_index) {
+					selected_choice_struct = choice;
+					break;
+				}
+			}
+		} else {
+			selected_choice_struct = story_state.current_choice_structs[*story_state.selected_choice];
+		}
+
+		story_state.add_choice_taken(this, selected_choice_struct->index);
 		++story_state.total_choices_taken;
-		InkChoiceEntry* selected_choice_struct = story_state.current_choice_structs[*story_state.selected_choice];
 
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 		InkStoryEvalResult choice_eval_result;
@@ -310,7 +394,6 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 
 		story_state.current_choices.clear();
 		story_state.current_choice_structs.clear();
-		story_state.current_choice_indices.clear();
 		story_state.current_thread_entries.clear();
 		story_state.selected_choice = std::nullopt;
 		story_state.at_choice = false;

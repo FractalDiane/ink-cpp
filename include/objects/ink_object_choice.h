@@ -10,6 +10,7 @@
 
 struct InkChoiceEntry {
 	std::vector<InkObject*> text;
+	std::size_t index;
 	Knot result;
 	bool sticky = false;
 	std::vector<ExpressionParserV2::ShuntedExpression> conditions;
@@ -19,7 +20,7 @@ struct InkChoiceEntry {
 	GatherPoint label;
 
 	InkChoiceEntry() { result.is_choice_result = true; }
-	InkChoiceEntry(bool sticky) : sticky(sticky) {
+	InkChoiceEntry(std::size_t index, bool sticky) : index(index), sticky(sticky) {
 		result.is_choice_result = true;
 	}
 };
@@ -41,7 +42,7 @@ public:
 private:
 	std::vector<InkChoiceEntry> choices;
 
-	std::unordered_set<Uuid> conditions_fully_prepared;
+	std::unordered_map<Uuid, bool> conditions_fully_prepared;
 	std::unordered_set<InkObject*> text_objects_being_prepared;
 	std::unordered_map<InkObject*, std::string> text_objects_fully_prepared;
 
@@ -60,8 +61,17 @@ public:
 	virtual InkObject* populate_from_bytes(const ByteVec& bytes, std::size_t& index) override;
 
 	GetChoicesResult get_choices(InkStoryState& story_state, InkStoryEvalResult& eval_result);
+	//std::vector<std::pair<std::size_t, GatherPoint*>> get_choice_labels();
+	//std::vector<ChoiceLabelData> get_choice_labels(Knot* containing_knot, std::size_t index_in_knot);
+	std::vector<GatherPoint*> get_choice_labels();
+	std::vector<Knot*> get_choice_result_knots();
 
 	virtual bool stop_before_this(const InkStoryState& story_state) const override { return story_state.choice_divert_index.has_value(); }
+
+	virtual ExpressionsVec get_all_expressions() override;
+
+private:
+	//static void populate_choice_labels_recursive(InkObjectChoice* object, Knot* containing_knot, std::size_t index_in_knot, std::vector<ChoiceLabelData>& all_labels);
 };
 
 template <>

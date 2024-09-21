@@ -1713,6 +1713,29 @@ TEST_F(MiscBugTests, CrimeSceneChecks) {
 	STORY("22_misc_bugs/22i_crime_scene_checks.ink");
 	EXPECT_TEXT("false", "false", "neatly_made");
 }
+
+TEST_F(MiscBugTests, KnotDeeplyNestedLabels) {
+	STORY("22_misc_bugs/22j_knot_deeply_nested_labels.ink");
+	EXPECT_TEXT("hi", "hi2", "hi3", "and then a gather point", "and then in a knot2", "hello2");
+}
+
+TEST_F(MiscBugTests, DivertFromDeepNest) {
+	STORY("22_misc_bugs/22k_divert_from_deep_nest.ink");
+	EXPECT_TEXT("this is a test");
+	story.choose_choice_index(1);
+	EXPECT_TEXT("hi2");
+}
+
+TEST_F(MiscBugTests, ChoiceDivertScope) {
+	for (int i = 0; i < 2; ++i) {
+		STORY("22_misc_bugs/22l_choice_divert_scope.ink");
+		story.set_variable("test", i == 1);
+
+		EXPECT_TEXT("");
+		story.choose_choice_index(1);
+		EXPECT_TEXT(i == 1 ? "hi3" : "hi");
+	}
+}
 #pragma endregion
 
 #pragma region Long Example Tests

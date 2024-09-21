@@ -74,9 +74,20 @@ InkObjectConditional::~InkObjectConditional() {
 	}
 }
 
-void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
-	story_state.update_local_knot_variables();
+InkObject::ExpressionsVec InkObjectConditional::get_all_expressions() {
+	ExpressionsVec result;
+	for (Entry& entry : branches) {
+		result.push_back(&entry.first);
+	}
 
+	if (is_switch) {
+		result.push_back(&switch_expression);
+	}
+
+	return result;
+}
+
+void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	if (!story_state.current_knot().returning_from_function) {
 		conditions_fully_prepared.clear();
 	}

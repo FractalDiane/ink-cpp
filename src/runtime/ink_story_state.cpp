@@ -74,16 +74,11 @@ void InkStoryState::setup_next_stitch() {
 	}
 }
 
-void InkStoryState::update_local_knot_variables() {
-	story_tracking.update_visit_count_variables(current_knots_stack, current_stitch, variable_info);
-}
-
 void InkStoryState::apply_thread_choices() {
 	for (ThreadEntry& entry : current_thread_entries) {
 		if (!entry.applied) {
 			current_choices.emplace_back(entry.choice_text, true);
 			current_choice_structs.emplace_back(entry.choice_entry);
-			current_choice_indices.push_back(entry.choice_index);
 
 			entry.applied = true;
 		}
