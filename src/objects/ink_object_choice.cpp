@@ -129,33 +129,6 @@ InkObject::ExpressionsVec InkObjectChoice::get_all_expressions() {
 	return result;
 }
 
-/*std::vector<ChoiceLabelData> InkObjectChoice::get_choice_labels(Knot* containing_knot, std::size_t index_in_knot) {
-	std::vector<ChoiceLabelData> result;
-	populate_choice_labels_recursive(this, containing_knot, index_in_knot, result);
-	return result;
-}
-
-void InkObjectChoice::populate_choice_labels_recursive(InkObjectChoice* object, Knot* containing_knot, std::size_t index_in_knot, std::vector<ChoiceLabelData>& all_labels) {
-	for (std::size_t i = 0; i < object->choices.size(); ++i) {
-		InkChoiceEntry& entry = object->choices[i];
-		if (entry.label.in_choice) {
-			ChoiceLabelData label;
-			label.label = &entry.label;
-			label.containing_knot = containing_knot;
-			label.choice_index_in_knot = index_in_knot;
-			label.choice_option_index = i;
-			all_labels.push_back(label);
-		}
-
-		for (std::size_t j = 0; j < entry.result.objects.size(); ++j) {
-			InkObject* subobject = entry.result.objects[j];
-			if (subobject->get_id() == ObjectId::Choice) {
-				populate_choice_labels_recursive(static_cast<InkObjectChoice*>(subobject), &entry.result, j, all_labels);
-			}
-		}
-	}
-}*/
-
 std::vector<GatherPoint*> InkObjectChoice::get_choice_labels() {
 	std::vector<GatherPoint*> result;
 	for (InkChoiceEntry& choice : choices) {

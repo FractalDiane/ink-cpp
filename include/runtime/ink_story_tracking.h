@@ -36,6 +36,5 @@ struct InkStoryTracking {
 
 	void increment_visit_count(Knot* knot, Stitch* stitch = nullptr, GatherPoint* gather_point = nullptr);
 	void increment_turns_since();
-	void update_visit_count_variables(const std::vector<KnotStatus>& knots_stack, Stitch* current_stitch, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 	bool get_content_stats(InkWeaveContent* content, InkStoryTracking::SubKnotStats& result);
 };

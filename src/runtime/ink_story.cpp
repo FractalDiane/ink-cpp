@@ -75,31 +75,6 @@ void InkStory::init_story() {
 			story_state.story_tracking.gather_point_stats.insert({gather_point.uuid, InkStoryTracking::SubKnotStats(gather_point.name)});
 			knot_stats.first->second.gather_points.push_back(gather_point.uuid);
 		}
-
-		/*for (InkObject* object : knot.second.objects) {
-			if (object->get_id() == ObjectId::Choice && object->) {
-
-			}
-		}*/
-
-		/*for (std::size_t i = 0; i < knot.second.objects.size(); ++i) {
-			InkObject* this_object = knot.second.objects[i];
-			if (this_object->get_id() == ObjectId::Choice) {
-				std::vector<ChoiceLabelData> choice_labels = static_cast<InkObjectChoice*>(this_object)->get_choice_labels(&knot.second, i);
-				if (!choice_labels.empty()) {
-					knot.second.choice_labels.insert(knot.second.choice_labels.end(), choice_labels.begin(), choice_labels.end());
-					
-					if (!knot.second.stitches.empty() && i >= knot.second.stitches[0].index) {
-						for (auto stitch = knot.second.stitches.rbegin(); stitch != knot.second.stitches.rend(); ++stitch) {
-							if (stitch->index <= i) {
-								stitch->choice_labels.insert(stitch->choice_labels.end(), choice_labels.begin(), choice_labels.end());
-								break;
-							}
-						}
-					}
-				}
-			}
-		}*/
 	}
 
 	story_state.variable_info = std::move(story_data->variable_info);
@@ -278,20 +253,22 @@ std::string InkStory::continue_story() {
 		bool last_knot_had_newline = last_knot.index > 0 && last_knot.knot->objects[last_knot.index - 1]->get_id() == ObjectId::LineBreak;
 
 		// any gather points hit need to have their visit counts incremented
-		std::vector<GatherPoint> no_current_stitch;
-		std::vector<GatherPoint>& other_gathers = story_state.current_stitch ? story_state.current_stitch->gather_points : no_current_stitch;
-		auto joint_gather_view = std::vector{
-			std::views::all(story_state.current_knot().knot->gather_points),
-			std::views::all(other_gathers),
-		} | std::views::join;
+		if (!changed_knot && !story_state.current_knot().returning_from_function) {
+			std::vector<GatherPoint> no_current_stitch;
+			std::vector<GatherPoint>& other_gathers = story_state.current_stitch ? story_state.current_stitch->gather_points : no_current_stitch;
+			auto joint_gather_view = std::vector{
+				std::views::all(story_state.current_knot().knot->gather_points),
+				std::views::all(other_gathers),
+			} | std::views::join;
 
-		for (GatherPoint& gather_point : joint_gather_view) {
-			if (!changed_knot && !gather_point.in_choice && !story_state.current_knot().returning_from_function && gather_point.index == story_state.index_in_knot() && !gather_point.name.empty()) {
-				story_state.story_tracking.increment_visit_count(story_state.current_knot().knot, story_state.current_stitch, &gather_point);
-				break;
+			for (GatherPoint& gather_point : joint_gather_view) {
+				if (!gather_point.in_choice && !gather_point.name.empty() && gather_point.index == story_state.index_in_knot()) {
+					story_state.story_tracking.increment_visit_count(story_state.current_knot().knot, story_state.current_stitch, &gather_point);
+					break;
+				}
 			}
 		}
-
+		
 		// are we stopping here?
 		if (eval_result.reached_newline
 		&& eval_result.has_any_contents(true)
@@ -338,8 +315,6 @@ std::string InkStory::continue_story() {
 			if (target.found_any) {
 				if (target.is_choice_label) {
 					story_state.choice_divert_index = target.gather_point->choice_index;
-					//story_state.current_choices.push_back({}); // HACK
-					//story_state.current_knots_stack.back() = {target.choice_label.containing_knot, target.choice_label.choice_index_in_knot};
 					story_state.current_knots_stack.back() = {target.knot, target.gather_point->index};
 					advance_knot_index = false;
 				} else {
@@ -385,20 +360,6 @@ std::string InkStory::continue_story() {
 									if (eval_result.divert_type == DivertType::ToTunnel || eval_result.divert_type == DivertType::Thread) {
 										story_state.current_knots_stack.push_back({target.knot, 0});
 									} else {
-										/*while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
-											story_state.current_knots_stack.pop_back();
-										}*/
-
-										/*for (auto it = story_state.current_knots_stack.rbegin(); it != story_state.current_knots_stack.rend(); ++it) {
-											if (it->knot == target.knot) {
-												while (story_state.current_knots_stack.back().knot != it->knot) {
-													story_state.current_knots_stack.pop_back();
-												}
-
-												break;
-											}
-										}*/
-
 										try_remove_upper_knots(target);
 										story_state.current_knots_stack.back() = {target.knot, 0};
 									}
@@ -427,20 +388,6 @@ std::string InkStory::continue_story() {
 									if (eval_result.divert_type == DivertType::ToTunnel) {
 										story_state.current_knots_stack.push_back({target.knot, target.stitch->index});
 									} else {
-										/*while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
-											story_state.current_knots_stack.pop_back();
-										}*/
-
-										/*for (auto it = story_state.current_knots_stack.rbegin(); it != story_state.current_knots_stack.rend(); ++it) {
-											if (it->knot == target.knot) {
-												while (story_state.current_knots_stack.back().knot != it->knot) {
-													story_state.current_knots_stack.pop_back();
-												}
-
-												break;
-											}
-										}*/
-
 										try_remove_upper_knots(target);
 										story_state.current_knots_stack.back() = {target.knot, target.stitch->index};
 									}
@@ -465,20 +412,6 @@ std::string InkStory::continue_story() {
 									if (eval_result.divert_type == DivertType::ToTunnel) {
 										story_state.current_knots_stack.push_back({target.knot, target.gather_point->index});
 									} else {
-										/*while (story_state.current_knots_stack.size() > 1 && story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
-											story_state.current_knots_stack.pop_back();
-										}*/
-
-										/*for (auto it = story_state.current_knots_stack.rbegin(); it != story_state.current_knots_stack.rend(); ++it) {
-											if (it->knot == target.knot) {
-												while (story_state.current_knots_stack.back().knot != it->knot) {
-													story_state.current_knots_stack.pop_back();
-												}
-
-												break;
-											}
-										}*/
-
 										try_remove_upper_knots(target);
 										story_state.current_knots_stack.back() = {target.knot, target.gather_point->index};
 										if (target.gather_point->in_choice) {

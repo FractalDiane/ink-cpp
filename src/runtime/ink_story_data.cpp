@@ -89,7 +89,6 @@ GetContentResult find_gather_point_recursive(const std::string& path, std::size_
 		}
 	}
 
-	//std::vector<std::pair<GetContentResult, Stitch*>> candidates;
 	GetContentResult non_stitch_result;
 
 	std::vector<GatherPoint>& gather_points = use_stitch ? current_story_stitch->gather_points : new_knot->gather_points;
@@ -110,19 +109,11 @@ GetContentResult find_gather_point_recursive(const std::string& path, std::size_
 			} else if (!enclosing_stitch) {
 				non_stitch_result = result;
 			}
-
-			//if (!current_story_stitch) {
-				//return result;
-			//} else {
-			//	candidates.emplace_back(result, enclosing_stitch);
-			//}
 		}
 	}
 	
-	//std::size_t object_index = 0;
 	std::size_t i = use_stitch ? current_story_stitch->index : 0;
 	while (i < new_knot->objects.size()) {
-	//for (InkObject* object : new_knot->objects) {
 		InkObject* object = new_knot->objects[i];
 		if (object->get_id() == ObjectId::Choice) {
 			InkObjectChoice* choice_object = static_cast<InkObjectChoice*>(object);
@@ -141,8 +132,6 @@ GetContentResult find_gather_point_recursive(const std::string& path, std::size_
 					} else if (!enclosing_stitch) {
 						non_stitch_result = result;
 					}
-
-					//return result;
 				}
 			}
 
@@ -160,9 +149,6 @@ GetContentResult find_gather_point_recursive(const std::string& path, std::size_
 		}
 
 		++i;
-		/*for (Stitch& stitch : new_knot->stitches) {
-			if ()
-		}*/
 
 		for (auto stitch = new_knot->stitches.rbegin(); stitch != new_knot->stitches.rend(); ++stitch) {
 			if (stitch->index <= i) {
