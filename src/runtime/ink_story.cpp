@@ -105,6 +105,19 @@ void InkStory::bind_ink_functions() {
 		return -1;
 	});
 
+	EXP_FUNC("READ_COUNT", 1, {
+		const Variant& knot = arguments[0];
+
+		if (GetContentResult content = story_data->get_content(static_cast<std::string>(knot), story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch, false); content.found_any) {
+			InkStoryTracking::SubKnotStats stats;
+			if (story_state.story_tracking.get_content_stats(content.get_target(), stats)) {
+				return stats.times_visited;
+			}
+		}
+
+		return 0;
+	});
+
 	EXP_FUNC("SEED_RANDOM", 1, {
 		std::int64_t seed = arguments[0];
 
@@ -490,7 +503,14 @@ std::string InkStory::continue_story() {
 
 			eval_result.reached_function_return = false;
 			function_has_return_value = true;
-			eval_result.reached_newline = false;
+
+			// THIS IS HORRIBLE
+			const KnotStatus& new_back = story_state.current_knots_stack.back();
+			ObjectId back_type = new_back.knot->objects[new_back.index]->get_id();
+			if (back_type == ObjectId::Interpolation || back_type == ObjectId::Choice) {
+				eval_result.reached_newline = false;
+			}
+
 			changed_knot = true;
 			advance_knot_index = false;
 

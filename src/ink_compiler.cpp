@@ -329,6 +329,7 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 		{"RANDOM", {nullptr, (std::uint8_t)2}},
 		{"SEED_RANDOM", {nullptr, (std::uint8_t)1}},
 		{"CHOICE_COUNT", {nullptr, (std::uint8_t)0}},
+		{"READ_COUNT", {nullptr, (std::uint8_t)1}},
 		{"TURNS", {nullptr, (std::uint8_t)0}},
 		{"TURNS_SINCE", {nullptr, (std::uint8_t)1}},
 
@@ -398,6 +399,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 	switch (token.token) {
 		case InkToken::NewLine: {
+			// i don't understand ink's newline continuation rules either
 			if (last_object) {
 				switch (last_object->get_id()) {
 					case ObjectId::Logic:

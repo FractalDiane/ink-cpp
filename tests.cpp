@@ -2101,6 +2101,150 @@ TEST_F(InkProof, NestedTurnsSince) {
 	story.choose_choice_index(0);
 	EXPECT_TEXT("more stuff", "1 = 1");
 }
+
+TEST_F(InkProof, ReadCountVariableTarget) {
+	STORY("ink-proof/31_read_count_variable_target.ink");
+	EXPECT_TEXT(
+		"Count start: 0 0 0",
+		"1",
+		"2",
+		"3",
+		"Count end: 3 3 3",
+	);
+}
+
+TEST_F(InkProof, ListComparison) {
+	STORY("ink-proof/32_list_comparison.ink");
+	EXPECT_TEXT(
+		"Hey, my name is Philippe. What about yours?",
+		"I am Andre and I need my rheumatism pills!",
+		"Would you like me, Philippe, to get some more for you?",
+	);
+}
+
+TEST_F(InkProof, NewlineConsistency1) {
+	STORY("ink-proof/33_newline_consistency_1.ink");
+	EXPECT_TEXT("hello world");
+}
+
+TEST_F(InkProof, NewlineConsistency2) {
+	STORY("ink-proof/34_newline_consistency_2.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("hello");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("hello world");
+}
+
+TEST_F(InkProof, NewlineConsistency3) {
+	STORY("ink-proof/35_newline_consistency_3.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("hello");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("hello", "world");
+}
+
+TEST_F(InkProof, NewlineMultilineConditional) {
+	STORY("ink-proof/37_newline_multiline_conditional.ink");
+	EXPECT_TEXT("X", "x");
+}
+
+// i DISAGREE with how this works
+/*TEST_F(InkProof, ChoiceInWeave) {
+	STORY("ink-proof/38_choice_in_weave.ink");
+	EXPECT_TEXT("start", "gather should be seen");
+	EXPECT_CHOICES("go to a stitch");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("result");
+}*/
+
+TEST_F(InkProof, ChoiceInWeave2) {
+	STORY("ink-proof/39_choice_in_weave2.ink");
+	EXPECT_TEXT("first gather");
+	EXPECT_CHOICES("option 1", "option 2");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("the main gather", "bottom gather");
+}
+
+TEST_F(InkProof, UnbalancedIndentation) {
+	STORY("ink-proof/40_unbalanced_indentation.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("First");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("First");
+	EXPECT_CHOICES("Very indented");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("Very indented", "End");
+}
+
+TEST_F(InkProof, WeaveGathers) {
+	STORY("ink-proof/41_weave_gathers.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("one", "four");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("one");
+	EXPECT_CHOICES("two");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("two", "three", "six");
+}
+
+TEST_F(InkProof, WeaveOptions) {
+	STORY("ink-proof/42_weave_options.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("Hello.");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("Hello, world.");
+}
+
+TEST_F(InkProof, WeavesWithinSequence) {
+	STORY("ink-proof/43_weaves_within_sequence.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("choice");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("choice", "nextline");
+}
+
+TEST_F(InkProof, ImplicitInlineGlue) {
+	STORY("ink-proof/44_implicit_inline_glue.ink");
+	EXPECT_TEXT("A", "C");
+}
+
+TEST_F(InkProof, ImplicitInlineGlue2) {
+	STORY("ink-proof/45_implicit_inline_glue2.ink");
+	EXPECT_TEXT("A", "X");
+}
+
+TEST_F(InkProof, LeftRightGlueMatching) {
+	STORY("ink-proof/46_left_right_glue_matching.ink");
+	EXPECT_TEXT("A line.", "Another line.");
+}
+
+TEST_F(InkProof, ImplicitInlineGlue3) {
+	STORY("ink-proof/47_implicit_inline_glue3.ink");
+	EXPECT_TEXT("I have five eggs.");
+}
+
+TEST_F(InkProof, SimpleGlue) {
+	STORY("ink-proof/48_simple_glue.ink");
+	EXPECT_TEXT("Some content with glue.");
+}
+
+TEST_F(InkProof, StringsInChoices) {
+	STORY("ink-proof/49_strings_in_choices.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES(R"(test1 "test2 test3")");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("test1 test4");
+}
+
+TEST_F(InkProof, StringContains) {
+	STORY("ink-proof/50_string_contains.ink");
+	EXPECT_TEXT("1", "0", "1", "1");
+}
 #pragma endregion
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
