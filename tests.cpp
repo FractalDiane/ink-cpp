@@ -2283,14 +2283,12 @@ TEST_F(InkProof, TunnelAfterTunnel) {
 
 TEST_F(InkProof, CompareDivertTargets) {
 	STORY("ink-proof/58_compare_divert_targets.ink");
-	EXPECT_TEXT(
-		"different knot",
-		"same knot",
-		"same knot",
-		"different knot",
-		"same knot",
-		"same knot",
-	);
+	EXPECT_TEXT("different knot");
+	EXPECT_TEXT("same knot");
+	EXPECT_TEXT("same knot");
+	EXPECT_TEXT("different knot");
+	EXPECT_TEXT("same knot");
+	EXPECT_TEXT("same knot");
 }
 
 TEST_F(InkProof, TunnelVsThread) {

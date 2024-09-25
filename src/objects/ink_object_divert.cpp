@@ -1,5 +1,7 @@
 #include "objects/ink_object_divert.h"
 
+#include <format>
+
 InkObjectDivert::~InkObjectDivert() {
 	/*target_knot.dealloc_tokens();
 
@@ -54,6 +56,23 @@ std::string InkObjectDivert::get_target(InkStoryState& story_state, const Expres
 	}
 
 	return target;
+}
+
+std::string InkObjectDivert::to_string() const {
+	std::string result = "-> ";
+	for (const ExpressionParserV2::Token& token : target_knot.tokens) {
+		switch (token.type) {
+			case ExpressionParserV2::TokenType::LiteralString:
+				result += static_cast<std::string>(token.value);
+				break;
+			case ExpressionParserV2::TokenType::Variable:
+				result += token.variable_name;
+				break;
+			default: break;
+		}
+	}
+	
+	return result;
 }
 
 void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {

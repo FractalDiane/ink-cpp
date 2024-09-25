@@ -115,7 +115,7 @@ namespace {
 
 namespace {
 
-void try_add_word(const std::string& expression, std::size_t index, std::vector<Token>& result, std::string& word, const StoryVariableInfo& story_var_info, bool in_knot_name) {
+void try_add_word(const std::string& expression, std::size_t index, std::vector<Token>& result, std::string& word, const StoryVariableInfo& story_var_info, bool& in_knot_name) {
 	if (!word.empty()) {
 		bool found_result = false;
 		if (auto keyword = OperatorKeywords.find(word); keyword != OperatorKeywords.end()) {
@@ -205,6 +205,7 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 			if (in_knot_name) {
 				Token token = Token::literal_knotname(word, true);
 				result.push_back(token);
+				in_knot_name = false;
 			} else {
 				Token token = Token::variable(word);
 				result.push_back(token);

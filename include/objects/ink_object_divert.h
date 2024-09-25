@@ -26,4 +26,6 @@ public:
 	virtual void execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) override;
 
 	std::string get_target(InkStoryState& story_state, const ExpressionParserV2::StoryVariableInfo& story_var_info);
+
+	virtual std::string to_string() const override;
 };
