@@ -2245,6 +2245,404 @@ TEST_F(InkProof, StringContains) {
 	STORY("ink-proof/50_string_contains.ink");
 	EXPECT_TEXT("1", "0", "1", "1");
 }
+
+TEST_F(InkProof, StringConstants) {
+	STORY("ink-proof/51_string_constants.ink");
+	EXPECT_TEXT("hi");
+}
+
+TEST_F(InkProof, StringTypeCoercion) {
+	STORY("ink-proof/52_string_type_coercion.ink");
+	EXPECT_TEXT("same", "different");
+}
+
+TEST_F(InkProof, TunnelOnwardsDivertOverride) {
+	STORY("ink-proof/53_tunnel_onwards_divert_override.ink");
+	EXPECT_TEXT("This is A", "Now in B.");
+}
+
+TEST_F(InkProof, BasicTunnel) {
+	STORY("ink-proof/54_basic_tunnel.ink");
+	EXPECT_TEXT("Hello world");
+}
+
+TEST_F(InkProof, SameLineDivertInline) {
+	STORY("ink-proof/55_same_line_divert_inline.ink");
+	EXPECT_TEXT("We hurried home to Savile Row as fast as we could.");
+}
+
+TEST_F(InkProof, DivertParameters) {
+	STORY("ink-proof/56_divert_parameters.ink");
+	EXPECT_TEXT("5");
+}
+
+TEST_F(InkProof, TunnelAfterTunnel) {
+	STORY("ink-proof/57_tunnel_after_tunnel.ink");
+	EXPECT_TEXT("Hello...", "...world.", "The End.");
+}
+
+TEST_F(InkProof, CompareDivertTargets) {
+	STORY("ink-proof/58_compare_divert_targets.ink");
+	EXPECT_TEXT(
+		"different knot",
+		"same knot",
+		"same knot",
+		"different knot",
+		"same knot",
+		"same knot",
+	);
+}
+
+TEST_F(InkProof, TunnelVsThread) {
+	STORY("ink-proof/59_tunnel_vs_thread.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("A", "B");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("A", "Finished tunnel.", "Starting thread.");
+	EXPECT_CHOICES("C", "D", "E");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT("D");
+}
+
+TEST_F(InkProof, TunnelAfterTunnelArgs) {
+	STORY("ink-proof/60_tunnel_after_tunnel_args.ink");
+	EXPECT_TEXT("8");
+}
+
+TEST_F(InkProof, DivertInConditional) {
+	STORY("ink-proof/61_divert_in_conditional.ink");
+	EXPECT_TEXT("");
+}
+
+TEST_F(InkProof, ComplexTunnels) {
+	STORY("ink-proof/62_complex_tunnels.ink");
+	EXPECT_TEXT(
+		"one (1)",
+		"one and a half (1.5)",
+		"two (2)",
+		"three (3)",
+	);
+}
+
+TEST_F(InkProof, DivertToWeavePoints) {
+	STORY("ink-proof/63_divert_to_weave_points.ink");
+	EXPECT_TEXT(
+		"gather",
+		"test",
+		"choice content",
+		"gather",
+		"second time round",
+	);
+}
+
+TEST_F(InkProof, DoneStopsThread) {
+	STORY("ink-proof/64_done_stops_thread.ink");
+	EXPECT_TEXT("", "");
+}
+
+TEST_F(InkProof, TunnelDefaultChoice) {
+	STORY("ink-proof/65_tunnel_default_choice.ink");
+	EXPECT_TEXT("8");
+}
+
+TEST_F(InkProof, PathToSelf) {
+	STORY("ink-proof/66_path_to_self.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("A", "Finish");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("A");
+	EXPECT_CHOICES("A", "Finish");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT("Finish");
+}
+
+TEST_F(InkProof, ListSaveLoad) {
+	STORY("ink-proof/67_list_save_load.ink");
+	EXPECT_TEXT("a, x, c");
+}
+
+TEST_F(InkProof, ListRange) {
+	STORY("ink-proof/68_list_range.ink");
+	EXPECT_TEXT(
+		"Pound, Pizza, Euro, Pasta, Dollar, Curry, Paella",
+		"Euro, Pasta, Dollar, Curry",
+		"Two, Three, Four, Five, Six",
+		"Pizza, Pasta",
+	);
+}
+
+TEST_F(InkProof, MoreListOperations) {
+	STORY("ink-proof/69_more_list_operations.ink");
+	EXPECT_TEXT("1", "l", "n", "l, m", "n");
+}
+
+TEST_F(InkProof, ListMixedItems) {
+	STORY("ink-proof/70_list_mixed_items.ink");
+	EXPECT_TEXT("a, y, c");
+}
+
+TEST_F(InkProof, ListBasicOperations) {
+	STORY("ink-proof/71_list_basic_operations.ink");
+	EXPECT_TEXT(
+		"b, d",
+		"a, b, c, e",
+		"b, c",
+		"0",
+		"1",
+		"1",
+	);
+}
+
+TEST_F(InkProof, EmptyListOriginAfterAssignment) {
+	STORY("ink-proof/72_empty_list_origin_after_assignment.ink");
+	EXPECT_TEXT("a, b, c");
+}
+
+TEST_F(InkProof, EmptyListOrigin) {
+	STORY("ink-proof/73_empty_list_origin.ink");
+	EXPECT_TEXT("a, b");
+}
+
+TEST_F(InkProof, ListRandom) {
+	STORY("ink-proof/74_list_random.ink");
+	for (int i = 0; i < 10; ++i) {
+		std::string text = story.continue_story();
+		EXPECT_TRUE(text == "B" || text == "C" || text == "D");
+	}
+}
+
+TEST_F(InkProof, CallstackReset) {
+	STORY("ink-proof/75_callstack_reset.ink");
+	EXPECT_TEXT("The first line.", "The second line.");
+}
+
+TEST_F(InkProof, CallstackEvaluation) {
+	STORY("ink-proof/76_callstack_evaluation.ink");
+	EXPECT_TEXT("8");
+}
+
+TEST_F(InkProof, ThreadFallbackChoice) {
+	STORY("ink-proof/77_thread_fallback_choice.ink");
+	EXPECT_TEXT("Should be 1 not 0: 1.");
+}
+
+TEST_F(InkProof, ChoiceWithBracketsOnly) {
+	STORY("ink-proof/78_choice_brackets_only.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("Option");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("Text");
+}
+
+TEST_F(InkProof, ChoiceSelfLinkBack) {
+	STORY("ink-proof/79_choice_self_link_back.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("First choice");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("Second choice");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("");
+}
+
+TEST_F(InkProof, HasReadOnChoice) {
+	STORY("ink-proof/80_has_read_on_choice.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("visible choice");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("visible choice");
+}
+
+TEST_F(InkProof, GatherChoiceSameLine) {
+	STORY("ink-proof/81_gather_choice_same_line.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("hello");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("hello");
+	EXPECT_CHOICES("world");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("world");
+}
+
+TEST_F(InkProof, ChoiceDivertToDone) {
+	STORY("ink-proof/82_choice_divert_to_done.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("choice");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("choice", "");
+}
+
+TEST_F(InkProof, ChoiceThreadFork) {
+	STORY("ink-proof/83_choice_thread_fork.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("A choice");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("A choice", "Vaue of local var is: 1");
+}
+
+TEST_F(InkProof, StickyChoices) {
+	STORY("ink-proof/84_sticky_choices.ink");
+	EXPECT_TEXT("First line.", "Second line.");
+	EXPECT_CHOICES("Choice 1", "Choice 2", "Finish");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("Choice 1", "First line.", "Second line.");
+	EXPECT_CHOICES("Choice 1", "Choice 2", "Finish");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT("Choice 2", "First line.", "Second line.");
+	EXPECT_CHOICES("Choice 1", "Choice 2", "Finish");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("Choice 1", "First line.", "Second line.");
+	EXPECT_CHOICES("Choice 1", "Choice 2", "Finish");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT("Choice 2", "First line.", "Second line.");
+	EXPECT_CHOICES("Choice 1", "Choice 2", "Finish");
+	story.choose_choice_index(2);
+
+	EXPECT_TEXT("Finish");
+}
+
+TEST_F(InkProof, LogicInChoices) {
+	STORY("ink-proof/85_logic_in_choices.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("'Hello Joe, your name is Joe.'");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("'Hello Joe,' I said, knowing full well that his name was Joe.");
+}
+
+TEST_F(InkProof, DefaultGather) {
+	STORY("ink-proof/86_default_gather.ink");
+	EXPECT_TEXT("x");
+}
+
+TEST_F(InkProof, NonTextInChoice) {
+	STORY("ink-proof/87_non_text_in_choice.ink");
+	EXPECT_TEXT("");
+	EXPECT_TEXT("option text");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("option text. Conditional bit. Next.");
+}
+
+TEST_F(InkProof, ConditionalChoices) {
+	STORY("ink-proof/88_conditional_choices.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("one", "two", "three", "four");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("one");
+}
+
+TEST_F(InkProof, OnceOnlyChoiceOwnContent) {
+	STORY("ink-proof/89_once_only_choice_own_content.ink");
+	EXPECT_TEXT("This is the first time.");
+	EXPECT_CHOICES("Eat ice-cream", "Drink coke", "Munch cookies");
+	story.choose_choice_index(0);
+	
+	EXPECT_TEXT("Eat ice-cream", "This is the second time.");
+	EXPECT_CHOICES("Drink coke", "Munch cookies");
+	story.choose_choice_index(0);
+	
+	EXPECT_TEXT("Drink coke", "This is the third time.");
+	EXPECT_CHOICES("Munch cookies");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("Munch cookies", "I've finished eating now.");
+}
+
+TEST_F(InkProof, MultipleDefaultChoices) {
+	STORY("ink-proof/90_multiple_default_choices.ink");
+	EXPECT_TEXT("1", "2", "3");
+}
+
+TEST_F(InkProof, ChoiceCount) {
+	STORY("ink-proof/91_choice_count.ink");
+	EXPECT_TEXT("2");
+	EXPECT_CHOICES("one", "two");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("");
+}
+
+/*TEST_F(InkProof, NoChoiceGather) {
+	STORY("ink-proof/92_no_choice_gather.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("opt");
+	story.choose_choice_index(0);
+
+}*/
+
+TEST_F(InkProof, DefaultChoices) {
+	STORY("ink-proof/93_default_choices.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("Choice 1", "Choice 2");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("After choice");
+	EXPECT_CHOICES("Choice 2");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("After choice", "This is default.");
+}
+
+TEST_F(InkProof, PrintNum) {
+	STORY("ink-proof/94_print_num.ink");
+	EXPECT_TEXT(
+		". four .",
+		". fifteen .",
+		". thirty-seven .",
+		". one hundred and one .",
+		". two hundred and twenty-two .",
+		". one thousand two hundred and thirty-four .",
+	);
+}
+
+TEST_F(InkProof, MultilineGlueLogic) {
+	STORY("ink-proof/95_multiline_glue_logic.ink");
+	EXPECT_TEXT("a b", "a b");
+}
+
+TEST_F(InkProof, NestedPassByReference) {
+	STORY("ink-proof/96_nested_pass_by_reference.ink");
+	EXPECT_TEXT("5", "625");
+}
+
+TEST_F(InkProof, LogicWithNewlines) {
+	STORY("ink-proof/97_logic_with_newlines.ink");
+	EXPECT_TEXT("text1", "text 2", "text1", "text 2");
+}
+
+TEST_F(InkProof, KnotThreadInteraction2) {
+	STORY("ink-proof/98_knot_thread_interaction.ink");
+	EXPECT_TEXT("I'm in a tunnel", "When should this get printed?");
+	EXPECT_CHOICES("I'm an option");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("I'm an option", "Finishing thread.");
+}
+
+TEST_F(InkProof, Tags) {
+	STORY("ink-proof/99_tags.ink");
+	EXPECT_TEXT("This is the content");
+	std::vector<std::string> tags1 = {"author: Joe", "title: My Great Story"};
+	EXPECT_EQ(story.get_current_tags(), tags1);
+}
+
+TEST_F(InkProof, TagsOnChoice) {
+	STORY("ink-proof/100_tags_on_choice.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("Start of choice text");
+	story.choose_choice_index(0);
+
+	EXPECT_TEXT("Start of choice text");
+	std::vector<std::string> tags = {"tag both [Choice only text, choice only tag] This is after the choice is taken", "post choice tag"};
+	EXPECT_EQ(story.get_current_tags(), tags);
+}
 #pragma endregion
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
