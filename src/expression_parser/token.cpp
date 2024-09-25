@@ -11,6 +11,32 @@ using namespace ExpressionParserV2;
 #define i64 std::int64_t
 #define v std::get
 
+namespace {
+	template <typename T>
+	struct CoercionResult {
+		T value;
+		bool success;
+	};
+
+	CoercionResult<i64> try_coerce_to_int(const std::string& what) {
+		try {
+			i64 coerced = std::stoll(what);
+			return {coerced, true};
+		} catch (...) {
+			return {0, false};
+		}
+	}
+
+	CoercionResult<double> try_coerce_to_float(const std::string& what) {
+		try {
+			double coerced = std::stod(what);
+			return {coerced, true};
+		} catch (...) {
+			return {0.0, false};
+		}
+	}
+}
+
 std::optional<Variant> StoryVariableInfo::get_variable_value(const std::string& variable) const {
 	std::string final_var = resolve_redirects(variable);
 
@@ -1119,10 +1145,34 @@ Variant Variant::operator==(const Variant& rhs) const {
 		} break;
 
 		case Variant_String: {
-			if (rhs.value.index() == Variant_String) {
-				return v<std::string>(value) == v<std::string>(rhs.value);
-			} else {
-				return Variant();
+			switch (rhs.value.index()) {
+				case Variant_String: {
+					return v<std::string>(value) == v<std::string>(rhs.value);
+				} break;
+
+				// i hate it too!
+				case Variant_Int: {
+					CoercionResult<i64> coerced = try_coerce_to_int(v<std::string>(value));
+					if (coerced.success) {
+						return coerced.value == v<i64>(rhs.value);
+					} else {
+						return false;
+					}
+				} break;
+
+				// i hate it too!
+				case Variant_Float: {
+					CoercionResult<double> coerced = try_coerce_to_float(v<std::string>(value));
+					if (coerced.success) {
+						return coerced.value == v<double>(rhs.value);
+					} else {
+						return false;
+					}
+				} break;
+
+				default: {
+					return Variant();
+				} break;
 			}
 		} break;
 
@@ -1203,10 +1253,34 @@ Variant Variant::operator!=(const Variant& rhs) const {
 		} break;
 
 		case Variant_String: {
-			if (rhs.value.index() == Variant_String) {
-				return v<std::string>(value) != v<std::string>(rhs.value);
-			} else {
-				return Variant();
+			switch (rhs.value.index()) {
+				case Variant_String: {
+					return v<std::string>(value) != v<std::string>(rhs.value);
+				} break;
+
+				// i hate it too!
+				case Variant_Int: {
+					CoercionResult<i64> coerced = try_coerce_to_int(v<std::string>(value));
+					if (coerced.success) {
+						return coerced.value != v<i64>(rhs.value);
+					} else {
+						return true;
+					}
+				} break;
+
+				// i hate it too!
+				case Variant_Float: {
+					CoercionResult<double> coerced = try_coerce_to_float(v<std::string>(value));
+					if (coerced.success) {
+						return coerced.value != v<double>(rhs.value);
+					} else {
+						return true;
+					}
+				} break;
+
+				default: {
+					return Variant();
+				} break;
 			}
 		} break;
 
