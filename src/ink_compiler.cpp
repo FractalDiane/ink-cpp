@@ -1120,7 +1120,41 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					}
 				}
 
-				result_object = new InkObjectDivert(target_tokens, {}, DivertType::FromTunnel);
+				// TODO: dry it a ridiculous amount
+				std::vector<ExpressionParserV2::ShuntedExpression> arguments;
+					if (next_token_is(all_tokens, token_index + 2, InkToken::LeftParen)) {
+						token_index += 4;
+
+						std::string all_args;
+						all_args.reserve(50);
+
+						std::size_t extra_paren_count = 0;
+						while (all_tokens[token_index].token != InkToken::RightParen || extra_paren_count > 0) {
+							all_args += all_tokens[token_index].text_contents;
+							if (all_tokens[token_index].token == InkToken::LeftParen) {
+								++extra_paren_count;
+							} else if (all_tokens[token_index].token == InkToken::RightParen) {
+								--extra_paren_count;
+							}
+
+							++token_index;
+						}
+
+						--token_index;
+
+						std::vector<std::string> split = split_string(all_args, ',', true, true);
+						for (const std::string& arg : split) {
+							try {
+								ExpressionParserV2::ShuntedExpression tokenized = ExpressionParserV2::tokenize_and_shunt_expression(arg, story_variable_info);
+								tokenized.uuid = current_uuid++;
+								arguments.push_back(tokenized);
+							} catch (...) {
+								throw std::runtime_error("Malformed knot argument");
+							}
+						}
+					}
+
+				result_object = new InkObjectDivert(target_tokens, arguments, DivertType::FromTunnel);
 				++token_index;
 			} else if (in_choice_line) {
 				result_object = new InkObjectDivert();

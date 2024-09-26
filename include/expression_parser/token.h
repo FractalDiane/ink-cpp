@@ -13,6 +13,8 @@
 #include <unordered_set>
 #include <functional>
 
+typedef float ink_float;
+
 namespace ExpressionParserV2 {
 
 enum {

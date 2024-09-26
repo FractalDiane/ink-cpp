@@ -1248,7 +1248,7 @@ TEST_F(FunctionTests, ComplexFunctions) {
 	STORY("17_functions/17h_complex_functions.ink");
 	EXPECT_TEXT("hello");
 	EXPECT_TEXT("there");
-	EXPECT_TEXT("x = 3.8000000");
+	EXPECT_TEXT("x = 3.8000002");
 	EXPECT_TEXT("y = 2");
 	EXPECT_TEXT("hello");
 	EXPECT_TEXT("therehello");
@@ -1277,7 +1277,7 @@ TEST_F(ConstantTests, StringConstants) {
 TEST_F(ConstantTests, NumberConstants) {
 	STORY("18_constants/18b_number_constants.ink");
 	EXPECT_TEXT(
-		"The circumference of my pie divided by its diameter is approximately 3.1400000",
+		"The circumference of my pie divided by its diameter is approximately 3.14",
 		"I paid 10 pounds for said pie, by the way.",
 	);
 }

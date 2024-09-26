@@ -296,10 +296,17 @@ std::string Variant::to_printable_string() const {
 				
 			case Variant_Float: {
 				double float_val = v<double>(value);
+				constexpr float x = ((8.0f - 2.0f) * 0.3f) + 2.0f;
+				// ink prints to 7 figures of precision but ignores trailing zeroes
 				if (std::rint(float_val) == float_val) {
 					return std::to_string(static_cast<i64>(float_val));
 				} else {
-					return std::format("{:.7f}", float_val);
+					std::string result = std::format("{:.7f}", float_val);
+					while (result.back() == '0') {
+						result.pop_back();
+					}
+
+					return result;
 				}
 			} break;
 
