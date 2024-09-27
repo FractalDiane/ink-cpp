@@ -668,15 +668,33 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 								in_result = true;
 								in_choice_line = false;
 								if (in_choice_object->get_id() == ObjectId::Divert) {
-									if (in_choice_object->has_any_contents(false)) {
-										--token_index;
-										choice_entry.immediately_continue_to_result = !choice_entry.text.empty();
-									} else {
-										const std::vector<InkObject*>& text_contents = choice_entry.text;
-										bool no_text = text_contents.empty() || (text_contents.size() == 1 && !text_contents[0]->has_any_contents(true));
-										choice_entry.fallback = no_text;
-										++token_index;
+									bool rewind_index = false;
+									if (!choice_entry.text.empty()) {
+										rewind_index = true;
+										//--token_index;
 										choice_entry.immediately_continue_to_result = true;
+									} else {
+										//const std::vector<InkObject*>& text_contents = choice_entry.text;
+										//bool no_text = text_contents.empty() || (text_contents.size() == 1 && !text_contents[0]->has_any_contents(true));
+										choice_entry.fallback = true;
+										//++token_index;
+										/*if (in_choice_object->has_any_contents(false)) {
+											--token_index;
+										} else {
+											++token_index;
+										}*/
+
+										rewind_index = in_choice_object->has_any_contents(false);
+
+										choice_entry.immediately_continue_to_result = true;
+									}
+
+									if (rewind_index) {
+										while (all_tokens[token_index].token != InkToken::Arrow) {
+											--token_index;
+										}
+									} else {
+										++token_index;
 									}
 								}
 
