@@ -72,7 +72,7 @@ namespace {
 	Variant builtin_pow(const std::vector<Variant>& args) {
 		const Variant& base = args[0];
 		const Variant& exponent = args[1];
-		return std::pow(static_cast<double>(base), static_cast<double>(exponent));
+		return std::pow(static_cast<ink_float>(base), static_cast<ink_float>(exponent));
 	}
 
 	Variant builtin_int(const std::vector<Variant>& args) {
@@ -80,15 +80,15 @@ namespace {
 	}
 
 	Variant builtin_float(const std::vector<Variant>& args) {
-		return static_cast<double>(args[0]);
+		return static_cast<ink_float>(args[0]);
 	}
 
 	Variant builtin_floor(const std::vector<Variant>& args) {
-		return std::floor(static_cast<double>(args[0]));
+		return std::floor(static_cast<ink_float>(args[0]));
 	}
 
 	Variant builtin_ceil(const std::vector<Variant>& args) {
-		return std::ceil(static_cast<double>(args[0]));
+		return std::ceil(static_cast<ink_float>(args[0]));
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
@@ -159,7 +159,12 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 			if (is_num) {
 				if (word.contains(".")) {
 					try {
-						double word_float = std::stod(word);
+						#if INK_DOUBLE_PRECISION_FLOATS
+						ink_float word_float = std::stod(word);
+						#else
+						ink_float word_float = std::stof(word);
+						#endif
+
 						Token token = Token::literal_float(word_float);
 						result.push_back(token);
 						found_result = true;

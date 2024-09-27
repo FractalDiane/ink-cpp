@@ -166,10 +166,10 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	EXPECT_EQ(static_cast<std::int64_t>(t2), 361);
 
 	Variant t3 = execute_expression("5.0 * 4.2", blank_variable_info).value();
-	EXPECT_EQ(static_cast<double>(t3), 21.0);
+	EXPECT_EQ(static_cast<ink_float>(t3), 21.0);
 
 	Variant t4 = execute_expression("5.0 - 4.2 - 3.7 / 2.5", blank_variable_info).value();
-	EXPECT_TRUE(std::abs(static_cast<double>(t4) - -0.68) < 0.0001);
+	EXPECT_TRUE(std::abs(static_cast<ink_float>(t4) - -0.68) < 0.0001);
 
 	Variant t5 = execute_expression("5 == 2", blank_variable_info).value();
 	EXPECT_EQ(static_cast<bool>(t5), false);
@@ -199,13 +199,13 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	EXPECT_EQ(static_cast<std::int64_t>(t13), 35);
 
 	Variant t14 = execute_expression("POW(3, 2)", blank_variable_info).value();
-	EXPECT_EQ(static_cast<double>(t14), 9);
+	EXPECT_EQ(static_cast<ink_float>(t14), 9);
 
 	Variant t15 = execute_expression("-> my_knot", blank_variable_info).value();
 	EXPECT_EQ(static_cast<std::string>(t15), "my_knot");
 
 	Variant t16 = execute_expression("POW(FLOOR(3.5), FLOOR(2.9)", blank_variable_info).value();
-	EXPECT_EQ(static_cast<double>(t16), 9);
+	EXPECT_EQ(static_cast<ink_float>(t16), 9);
 
 	Variant t17 = execute_expression("(5 * 5) - (3 * 3) + 3", blank_variable_info).value();
 	EXPECT_EQ(static_cast<std::int64_t>(t17), 19);
@@ -218,7 +218,7 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	ExpressionParser::StoryVariableInfo vars2;
 	vars2.variables = {{"test", 6}};
 	Variant t19 = execute_expression("POW(test, 2)", vars2).value();
-	EXPECT_EQ(static_cast<double>(t19), 36);
+	EXPECT_EQ(static_cast<ink_float>(t19), 36);
 
 	ExpressionParser::StoryVariableInfo vars3;
 	vars3.variables = {{"x", 5}};
@@ -442,6 +442,11 @@ TEST_F(VaryingChoiceTests, ConditionalChoices) {
 	story.choose_choice_index(1);
 	EXPECT_TEXT("Hello 2", "Hello 3");
 	EXPECT_CHOICES("Choice 1", "Choice 2", "Choice 3");
+}
+
+TEST_F(VaryingChoiceTests, FallbackChoice2) {
+	STORY("7_varying/7d_fallback_choice_2.ink");
+	EXPECT_TEXT("But alas, there was no choice.");
 }
 #pragma endregion
 
@@ -1248,7 +1253,8 @@ TEST_F(FunctionTests, ComplexFunctions) {
 	STORY("17_functions/17h_complex_functions.ink");
 	EXPECT_TEXT("hello");
 	EXPECT_TEXT("there");
-	EXPECT_TEXT("x = 3.8000002");
+	//EXPECT_TEXT("x = 3.8000002");
+	EXPECT_TEXT("x = 3.8");
 	EXPECT_TEXT("y = 2");
 	EXPECT_TEXT("hello");
 	EXPECT_TEXT("therehello");

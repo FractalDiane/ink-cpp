@@ -13,7 +13,11 @@
 #include <unordered_set>
 #include <functional>
 
-typedef float ink_float;
+#if INK_DOUBLE_PRECISION_FLOATS
+using ink_float = double;
+#else
+using ink_float = float;
+#endif
 
 namespace ExpressionParserV2 {
 
@@ -26,7 +30,7 @@ enum {
 };
 
 #define i64 std::int64_t
-using VariantValue = std::variant<bool, i64, double, std::string, InkList>;
+using VariantValue = std::variant<bool, i64, ink_float, std::string, InkList>;
 
 class Variant {
 private:
@@ -96,7 +100,7 @@ public:
 
 	operator bool() const;
 	operator i64() const;
-	operator double() const;
+	operator ink_float() const;
 	operator std::string() const;
 	operator InkList() const;
 };
@@ -303,7 +307,7 @@ struct Token {
 		return {.type = TokenType::LiteralNumberInt, .value = val};
 	}
 
-	static Token literal_float(double val) {
+	static Token literal_float(ink_float val) {
 		return {.type = TokenType::LiteralNumberFloat, .value = val};
 	}
 

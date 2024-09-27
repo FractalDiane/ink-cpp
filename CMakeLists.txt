@@ -83,7 +83,7 @@ add_executable(tests tests.cpp ${SRC_COMPILER} ${SRC_UTIL})
 add_dependencies(tests ink_backend)
 target_link_libraries(tests PUBLIC ink_backend GTest::gtest_main)
 
-add_compile_definitions(INKB_VERSION=0 INKCPP_WORKING_DIR="${PROJECT_SOURCE_DIR}")
+add_compile_definitions(INKB_VERSION=0 INK_DOUBLE_PRECISION_FLOATS=1 INKCPP_WORKING_DIR="${PROJECT_SOURCE_DIR}")
 
 include_directories(include)
 
