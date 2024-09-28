@@ -1049,9 +1049,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 		} break;
 
 		case InkToken::Colon: {
-			if (brace_level == 0) {
-				result_object = new InkObjectText(":");
-			}
+			result_object = new InkObjectText(":");
 		} break;
 
 		case InkToken::Arrow:
@@ -1211,6 +1209,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				if (!gather_point_knot.stitches.empty() && gather_point_knot.objects.size() >= gather_point_knot.stitches[0].index) {
 					gather_point_knot.stitches.back().gather_points.push_back(new_gather_point);
 				}
+
+				end_line = true;
 			} else {
 				result_object = new InkObjectText("-");
 			}
