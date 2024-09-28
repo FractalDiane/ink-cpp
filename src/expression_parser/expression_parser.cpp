@@ -339,7 +339,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 						result.push_back(Token::operat(OperatorType::MinusAssign, UnaryType::NotUnary));
 						++index;
 					} else {
-						if (next_char(expression, index) > ' ' && (result.empty() || result.back().type == TokenType::Operator)) {
+						if (next_char(expression, index) > ' ' && (result.empty() || result.back().type == TokenType::Operator || result.back().type == TokenType::ParenComma)) {
 							result.push_back(Token::operat(OperatorType::Negative, UnaryType::Prefix));
 						} else {
 							result.push_back(Token::operat(OperatorType::Minus, UnaryType::NotUnary));

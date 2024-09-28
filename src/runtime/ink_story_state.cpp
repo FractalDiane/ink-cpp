@@ -1,6 +1,7 @@
 #include "runtime/ink_story_state.h"
 
 #include "objects/ink_object.h"
+#include "objects/ink_object_choice.h"
 #include "ink_utils.h"
 
 #include <format>
@@ -82,6 +83,11 @@ void InkStoryState::apply_thread_choices() {
 
 			entry.applied = true;
 		}
+	}
+
+	if (current_choice_structs.size() == 1 && current_choice_structs[0]->fallback) {
+		current_knots_stack.push_back({&current_choice_structs[0]->result, 0});
+		at_choice = false;
 	}
 }
 

@@ -2371,12 +2371,10 @@ TEST_F(InkProof, ListSaveLoad) {
 
 TEST_F(InkProof, ListRange) {
 	STORY("ink-proof/68_list_range.ink");
-	EXPECT_TEXT(
-		"Pound, Pizza, Euro, Pasta, Dollar, Curry, Paella",
-		"Euro, Pasta, Dollar, Curry",
-		"Two, Three, Four, Five, Six",
-		"Pizza, Pasta",
-	);
+	EXPECT_TEXT("Pound, Pizza, Euro, Pasta, Dollar, Curry, Paella");
+	EXPECT_TEXT("Euro, Pasta, Dollar, Curry");
+	EXPECT_TEXT("Two, Three, Four, Five, Six");
+	EXPECT_TEXT("Pizza, Pasta");
 }
 
 TEST_F(InkProof, MoreListOperations) {

@@ -102,8 +102,10 @@ InkList::InkList(const InkList& from) : current_values(from.current_values), all
 InkList& InkList::operator=(const InkList& from) {
 	if (this != &from) {
 		current_values = from.current_values;
-		all_origins = from.all_origins;
 		owning_definition_map = from.owning_definition_map;
+		if (!from.all_origins.empty()) {
+			all_origins = from.all_origins;
+		}
 	}
 
 	return *this;
@@ -115,7 +117,7 @@ void InkList::add_item(const std::string& item_name) {
 		for (const auto& list : owning_definition_map->defined_lists) {
 			if (list.second.get_name() == namespace_val[0]) {
 				if (std::optional<std::int64_t> entry_value = list.second.get_entry_value(namespace_val[1]); entry_value.has_value()) {
-					current_values.insert(InkListItem(namespace_val[1], *entry_value, list.second.get_uuid()));
+					current_values.insert(InkListItem(namespace_val[1], *entry_value, list.second.get_uuid(), list.second.get_name()));
 					all_origins.insert(list.second.get_uuid());
 					return;
 				}
@@ -124,7 +126,7 @@ void InkList::add_item(const std::string& item_name) {
 	} else {
 		for (const auto& list : owning_definition_map->defined_lists) {
 			if (std::optional<std::int64_t> entry_value = list.second.get_entry_value(item_name); entry_value.has_value()) {
-				current_values.insert(InkListItem(item_name, *entry_value, list.second.get_uuid()));
+				current_values.insert(InkListItem(item_name, *entry_value, list.second.get_uuid(), list.second.get_name()));
 				all_origins.insert(list.second.get_uuid());
 				return;
 			}
@@ -140,7 +142,7 @@ void InkList::add_item(const InkListItem& item) {
 void InkList::remove_item(const std::string& item_name) {
 	for (const auto& list : owning_definition_map->defined_lists) {
 		if (std::optional<std::int64_t> entry_value = list.second.get_entry_value(item_name); entry_value.has_value()) {
-			current_values.erase(InkListItem(item_name, *entry_value, list.second.get_uuid()));
+			current_values.erase(InkListItem(item_name, *entry_value, list.second.get_uuid(), list.second.get_name()));
 			return;
 		}
 	}
@@ -198,8 +200,8 @@ InkList InkList::inverted() const {
 	for (Uuid origin : all_origins) {
 		const InkListDefinition& this_definition = owning_definition_map->defined_lists.at(origin);
 		for (const auto& entry : this_definition.list_entries) {
-			if (!current_values.contains(InkListItem(entry.first, entry.second, this_definition.get_uuid()))) {
-				result.add_item(InkListItem(entry.first, entry.second, origin));
+			if (!current_values.contains(InkListItem(entry.first, entry.second, this_definition.get_uuid(), this_definition.get_name()))) {
+				result.add_item(InkListItem(entry.first, entry.second, origin, this_definition.get_name()));
 			}
 		}
 	}
@@ -292,7 +294,7 @@ InkList InkList::all_possible_items() const {
 	for (Uuid origin : all_origins) {
 		const InkListDefinition& this_definition = owning_definition_map->defined_lists.at(origin);
 		for (const auto& entry : this_definition.list_entries) {
-			result.add_item(InkListItem(entry.first, entry.second, origin));
+			result.add_item(InkListItem(entry.first, entry.second, origin, this_definition.get_name()));
 		}
 	}
 
@@ -319,14 +321,15 @@ InkList InkList::range(const InkList& from, const InkList& to) const {
 	InkListItem from_item = from.single_item();
 	InkListItem to_item = to.single_item();
 	for (const InkListItem& item : current_values) {
-		if (item.label == from_item.label) {
+		if (!in_range && item.label == from_item.label) {
 			in_range = true;
-			result.add_item(item);
 		}
 
-		if (item.label == to_item.label) {
+		if (in_range) {
 			result.add_item(item);
-			break;
+			if (item.label == to_item.label) {
+				break;
+			}
 		}
 	}
 
@@ -415,7 +418,7 @@ InkListItem Deserializer<InkListItem>::operator()(const ByteVec& bytes, std::siz
 	std::int64_t value = dsvalue(bytes, index);
 	Uuid origin = dsorigin(bytes, index);
 
-	return InkListItem(label, value, origin);
+	return InkListItem(label, value, origin, std::string());
 }
 
 ByteVec Serializer<InkList>::operator()(const InkList& list) {

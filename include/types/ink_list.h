@@ -61,11 +61,10 @@ struct InkListItem {
 	std::string label;
 	std::int64_t value;
 	Uuid origin_list_uuid;
+	std::string origin_list_name;
 
-	friend class InkList;
-
-	InkListItem() : label{}, value(0), origin_list_uuid(0) {}
-	InkListItem(const std::string& label, std::int64_t value, Uuid origin_list_uuid) : label(label), value(value), origin_list_uuid(origin_list_uuid) {}
+	InkListItem() : label{}, value(0), origin_list_uuid(0), origin_list_name() {}
+	InkListItem(const std::string& label, std::int64_t value, Uuid origin_list_uuid, const std::string& origin_list_name) : label(label), value(value), origin_list_uuid(origin_list_uuid), origin_list_name(origin_list_name) {}
 
 	bool operator==(const InkListItem& other) const {
 		return origin_list_uuid == other.origin_list_uuid && label == other.label;
@@ -79,19 +78,10 @@ struct InkListItem {
 		if (value != other.value) {
 			return value < other.value;
 		} else if (origin_list_uuid != other.origin_list_uuid) {
-			return origin_list_uuid.get() < other.origin_list_uuid.get();
+			return origin_list_name < other.origin_list_name;
 		} else {
 			return label < other.label;
 		}
-	}
-};
-
-template <>
-struct std::hash<InkListItem> {
-	std::size_t operator()(const InkListItem& list_item) const noexcept {
-		std::size_t h1 = std::hash<std::string>()(list_item.label);
-		std::size_t h2 = std::hash<std::int64_t>()(list_item.value);
-		return h1 ^ h2;
 	}
 };
 

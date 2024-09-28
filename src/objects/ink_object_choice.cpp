@@ -305,8 +305,17 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		if (!story_state.current_choices.empty()) {
 			story_state.at_choice = true;
 		} else if (final_choices.fallback_index.has_value()) {
-			story_state.current_knots_stack.push_back({&(choices[*final_choices.fallback_index].result), 0});
-			story_state.at_choice = false;
+			InkChoiceEntry& fallback_choice = choices[*final_choices.fallback_index];
+			if (in_thread) {
+				story_state.current_thread_entries.emplace_back(
+					std::string(), &fallback_choice, fallback_choice.index,
+					story_state.current_knot().knot, story_state.current_stitch, story_state.current_knot().index,
+					story_state.thread_arguments_stack.back()
+				);
+			} else {
+				story_state.current_knots_stack.push_back({&(choices[*final_choices.fallback_index].result), 0});
+				story_state.at_choice = false;
+			}
 		}
 
 		if (story_state.choice_divert_index.has_value()) {
