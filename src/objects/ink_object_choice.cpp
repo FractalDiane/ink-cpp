@@ -151,6 +151,48 @@ std::vector<Knot*> InkObjectChoice::get_choice_result_knots() {
 	return result;
 }
 
+bool InkObjectChoice::try_cache_prepared_text(InkObject* object, InkStoryState& story_state, InkStoryEvalResult& story_eval_result, InkStoryEvalResult& choice_eval_result, GetChoicesResult* choices_result, bool result_mode) {
+	std::string result_before = choice_eval_result.result;
+	Uuid previous_preparation_uuid = story_state.current_knot().current_function_prep_expression;
+	object->execute(story_state, choice_eval_result);
+	if (text_objects_being_prepared.contains(object)) {
+		text_objects_being_prepared.erase(object);
+		
+		std::string object_added_text = choice_eval_result.result;
+		object_added_text.erase(object_added_text.begin(), object_added_text.begin() + result_before.size());
+		text_objects_fully_prepared.emplace(object, object_added_text);
+
+		story_eval_result.return_value = std::nullopt;
+	} else if (choice_eval_result.imminent_function_prep) {
+		if (auto prepared_value = text_objects_fully_prepared.find(object); prepared_value != text_objects_fully_prepared.end()) {
+			choice_eval_result.result += prepared_value->second;
+			choice_eval_result.imminent_function_prep = FunctionPrepType::None;
+			story_state.current_knot().current_function_prep_expression = previous_preparation_uuid;
+		} else {
+			story_eval_result.target_knot = choice_eval_result.target_knot;
+			story_eval_result.divert_args = choice_eval_result.divert_args;
+			story_eval_result.divert_type = DivertType::Function;
+
+			if (!result_mode) {
+				if (object->get_id() == ObjectId::Interpolation) {
+					choices_result->function_prep_type = FunctionPrepType::ChoiceTextInterpolate;
+				} else {
+					choices_result->function_prep_type = FunctionPrepType::Generic;
+				}
+
+				for (std::size_t j = 0; j < choices_result->choices.size(); ++j) {
+					story_state.current_choices.pop_back();
+				}
+			}
+
+			text_objects_being_prepared.insert(object);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
 	GetChoicesResult choices_result;
 
@@ -207,39 +249,8 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 							break;
 						}
 						
-						std::string result_before = choice_eval_result.result;
-						Uuid previous_preparation_uuid = story_state.current_knot().current_function_prep_expression;
-						object->execute(story_state, choice_eval_result);
-						if (text_objects_being_prepared.contains(object)) {
-							text_objects_being_prepared.erase(object);
-							
-							std::string object_added_text = choice_eval_result.result;
-							object_added_text.erase(object_added_text.begin(), object_added_text.begin() + result_before.size());
-							text_objects_fully_prepared.emplace(object, object_added_text);
-
-							eval_result.return_value = std::nullopt;
-						} else if (choice_eval_result.imminent_function_prep) {
-							if (auto prepared_value = text_objects_fully_prepared.find(object); prepared_value != text_objects_fully_prepared.end()) {
-								choice_eval_result.result += prepared_value->second;
-								choice_eval_result.imminent_function_prep = FunctionPrepType::None;
-								story_state.current_knot().current_function_prep_expression = previous_preparation_uuid;
-							} else {
-								eval_result.target_knot = choice_eval_result.target_knot;
-								eval_result.divert_args = choice_eval_result.divert_args;
-								eval_result.divert_type = DivertType::Function;
-								if (object->get_id() == ObjectId::Interpolation) {
-									choices_result.function_prep_type = FunctionPrepType::ChoiceTextInterpolate;
-								} else {
-									choices_result.function_prep_type = FunctionPrepType::Generic;
-								}
-
-								for (std::size_t j = 0; j < choices_result.choices.size(); ++j) {
-									story_state.current_choices.pop_back();
-								}
-
-								text_objects_being_prepared.insert(object);
-								return choices_result;
-							}
+						if (try_cache_prepared_text(object, story_state, eval_result, choice_eval_result, &choices_result, false)) {
+							return choices_result;
 						}
 					}
 
@@ -340,16 +351,17 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.add_choice_taken(this, selected_choice_struct->index);
 		++story_state.total_choices_taken;
 
+		if (!story_state.current_knot().returning_from_function) {
+			text_objects_being_prepared.clear();
+			text_objects_fully_prepared.clear();
+		}
+
 		story_state.choice_mix_position = InkStoryState::ChoiceMixPosition::Before;
 		InkStoryEvalResult choice_eval_result;
 		choice_eval_result.result.reserve(50);
+		choice_eval_result.return_value = eval_result.return_value;
 		for (InkObject* object : selected_choice_struct->text) {
-			object->execute(story_state, choice_eval_result);
-			if (choice_eval_result.imminent_function_prep) {
-				eval_result.target_knot = choice_eval_result.target_knot;
-				eval_result.divert_type = DivertType::Function;
-				eval_result.divert_args = choice_eval_result.divert_args;
-
+			if (try_cache_prepared_text(object, story_state, eval_result, choice_eval_result, nullptr, true)) {
 				if (object->get_id() == ObjectId::Interpolation) {
 					eval_result.imminent_function_prep = FunctionPrepType::ChoiceTextInterpolate;
 				} else {

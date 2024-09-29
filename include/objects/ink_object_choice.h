@@ -67,6 +67,9 @@ public:
 	virtual bool stop_before_this(const InkStoryState& story_state) const override { return story_state.choice_divert_index.has_value(); }
 
 	virtual ExpressionsVec get_all_expressions() override;
+
+private:
+	bool try_cache_prepared_text(InkObject* object, InkStoryState& story_state, InkStoryEvalResult& story_eval_result, InkStoryEvalResult& choice_eval_result, GetChoicesResult* choices_result, bool result_mode);
 };
 
 template <>

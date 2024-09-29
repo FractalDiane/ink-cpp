@@ -267,16 +267,7 @@ std::string InkStory::continue_story() {
 
 		// any gather points hit need to have their visit counts incremented
 		if (!changed_knot && !story_state.current_knot().returning_from_function) {
-			/*std::vector<GatherPoint> no_current_stitch;
-			std::vector<GatherPoint>& other_gathers = story_state.current_stitch ? story_state.current_stitch->gather_points : no_current_stitch;
-			auto joint_gather_view = std::vector{
-				std::views::all(story_state.current_knot().knot->gather_points),
-				std::views::all(other_gathers),
-			} | std::views::join;*/
-
-			std::vector<GatherPoint>& joint_gather_view = story_state.current_knot().knot->gather_points;
-
-			for (GatherPoint& gather_point : joint_gather_view) {
+			for (GatherPoint& gather_point : story_state.current_knot().knot->gather_points) {
 				if (!gather_point.in_choice && !gather_point.name.empty() && gather_point.index == story_state.index_in_knot()) {
 					story_state.story_tracking.increment_visit_count(story_state.current_knot().knot, story_state.current_stitch, &gather_point);
 					break;

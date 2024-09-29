@@ -2528,7 +2528,7 @@ TEST_F(InkProof, DefaultGather) {
 TEST_F(InkProof, NonTextInChoice) {
 	STORY("ink-proof/87_non_text_in_choice.ink");
 	EXPECT_TEXT("");
-	EXPECT_TEXT("option text");
+	EXPECT_CHOICES("option text");
 	story.choose_choice_index(0);
 	EXPECT_TEXT("option text. Conditional bit. Next.");
 }
