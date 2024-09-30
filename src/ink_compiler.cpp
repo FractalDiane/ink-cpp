@@ -726,7 +726,10 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						
 						++token_index;
 
-						if (!past_choice_initial_braces && in_choice_token.token != InkToken::LeftBrace && (in_choice_token.escaped || in_choice_token.token != InkToken::Text || !strip_string_edges(in_choice_token.text_contents, true, true, true).empty())) {
+						if (!past_choice_initial_braces
+							&& in_choice_token.token != InkToken::LeftBrace
+							&& (in_choice_token.token != InkToken::NewLine || next_token(all_tokens, token_index - 1).token != InkToken::LeftBrace)
+							&& (in_choice_token.escaped || in_choice_token.token != InkToken::Text || !strip_string_edges(in_choice_token.text_contents, true, true, true).empty())) {
 							past_choice_initial_braces = true;
 						}
 					}

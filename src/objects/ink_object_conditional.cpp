@@ -104,7 +104,15 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 
 				if (condition_result.has_value() && *condition_result) {
 					entry.second.function_prep_type = story_state.current_knot().knot->function_prep_type;
-					story_state.current_knots_stack.push_back({&(entry.second), 0});
+
+					if (story_state.at_choice) {
+						for (InkObject* object : entry.second.objects) {
+							object->execute(story_state, eval_result);
+						}
+					} else {
+						story_state.current_knots_stack.push_back({&(entry.second), 0});
+					}
+
 					return;
 				}
 			}	
