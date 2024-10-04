@@ -2594,14 +2594,12 @@ TEST_F(InkProof, DefaultChoices) {
 
 TEST_F(InkProof, PrintNum) {
 	STORY("ink-proof/94_print_num.ink");
-	EXPECT_TEXT(
-		". four .",
-		". fifteen .",
-		". thirty-seven .",
-		". one hundred and one .",
-		". two hundred and twenty-two .",
-		". one thousand two hundred and thirty-four .",
-	);
+	EXPECT_TEXT(". four .");
+	EXPECT_TEXT(". fifteen .");
+	EXPECT_TEXT(". thirty-seven .");
+	EXPECT_TEXT(". one hundred and one .");
+	EXPECT_TEXT(". two hundred and twenty-two .");
+	EXPECT_TEXT(". one thousand two hundred and thirty-four .");
 }
 
 TEST_F(InkProof, MultilineGlueLogic) {

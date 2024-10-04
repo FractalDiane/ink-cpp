@@ -30,6 +30,10 @@ void InkObjectText::execute(InkStoryState& story_state, InkStoryEvalResult& eval
 				eval_result.return_value = text_contents;
 			}
 		}
+
+		if (!strip_string_edges(text_contents, true, true, true).empty()) {
+			story_state.in_glue = false;
+		}
 	}
 }
 
