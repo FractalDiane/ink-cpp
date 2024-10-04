@@ -2568,7 +2568,7 @@ TEST_F(InkProof, ChoiceCount) {
 	EXPECT_TEXT("2");
 	EXPECT_CHOICES("one", "two");
 	story.choose_choice_index(0);
-	EXPECT_TEXT("");
+	EXPECT_TEXT("one", "");
 }
 
 /*TEST_F(InkProof, NoChoiceGather) {

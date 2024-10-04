@@ -83,11 +83,14 @@ struct Knot : public InkWeaveContent {
 struct KnotStatus {
 	Knot* knot;
 	std::size_t index = 0;
+
+	Stitch* current_stitch = nullptr;
+	Stitch* next_stitch = nullptr;
+
 	bool returning_from_function = false;
 	Uuid current_function_prep_expression = UINT32_MAX;
 	bool any_new_content = false;
 	bool reached_newline = false;
-	Stitch* next_stitch = nullptr;
 };
 
 template <>

@@ -297,7 +297,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			if (in_thread) {
 				story_state.current_thread_entries.emplace_back(
 					choice.text, choice.entry, choice.index,
-					story_state.current_knot().knot, story_state.current_stitch, story_state.current_knot().index,
+					story_state.current_knot().knot, story_state.current_stitch(), story_state.current_knot().index,
 					story_state.thread_arguments_stack.back()
 				);
 			} else {
@@ -320,7 +320,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			if (in_thread) {
 				story_state.current_thread_entries.emplace_back(
 					std::string(), &fallback_choice, fallback_choice.index,
-					story_state.current_knot().knot, story_state.current_stitch, story_state.current_knot().index,
+					story_state.current_knot().knot, story_state.current_stitch(), story_state.current_knot().index,
 					story_state.thread_arguments_stack.back()
 				);
 			} else {
@@ -383,7 +383,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		story_state.story_tracking.increment_turns_since();
 
 		if (!selected_choice_struct->label.name.empty()) {
-			story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, &selected_choice_struct->label);
+			story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch(), &selected_choice_struct->label);
 		}
 
 		story_state.current_choices.clear();

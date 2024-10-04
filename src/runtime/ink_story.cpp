@@ -82,6 +82,7 @@ void InkStory::init_story() {
 
 	story_state.current_knots_stack = {{&(story_data->knots[story_data->knot_order[0]]), 0}};
 	story_state.variable_info.current_weave_uuid = story_state.current_knot().knot->uuid;
+	story_state.setup_next_stitch();
 }
 
 void InkStory::bind_ink_functions() {
@@ -89,13 +90,13 @@ void InkStory::bind_ink_functions() {
 
 	#define EXP_FUNC(name, argc, body) story_state.variable_info.builtin_functions[name] = {[this](const std::vector<ExpressionParserV2::Variant>& arguments) -> ExpressionParserV2::Variant body, (std::uint8_t)argc};
 
-	EXP_FUNC("CHOICE_COUNT", 0, { return story_state.current_choices.size(); });
+	EXP_FUNC("CHOICE_COUNT", 0, { return story_state.current_choices.size() + story_state.current_thread_entries.size(); });
 	EXP_FUNC("TURNS", 0, { return story_state.total_choices_taken; });
 
 	EXP_FUNC("TURNS_SINCE", 1, {
 		const Variant& knot = arguments[0];
 
-		if (GetContentResult content = story_data->get_content(static_cast<std::string>(knot), story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch, false); content.found_any) {
+		if (GetContentResult content = story_data->get_content(static_cast<std::string>(knot), story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch(), false); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
 			if (story_state.story_tracking.get_content_stats(content.get_target(), stats)) {
 				return stats.turns_since_visited;
@@ -108,7 +109,7 @@ void InkStory::bind_ink_functions() {
 	EXP_FUNC("READ_COUNT", 1, {
 		const Variant& knot = arguments[0];
 
-		if (GetContentResult content = story_data->get_content(static_cast<std::string>(knot), story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch, false); content.found_any) {
+		if (GetContentResult content = story_data->get_content(static_cast<std::string>(knot), story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch(), false); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
 			if (story_state.story_tracking.get_content_stats(content.get_target(), stats)) {
 				return stats.times_visited;
@@ -223,7 +224,7 @@ void InkStory::update_visit_count_variables(std::vector<ExpressionParserV2::Shun
 	for (ExpressionParserV2::ShuntedExpression* expression : expressions) {
 		for (ExpressionParserV2::Token& token : expression->tokens) {
 			if (token.type == ExpressionParserV2::TokenType::Variable) {
-				GetContentResult content = story_data->get_content(token.variable_name, story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch, false);
+				GetContentResult content = story_data->get_content(token.variable_name, story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch(), false);
 				if (content.found_any) {
 					InkStoryTracking::SubKnotStats target_count;
 					story_state.story_tracking.get_content_stats(content.get_target(), target_count);
@@ -269,7 +270,7 @@ std::string InkStory::continue_story() {
 		if (!changed_knot && !story_state.current_knot().returning_from_function) {
 			for (GatherPoint& gather_point : story_state.current_knot().knot->gather_points) {
 				if (!gather_point.in_choice && !gather_point.name.empty() && gather_point.index == story_state.index_in_knot()) {
-					story_state.story_tracking.increment_visit_count(story_state.current_knot().knot, story_state.current_stitch, &gather_point);
+					story_state.story_tracking.increment_visit_count(story_state.current_knot().knot, story_state.current_stitch(), &gather_point);
 					break;
 				}
 			}
@@ -309,10 +310,10 @@ std::string InkStory::continue_story() {
 
 		// diverts
 		if (!eval_result.target_knot.empty()) {
-			GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch, true);
+			GetContentResult target = story_data->get_content(eval_result.target_knot, story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch(), true);
 			if (!target.found_any) {
 				if (std::optional<ExpressionParserV2::Variant> target_var = story_state.variable_info.get_variable_value(eval_result.target_knot); target_var.has_value()) {
-					target = story_data->get_content(*target_var, story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch, true);
+					target = story_data->get_content(*target_var, story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch(), true);
 				}
 			}
 
@@ -380,9 +381,9 @@ std::string InkStory::continue_story() {
 
 									// auto divert to the first stitch if there's no content outside of stitches
 									if (!target.knot->stitches.empty() && target.knot->stitches[0].index == 0) {
-										story_state.current_stitch = &target.knot->stitches[0];
+										story_state.current_nonchoice_knot().current_stitch = &target.knot->stitches[0];
 									} else {
-										story_state.current_stitch = nullptr;
+										story_state.current_nonchoice_knot().current_stitch = nullptr;
 									}
 									
 									story_state.setup_next_stitch();
@@ -403,7 +404,7 @@ std::string InkStory::continue_story() {
 										advance_knot_index = false;
 									}
 
-									story_state.current_stitch = target.stitch;
+									story_state.current_nonchoice_knot().current_stitch = target.stitch;
 									story_state.setup_next_stitch();
 
 									apply_knot_args(target.stitch, eval_result);
@@ -426,7 +427,7 @@ std::string InkStory::continue_story() {
 									}
 									
 									if (target.stitch) {
-										story_state.current_stitch = target.stitch;
+										story_state.current_nonchoice_knot().current_stitch = target.stitch;
 										story_state.setup_next_stitch();
 									}
 
@@ -507,7 +508,7 @@ std::string InkStory::continue_story() {
 			changed_knot = true;
 			advance_knot_index = false;
 
-			story_state.variable_info.current_weave_uuid = story_state.current_stitch ? story_state.current_stitch->uuid : story_state.current_nonchoice_knot().knot->uuid;
+			story_state.update_weave_uuid();
 		}
 
 		if (advance_knot_index) {
@@ -528,7 +529,7 @@ std::string InkStory::continue_story() {
 						for (GatherPoint* gather_point : this_knot.knot->get_all_gather_points()) {
 							if (!gather_point->in_choice && gather_point->level <= story_state.current_knots_stack.size() && gather_point->index > this_knot.index) {
 								story_state.current_knot().index = gather_point->index;
-								story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch, gather_point);
+								story_state.story_tracking.increment_visit_count(story_state.current_nonchoice_knot().knot, story_state.current_stitch(), gather_point);
 								found_gather = gather_point;
 								break;
 							}
@@ -541,7 +542,7 @@ std::string InkStory::continue_story() {
 						story_state.current_knots_stack.pop_back();
 					}
 
-					story_state.variable_info.current_weave_uuid = story_state.current_stitch ? story_state.current_stitch->uuid : story_state.current_nonchoice_knot().knot->uuid;
+					story_state.update_weave_uuid();
 
 					if (found_gather) {
 						eval_result.reached_newline = story_state.current_knot().reached_newline = true;
@@ -567,7 +568,7 @@ std::string InkStory::continue_story() {
 					eval_result.return_value = std::nullopt;
 				}
 
-				story_state.variable_info.current_weave_uuid = story_state.current_stitch ? story_state.current_stitch->uuid : story_state.current_nonchoice_knot().knot->uuid;
+				story_state.update_weave_uuid();
 			// ending a thread needs to keep the last knot on the stack to apply the choices to
 			} else if (story_state.current_thread_entries.empty() || story_state.current_knots_stack.size() > 1) {
 				story_state.current_knots_stack.pop_back();
@@ -579,6 +580,10 @@ std::string InkStory::continue_story() {
 				break;
 			}
 		}
+	}
+
+	if (!story_state.thread_entries_applied) {
+		story_state.apply_thread_choices();
 	}
 
 	return remove_duplicate_spaces(strip_string_edges(eval_result.result, true, true, true));
@@ -616,6 +621,16 @@ void InkStory::choose_choice_index(std::size_t index) {
 		if (story_state.current_choices[index].from_thread) {
 			const InkStoryState::ThreadEntry& thread_entry = story_state.current_thread_entries[index];
 			story_state.current_knots_stack.back() = {thread_entry.containing_knot, thread_entry.index_in_knot};
+
+			if (!thread_entry.containing_knot->name.empty()) {
+				for (auto stitch = story_state.current_nonchoice_knot().knot->stitches.rbegin(); stitch != story_state.current_nonchoice_knot().knot->stitches.rend(); ++stitch) {
+					if (stitch->index <= thread_entry.index_in_knot) {
+						story_state.current_knots_stack.back().current_stitch = &*stitch;
+						break;
+					}
+				}
+			}
+			
 			story_state.setup_next_stitch();
 
 			InkWeaveContent* thread_target = thread_entry.containing_stitch
@@ -638,6 +653,7 @@ void InkStory::choose_choice_index(std::size_t index) {
 			}
 
 			story_state.should_wrap_up_thread = false;
+			story_state.thread_entries_applied = false;
 		} else {
 			--story_state.current_knots_stack.back().index;
 		}

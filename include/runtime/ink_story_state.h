@@ -47,7 +47,6 @@ struct InkStoryState {
 	std::mt19937 rng{std::random_device()()};
 
 	std::vector<KnotStatus> current_knots_stack;
-	Stitch* current_stitch = nullptr;
 
 	bool should_end_story = false;
 
@@ -69,6 +68,7 @@ struct InkStoryState {
 
 	std::size_t current_thread_depth = 0;
 	std::vector<ThreadEntry> current_thread_entries;
+	bool thread_entries_applied = false;
 	std::vector<std::vector<std::pair<std::string, ExpressionParserV2::Variant>>> thread_arguments_stack;
 	bool should_wrap_up_thread = false;
 
@@ -91,7 +91,10 @@ struct InkStoryState {
 	KnotStatus& previous_nonfunction_knot(bool offset_by_one = false);
 	inline std::size_t current_knot_size() const { return current_knots_stack.back().knot->objects.size(); }
 	KnotStatus& current_nonchoice_knot();
+	void update_weave_uuid();
 	void setup_next_stitch();
+	Stitch* current_stitch() { return current_nonchoice_knot().current_stitch; }
+	Stitch* next_stitch() { return current_nonchoice_knot().next_stitch; }
 
 	void apply_thread_choices();
 };

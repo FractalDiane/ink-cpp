@@ -53,13 +53,19 @@ KnotStatus& InkStoryState::current_nonchoice_knot() {
 	return current_knots_stack.front();
 }
 
+void InkStoryState::update_weave_uuid() {
+	Stitch* stitch_current = current_stitch();
+	variable_info.current_weave_uuid = stitch_current ? stitch_current->uuid : current_nonchoice_knot().knot->uuid;
+}
+
 void InkStoryState::setup_next_stitch() {
-	KnotStatus& current = current_knot();
+	KnotStatus& current = current_nonchoice_knot();
+	Stitch* stitch_current = current_stitch();
 	std::vector<Stitch>& stitches = current.knot->stitches;
-	if (current_stitch) {
+	if (stitch_current) {
 		for (auto stitch = stitches.begin(); stitch != stitches.end(); ++stitch) {
-			if (current_stitch == &*stitch) {
-				if (current_stitch != &stitches.back()) {
+			if (stitch_current == &*stitch) {
+				if (stitch_current != &stitches.back()) {
 					current.next_stitch = &*(stitch + 1);
 				} else {
 					current.next_stitch = nullptr;
@@ -89,6 +95,8 @@ void InkStoryState::apply_thread_choices() {
 		current_knots_stack.push_back({&current_choice_structs[0]->result, 0});
 		at_choice = false;
 	}
+
+	thread_entries_applied = true;
 }
 
 bool InkStoryEvalResult::has_any_contents(bool strip) {
