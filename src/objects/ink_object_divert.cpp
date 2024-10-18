@@ -79,11 +79,10 @@ void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 	std::string target = get_target(story_state, story_state.variable_info);
 
 	bool is_done = target == "DONE";
-	if (is_done && (story_state.current_thread_depth > 0 || !story_state.current_thread_entries.empty())) {
+	if (is_done && (story_state.current_thread_depth() > 0 || !story_state.current_thread_entries.empty())) {
 		story_state.apply_thread_choices();
 		story_state.should_wrap_up_thread = true;
-	}
-	else if (is_done || target == "END") {
+	} else if (is_done || target == "END") {
 		story_state.should_end_story = true;
 	} else {
 		eval_result.target_knot = target;

@@ -82,7 +82,7 @@ void InkStoryState::setup_next_stitch() {
 }
 
 void InkStoryState::apply_thread_choices() {
-	for (ThreadEntry& entry : current_thread_entries) {
+	for (ThreadChoiceEntry& entry : current_thread_entries) {
 		if (!entry.applied) {
 			current_choices.emplace_back(entry.choice_text, true);
 			current_choice_structs.emplace_back(entry.choice_entry);

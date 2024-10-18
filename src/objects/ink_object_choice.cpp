@@ -276,6 +276,8 @@ InkObjectChoice::GetChoicesResult InkObjectChoice::get_choices(InkStoryState& st
 }
 
 void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {
+	bool in_thread = story_state.current_thread_depth() > 0;
+
 	bool do_choice_setup = !story_state.selected_choice.has_value() || story_state.current_choices.empty();
 	bool select_choice_immediately = false;
 	if (do_choice_setup) {
@@ -288,7 +290,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			return;
 		}
 
-		bool in_thread = story_state.current_thread_depth > 0;
+		
 		if (!in_thread) {
 			story_state.apply_thread_choices();
 		}
@@ -298,7 +300,8 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 				story_state.current_thread_entries.emplace_back(
 					choice.text, choice.entry, choice.index,
 					story_state.current_knot().knot, story_state.current_stitch(), story_state.current_knot().index,
-					story_state.thread_arguments_stack.back()
+					story_state.thread_arguments_stack.back(),
+					story_state.thread_tunnels_stack
 				);
 			} else {
 				story_state.current_choices.emplace_back(choice.text, false);
@@ -306,7 +309,7 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			}
 		}
 
-		if (story_state.current_thread_depth > 0) {
+		if (in_thread) {
 			story_state.should_wrap_up_thread = true;
 		}
 		
@@ -334,8 +337,13 @@ void InkObjectChoice::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 			select_choice_immediately = true;
 		}
 	}
+
+	if (in_thread) {
+		//story_state.apply_thread_choices();
+		story_state.should_wrap_up_thread = true;
+	}
 	
-	if ((!do_choice_setup || select_choice_immediately) && story_state.current_thread_depth == 0) {
+	if ((!do_choice_setup || select_choice_immediately) && !in_thread) {
 		InkChoiceEntry* selected_choice_struct = nullptr;
 		if (story_state.choice_divert_index.has_value()) {
 			for (InkChoiceEntry* choice : story_state.current_choice_structs) {

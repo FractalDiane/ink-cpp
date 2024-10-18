@@ -2618,7 +2618,7 @@ TEST_F(InkProof, LogicWithNewlines) {
 }
 
 TEST_F(InkProof, KnotThreadInteraction2) {
-	STORY("ink-proof/98_knot_thread_interaction.ink");
+	STORY("ink-proof/98_knot_thread_interaction2.ink");
 	EXPECT_TEXT("I'm in a tunnel", "When should this get printed?");
 	EXPECT_CHOICES("I'm an option");
 	story.choose_choice_index(0);

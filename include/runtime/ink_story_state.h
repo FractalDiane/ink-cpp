@@ -32,7 +32,7 @@ struct InkStoryState {
 		Stitch* next_stitch = nullptr;
 	};*/
 
-	struct ThreadEntry {
+	struct ThreadChoiceEntry {
 		std::string choice_text;
 		struct InkChoiceEntry* choice_entry = nullptr;
 		std::size_t choice_index = 0;
@@ -40,6 +40,8 @@ struct InkStoryState {
 		Stitch* containing_stitch = nullptr;
 		std::size_t index_in_knot = 0;
 		std::vector<std::pair<std::string, ExpressionParserV2::Variant>> arguments;
+
+		std::vector<KnotStatus> tunnels_stack;
 
 		bool applied = false;
 	};
@@ -66,8 +68,10 @@ struct InkStoryState {
 
 	std::vector<Knot*> function_call_stack;
 
-	std::size_t current_thread_depth = 0;
-	std::vector<ThreadEntry> current_thread_entries;
+	//std::size_t current_thread_depth = 0;
+	std::vector<Knot*> threads_stack;
+	std::vector<ThreadChoiceEntry> current_thread_entries;
+	std::vector<KnotStatus> thread_tunnels_stack;
 	bool thread_entries_applied = false;
 	std::vector<std::vector<std::pair<std::string, ExpressionParserV2::Variant>>> thread_arguments_stack;
 	bool should_wrap_up_thread = false;
@@ -97,6 +101,7 @@ struct InkStoryState {
 	Stitch* next_stitch() { return current_nonchoice_knot().next_stitch; }
 
 	void apply_thread_choices();
+	std::size_t current_thread_depth() const { return threads_stack.size(); }
 };
 
 struct InkStoryEvalResult {
