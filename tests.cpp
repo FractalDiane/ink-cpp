@@ -2640,8 +2640,313 @@ TEST_F(InkProof, TagsOnChoice) {
 	story.choose_choice_index(0);
 
 	EXPECT_TEXT("Start of choice text");
-	std::vector<std::string> tags = {"tag both [Choice only text, choice only tag] This is after the choice is taken", "post choice tag"};
+	std::vector<std::string> tags = {"tag both [Choice only text", "choice only tag] This is after the choice is taken", "post choice tag"};
 	EXPECT_EQ(story.get_current_tags(), tags);
+}
+
+TEST_F(InkProof, ThreadInLogic) {
+	STORY("ink-proof/101_thread_in_logic.ink");
+	EXPECT_TEXT("Content");
+}
+
+TEST_F(InkProof, ThreadChoicesRemainOnTerminateFlow) {
+	STORY("ink-proof/102_thread_choices_terminate_flow.ink");
+	EXPECT_TEXT("Limes");
+	EXPECT_CHOICES("boop");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("boop");
+}
+
+TEST_F(InkProof, ThreadDone) {
+	STORY("ink-proof/103_thread_done.ink");
+	EXPECT_TEXT("This is a thread example");
+	EXPECT_TEXT("Hello.");
+	EXPECT_TEXT("The example is now complete.");
+}
+
+TEST_F(InkProof, MutliThread) {
+	STORY("ink-proof/104_multi_thread.ink");
+	EXPECT_TEXT("This is place 1.");
+	EXPECT_TEXT("This is place 2.");
+	EXPECT_CHOICES("choice in place 1", "choice in place 2");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("choice in place 1");
+	EXPECT_TEXT("The end");
+}
+
+/*TEST_F(InkProof, ListComparison) {
+	STORY("ink-proof/105_list_comparison.ink");
+	EXPECT_TEXT("Hey, my name is Philippe. What about yours?");
+	EXPECT_TEXT("I am Andre and I need my rheumatism pills!");
+	EXPECT_TEXT("Would you like me, Philippe, to get some more for you?");
+}*/
+
+TEST_F(InkProof, AllSequenceTypes) {
+	STORY("ink-proof/106_all_sequence_types.ink");
+	EXPECT_TEXT("Once: one two");
+	EXPECT_TEXT("Stopping: one two two two");
+	EXPECT_TEXT("Default: one two two two");
+	EXPECT_TEXT("Cycle: one two one two");
+	
+	std::string shuffle_text = story.continue_story();
+	EXPECT_TRUE(shuffle_text.starts_with("Shuffle: "));
+	EXPECT_TRUE(shuffle_text.substr(9).contains("one") || shuffle_text.substr(9).contains("two"));
+
+	std::string shuffle_text_2 = story.continue_story();
+	EXPECT_TRUE(shuffle_text_2.starts_with("Shuffle stopping: "));
+	EXPECT_TRUE(shuffle_text_2.substr(18).contains("one") && shuffle_text_2.substr(18).contains("two") && shuffle_text_2.ends_with("final final"));
+
+	std::string shuffle_text_3 = story.continue_story();
+	EXPECT_TRUE(shuffle_text_3.starts_with("Shuffle once: "));
+	EXPECT_TRUE(shuffle_text_3.substr(14).contains("one") && shuffle_text_3.substr(14).contains("two"));
+}
+
+TEST_F(InkProof, ShuffleStackMuddying) {
+	STORY("ink-proof/107_shuffle_stack_muddying.ink");
+	EXPECT_TEXT("");
+	std::vector<std::string> choices = story.get_current_choices();
+	EXPECT_EQ(choices.size(), 2);
+
+	bool found_1 = false;
+	bool found_2 = false;
+	bool found_3 = false;
+	bool found_4 = false;
+
+	for (const std::string& choice : choices) {
+		if (choice == "choice 1") {
+			found_1 = true;
+		} else if (choice == "choice 2") {
+			found_2 = true;
+		} else if (choice == "choice 3") {
+			found_3 = true;
+		} else if (choice == "choice 4") {
+			found_4 = true;
+		}
+	}
+
+	
+	EXPECT_TRUE(found_1 || found_2 || found_3 || found_4);
+}
+
+TEST_F(InkProof, BlanksInInlineSequences) {
+	STORY("ink-proof/108_sequence_blanks.ink");
+	EXPECT_TEXT("1. a");
+	EXPECT_TEXT("2.");
+	EXPECT_TEXT("3. b");
+	EXPECT_TEXT("4. b");
+	EXPECT_TEXT("---");
+	EXPECT_TEXT("1.");
+	EXPECT_TEXT("2. a");
+	EXPECT_TEXT("3. a");
+	EXPECT_TEXT("---");
+	EXPECT_TEXT("1. a");
+	EXPECT_TEXT("2.");
+	EXPECT_TEXT("3.");
+	EXPECT_TEXT("---");
+	EXPECT_TEXT("1.");
+	EXPECT_TEXT("2.");
+	EXPECT_TEXT("3.");
+}
+
+TEST_F(InkProof, GatherReadCountWithInitialSequence) {
+	STORY("ink-proof/109_gather_read_count_initial_sequence.ink");
+	EXPECT_TEXT("seen test");
+}
+
+TEST_F(InkProof, LeadingNewlineMultilineSequence) {
+	STORY("ink-proof/110_leading_newline_multiline_sequence.ink");
+	EXPECT_TEXT("a line after an empty line");
+}
+
+TEST_F(InkProof, EmptySequenceContent) {
+	STORY("ink-proof/111_empty_sequence_content.ink");
+	EXPECT_TEXT("Wait for it....");
+	EXPECT_TEXT("Surprise!");
+	EXPECT_TEXT("Done.");
+}
+
+TEST_F(InkProof, AllSwitchBranchesFailIsClean) {
+	STORY("ink-proof/112_all_switch_branches_fail.ink");
+	EXPECT_TEXT("", "");
+}
+
+TEST_F(InkProof, ElseBranches) {
+	STORY("ink-proof/113_else_branches.ink");
+	EXPECT_TEXT("other");
+	EXPECT_TEXT("other");
+	EXPECT_TEXT("other");
+	EXPECT_TEXT("other");
+}
+
+TEST_F(InkProof, Conditionals) {
+	STORY("ink-proof/114_conditionals.ink");
+	EXPECT_TEXT("true");
+	EXPECT_TEXT("true");
+	EXPECT_TEXT("true");
+	EXPECT_TEXT("true");
+	EXPECT_TEXT("true");
+	EXPECT_TEXT("great");
+	EXPECT_TEXT("right");
+}
+
+TEST_F(InkProof, EmptyMultilineConditionalBranch) {
+	STORY("ink-proof/115_empty_multiline_conditional.ink");
+	EXPECT_TEXT("", "");
+}
+
+TEST_F(InkProof, TrivialCondition) {
+	STORY("ink-proof/116_trivial_condition.ink");
+	EXPECT_TEXT("", "");
+}
+
+TEST_F(InkProof, FactorialRecursive) {
+	STORY("ink-proof/117_factorial_recursive.ink");
+	EXPECT_TEXT("120");
+}
+
+TEST_F(InkProof, LiteralUnary) {
+	STORY("ink-proof/118_literal_unary.ink");
+	EXPECT_TEXT("-1", "0", "1");
+}
+
+TEST_F(InkProof, BasicStringLiterals) {
+	STORY("ink-proof/119_basic_string_literals.ink");
+	EXPECT_TEXT("Hello world 1", "Hello world 2.");
+}
+
+TEST_F(InkProof, EvaluateFunctions) {
+	STORY("ink-proof/120_evaluate_functions.ink");
+	EXPECT_TEXT("Top level content");
+	EXPECT_CHOICES("choice");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("choice", "");
+}
+
+TEST_F(InkProof, Arithmetic) {
+	STORY("ink-proof/121_arithmetic.ink");
+	EXPECT_TEXT("36");
+	EXPECT_TEXT("2");
+	EXPECT_TEXT("3");
+	EXPECT_TEXT("2");
+	EXPECT_TEXT("2.5");
+	EXPECT_TEXT("8");
+	EXPECT_TEXT("8");
+}
+
+TEST_F(InkProof, StackLeaks) {
+	STORY("ink-proof/122_stack_leaks.ink");
+	EXPECT_TEXT("else");
+	EXPECT_TEXT("else");
+	EXPECT_TEXT("hi");
+}
+
+TEST_F(InkProof, FactorialByReference) {
+	STORY("ink-proof/123_factorial_by_reference.ink");
+	EXPECT_TEXT("120");
+}
+
+TEST_F(InkProof, EvaluateFunctions2) {
+	STORY("ink-proof/124_evaluate_functions_2.ink");
+	EXPECT_TEXT("One");
+	EXPECT_TEXT("Two");
+	EXPECT_TEXT("Three");
+}
+
+TEST_F(InkProof, Increment) {
+	STORY("ink-proof/125_increment.ink");
+	EXPECT_TEXT("6", "5");
+}
+
+TEST_F(InkProof, FunctionVariableStateBug) {
+	STORY("ink-proof/126_function_variable_state_bug.ink");
+	EXPECT_TEXT("Start");
+	EXPECT_TEXT("In tunnel.");
+	EXPECT_TEXT("End");
+}
+
+TEST_F(InkProof, VariableObserver) {
+	STORY("ink-proof/127_variable_observer.ink");
+	EXPECT_TEXT("Hello world!", "Hello world 2!");
+	EXPECT_CHOICES("choice");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("choice", "");
+}
+
+TEST_F(InkProof, KnotStitchGatherCounts) {
+	STORY("ink-proof/128_knot_stitch_gather_counts.ink");
+	
+	EXPECT_TEXT("1 1");
+
+	EXPECT_TEXT("2 2");
+
+	EXPECT_TEXT("3 3");
+
+	EXPECT_TEXT("1 1");
+
+	EXPECT_TEXT("2 1");
+
+	EXPECT_TEXT("3 1");
+
+	EXPECT_TEXT("1 2");
+
+	EXPECT_TEXT("2 2");
+
+	EXPECT_TEXT("3 2");
+
+	EXPECT_TEXT("1 1");
+
+	EXPECT_TEXT("2 1");
+
+	EXPECT_TEXT("3 1");
+
+	EXPECT_TEXT("1 2");
+
+	EXPECT_TEXT("2 2");
+
+	EXPECT_TEXT("3 2");
+}
+
+TEST_F(InkProof, KnotDoNotGather) {
+	STORY("ink-proof/129_knot_do_not_gather.ink");
+	EXPECT_TEXT("g");
+}
+
+TEST_F(InkProof, KnotThreadInteraction) {
+	STORY("ink-proof/130_knot_thread_interaction.ink");
+	EXPECT_TEXT("blah blah");
+	EXPECT_CHOICES("option", "wigwag");
+	story.choose_choice_index(1);
+
+	EXPECT_TEXT("wigwag");
+	EXPECT_TEXT("THE END");
+}
+
+/*TEST_F(InkProof, KnotAndVariableSameName) {
+	STORY("ink-proof/131_knot_variable_same_name.ink");
+	
+}*/
+
+TEST_F(InkProof, CompareDiverts) {
+	STORY("ink-proof/132_compare_diverts.ink");
+	EXPECT_TEXT("1");
+	EXPECT_TEXT("0");
+	EXPECT_TEXT("0");
+	EXPECT_TEXT("1");
+}
+
+TEST_F(InkProof, PrintFloatPrecision) {
+	STORY("ink-proof/133_print_float_precision.ink");
+	EXPECT_TEXT("2.3333333");
+}
+
+TEST_F(InkProof, NativeBools) {
+	STORY("ink-proof/134_native_bools.ink");
+	EXPECT_TEXT("true", "false");	
+}
+
+TEST_F(InkProof, BoolCoercion) {
+	STORY("ink-proof/135_bool_coercion.ink");
+	EXPECT_TEXT("2", "-1");
 }
 #pragma endregion
 ////////////////////////////////////////////////////////////////////////////////////////////////////
