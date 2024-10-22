@@ -253,6 +253,9 @@ std::string InkStory::continue_story() {
 	}
 
 	story_state.current_knot().any_new_content = false;
+	if (can_continue() && !story_state.current_choices.empty()) {
+		story_state.thread_entries_applied = false;
+	}
 
 	InkStoryEvalResult eval_result;
 	eval_result.result.reserve(512);
@@ -376,9 +379,11 @@ std::string InkStory::continue_story() {
 									if (eval_result.divert_type == DivertType::ToTunnel || eval_result.divert_type == DivertType::Thread) {
 										if (eval_result.divert_type == DivertType::ToTunnel) {
 											story_state.thread_tunnels_stack.push_back(story_state.current_knot());
+											story_state.thread_tunnels_stack.back().is_tunnel_origin = true;
 											story_state.thread_tunnels_stack.push_back({target.knot, 0});
 										}
 
+										story_state.current_knots_stack.back().is_tunnel_origin = eval_result.divert_type == DivertType::ToTunnel;
 										story_state.current_knots_stack.push_back({target.knot, 0});
 									} else {
 										if (eval_result.divert_type == DivertType::FromTunnel) {
@@ -412,7 +417,10 @@ std::string InkStory::continue_story() {
 								case WeaveContentType::Stitch: {
 									if (eval_result.divert_type == DivertType::ToTunnel) {
 										story_state.thread_tunnels_stack.push_back(story_state.current_knot());
+										story_state.thread_tunnels_stack.back().is_tunnel_origin = true;
 										story_state.thread_tunnels_stack.push_back({target.knot, target.stitch->index});
+
+										story_state.current_knots_stack.back().is_tunnel_origin = eval_result.divert_type == DivertType::ToTunnel;
 										story_state.current_knots_stack.push_back({target.knot, target.stitch->index});
 									} else {
 										if (eval_result.divert_type == DivertType::FromTunnel) {
@@ -442,7 +450,10 @@ std::string InkStory::continue_story() {
 									Knot* previous_knot = story_state.current_knots_stack.back().knot;
 									if (eval_result.divert_type == DivertType::ToTunnel) {
 										story_state.thread_tunnels_stack.push_back(story_state.current_knot());
+										story_state.thread_tunnels_stack.back().is_tunnel_origin = true;
 										story_state.thread_tunnels_stack.push_back({target.knot, target.gather_point->index});
+
+										story_state.current_knots_stack.back().is_tunnel_origin = eval_result.divert_type == DivertType::ToTunnel;
 										story_state.current_knots_stack.push_back({target.knot, target.gather_point->index});
 									} else {
 										if (eval_result.divert_type == DivertType::FromTunnel) {
@@ -502,11 +513,11 @@ std::string InkStory::continue_story() {
 			
 			eval_result.divert_type = DivertType::ToKnot;
 		} else if (eval_result.divert_type == DivertType::FromTunnel) {
-			while (story_state.current_knot().knot != story_state.current_nonchoice_knot().knot) {
+			while (!story_state.current_knot().is_tunnel_origin) {
 				story_state.current_knots_stack.pop_back();
 			}
 			
-			story_state.current_knots_stack.pop_back();
+			//story_state.current_knots_stack.pop_back();
 			++story_state.current_knot().index;
 			changed_knot = true;
 			advance_knot_index = false;
@@ -651,11 +662,8 @@ void InkStory::choose_choice_index(std::size_t index) {
 		if (story_state.current_choices[index].from_thread) {
 			const InkStoryState::ThreadChoiceEntry& thread_entry = story_state.current_thread_entries[index];
 
-			while (story_state.current_nonchoice_knot().knot != story_state.current_knot().knot) {
-				story_state.current_knots_stack.pop_back();
-			}
+			story_state.current_knots_stack.clear();
 			
-
 			for (const KnotStatus& knot : thread_entry.tunnels_stack) {
 				if (knot.knot == thread_entry.containing_knot) {
 					break;

@@ -91,6 +91,8 @@ struct KnotStatus {
 	Uuid current_function_prep_expression = UINT32_MAX;
 	bool any_new_content = false;
 	bool reached_newline = false;
+	
+	bool is_tunnel_origin = false;
 };
 
 template <>
