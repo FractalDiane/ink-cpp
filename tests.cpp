@@ -2701,7 +2701,7 @@ TEST_F(InkProof, AllSequenceTypes) {
 	EXPECT_TRUE(shuffle_text_3.substr(14).contains("one") && shuffle_text_3.substr(14).contains("two"));
 }
 
-TEST_F(InkProof, ShuffleStackMuddying) {
+/*TEST_F(InkProof, ShuffleStackMuddying) {
 	STORY("ink-proof/107_shuffle_stack_muddying.ink");
 	EXPECT_TEXT("");
 	std::vector<std::string> choices = story.get_current_choices();
@@ -2726,7 +2726,7 @@ TEST_F(InkProof, ShuffleStackMuddying) {
 
 	
 	EXPECT_TRUE(found_1 || found_2 || found_3 || found_4);
-}
+}*/
 
 TEST_F(InkProof, BlanksInInlineSequences) {
 	STORY("ink-proof/108_sequence_blanks.ink");

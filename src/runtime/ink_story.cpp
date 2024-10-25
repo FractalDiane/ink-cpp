@@ -269,7 +269,7 @@ std::string InkStory::continue_story() {
 		KnotStatus& last_knot = story_state.previous_nonfunction_knot();
 		bool last_knot_had_newline = last_knot.index > 0 && last_knot.knot->objects[last_knot.index - 1]->get_id() == ObjectId::LineBreak;
 
-		// any gather points hit need to have their visit counts incremented
+		// gather points hit have their visit counts incremented
 		if (!changed_knot && !story_state.current_knot().returning_from_function) {
 			for (GatherPoint& gather_point : story_state.current_knot().knot->gather_points) {
 				if (!gather_point.in_choice && !gather_point.name.empty() && gather_point.index == story_state.index_in_knot()) {
@@ -305,7 +305,6 @@ std::string InkStory::continue_story() {
 
 			story_state.thread_arguments_stack.pop_back();
 			++story_state.current_knot().index;
-			//--story_state.current_thread_depth;
 			story_state.threads_stack.pop_back();
 			
 			story_state.should_wrap_up_thread = false;

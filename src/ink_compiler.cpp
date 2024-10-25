@@ -119,9 +119,13 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 			} break;
 
 			case '\\': {
-				current_text += next_char(script_text, index);
+				char next = next_char(script_text, index);
+				while (next_char(script_text, index) == next) {
+					current_text += next;
+					++index;
+				}
 				current_text_escaped = true;
-				++index;
+				//++index;
 			} break;
 
 			case '*':
@@ -803,11 +807,11 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					sequence_type = InkSequenceType::OnceOnly;
 					token_index += 2;
 					is_explicit_alternative = true;
-				} else if (text == "shuffle once") {
+				} else if (text == "shuffle once" || text == "once shuffle") {
 					sequence_type = InkSequenceType::ShuffleOnce;
 					token_index += 2;
 					is_explicit_alternative = true;
-				} else if (text == "shuffle stopping") {
+				} else if (text == "shuffle stopping" || text == "stopping shuffle") {
 					sequence_type = InkSequenceType::ShuffleStop;
 					token_index += 2;
 					is_explicit_alternative = true;
@@ -886,19 +890,29 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						}
 
 						case InkToken::Dash: {
+							bool implicit_else = false;
 							if (at_line_start) {
 								bool is_condition_entry = !is_conditional;
 								if (!is_condition_entry) {
 									std::size_t index = token_index;
+									bool any_content = false;
 									while (index < all_tokens.size()) {
-										InkToken this_token = all_tokens[index].token;
-										if (this_token == InkToken::Colon) {
+										const InkLexer::Token& this_token = all_tokens[index];
+										if (this_token.token == InkToken::Colon) {
 											is_condition_entry = true;
 											break;
 										}
 
-										if (this_token == InkToken::NewLine || this_token == InkToken::LeftBrace) {
+										if (this_token.token == InkToken::NewLine || this_token.token == InkToken::LeftBrace) {
+											if (any_content && !is_condition_entry && items_conditions.size() > 1) {
+												is_condition_entry = implicit_else = true;
+											}
+
 											break;
+										}
+
+										if (!any_content && !this_token.get_text_contents().empty()) {
+											any_content = true;
 										}
 
 										++index;
@@ -917,10 +931,13 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 									found_dash = true;
 								} else {
-									if (InkLexer::Token next = next_token(all_tokens, token_index); next.token == InkToken::Text && next.text_contents == "else") {
+									InkLexer::Token next = next_token(all_tokens, token_index);
+									if (implicit_else || next.token == InkToken::Text && next.text_contents == "else") {
 										in_else = true;
-										token_index += 2;
-
+										if (!implicit_else) {
+											token_index += 2;
+										}
+										
 										while (next_token_is(all_tokens, token_index, InkToken::NewLine) || (strip_string_edges(next_token(all_tokens, token_index).get_text_contents(), true, true, true).empty())) {
 											++token_index;
 										}
