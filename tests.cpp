@@ -2786,7 +2786,7 @@ TEST_F(InkProof, Conditionals) {
 	EXPECT_TEXT("true");
 	EXPECT_TEXT("true");
 	EXPECT_TEXT("great");
-	EXPECT_TEXT("right");
+	EXPECT_TEXT("right?");
 }
 
 TEST_F(InkProof, EmptyMultilineConditionalBranch) {

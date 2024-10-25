@@ -675,21 +675,10 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 									bool rewind_index = false;
 									if (!choice_entry.text.empty()) {
 										rewind_index = true;
-										//--token_index;
 										choice_entry.immediately_continue_to_result = true;
 									} else {
-										//const std::vector<InkObject*>& text_contents = choice_entry.text;
-										//bool no_text = text_contents.empty() || (text_contents.size() == 1 && !text_contents[0]->has_any_contents(true));
 										choice_entry.fallback = true;
-										//++token_index;
-										/*if (in_choice_object->has_any_contents(false)) {
-											--token_index;
-										} else {
-											++token_index;
-										}*/
-
 										rewind_index = in_choice_object->has_any_contents(false);
-
 										choice_entry.immediately_continue_to_result = true;
 									}
 
@@ -904,8 +893,23 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 										}
 
 										if (this_token.token == InkToken::NewLine || this_token.token == InkToken::LeftBrace) {
-											if (any_content && !is_condition_entry && items_conditions.size() > 1) {
-												is_condition_entry = implicit_else = true;
+											if (any_content && !is_condition_entry) {
+												switch (items_conditions.size()) {
+													case 1:
+														if (items_conditions.back().first.tokens.empty()) {
+															is_condition_entry = true;
+														} else if (!items_conditions.back().second.objects.empty()) {
+															goto is_else;
+														}
+														
+														break;
+													case 2:
+													is_else:
+														is_condition_entry = implicit_else = true;
+														break;
+													default:
+														throw std::runtime_error("Too many implicit condition entries");
+												}
 											}
 
 											break;
