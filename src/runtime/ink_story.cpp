@@ -266,7 +266,8 @@ std::string InkStory::continue_story() {
 		bool advance_knot_index = true;
 		InkObject* current_object = story_state.current_knot().knot->objects[story_state.index_in_knot()];
 
-		KnotStatus& last_knot = story_state.previous_nonfunction_knot();
+		KnotStatus last_knot = story_state.previous_nonfunction_knot();
+		Stitch* last_stitch = last_knot.current_stitch;
 		bool last_knot_had_newline = last_knot.index > 0 && last_knot.knot->objects[last_knot.index - 1]->get_id() == ObjectId::LineBreak;
 
 		// gather points hit have their visit counts incremented
@@ -393,7 +394,11 @@ std::string InkStory::continue_story() {
 										story_state.current_knots_stack.back() = {target.knot, 0};
 									}
 									
-									story_state.story_tracking.increment_visit_count(target.knot);
+									// diverting to a knot only increments it if we aren't already in it
+									if (last_knot.knot != target.knot) {
+										story_state.story_tracking.increment_visit_count(target.knot);
+									}
+									
 									if (!target.knot->stitches.empty() && target.knot->stitches[0].index == 0) {
 										story_state.story_tracking.increment_visit_count(target.knot, &target.knot->stitches[0]);
 									}
@@ -430,7 +435,15 @@ std::string InkStory::continue_story() {
 										story_state.current_knots_stack.back() = {target.knot, target.stitch->index};
 									}
 									
-									story_state.story_tracking.increment_visit_count(target.knot ? target.knot : story_state.current_nonchoice_knot().knot, target.stitch);
+									// diverting to a knot/stitch only increments it if we aren't already in it
+									if (target.knot && last_knot.knot != target.knot) {
+										story_state.story_tracking.increment_visit_count(target.knot);
+									}
+
+									if (last_stitch != target.stitch) {
+										story_state.story_tracking.increment_visit_count(target.knot, target.stitch);
+									}
+
 									if (story_state.current_nonchoice_knot().knot == story_state.current_knot().knot) {
 										advance_knot_index = false;
 									}
