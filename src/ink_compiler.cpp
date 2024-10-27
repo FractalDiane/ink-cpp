@@ -348,55 +348,67 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 	};
 
 	token_index = 0;
-	while (token_index < token_stream.size()) {
-		const InkLexer::Token& this_token = token_stream[token_index];
-		if (InkObject* this_token_object = compile_token(token_stream, this_token, result_knots)) {
-			Knot& current_knot = result_knots[current_knot_index];
-			bool add_this_object = true;
-			if (!this_token_object->has_any_contents(false)) {
-				add_this_object = false;
-			} else if (this_token_object->get_id() == ObjectId::LineBreak && current_knot.objects.empty()) {
-				add_this_object = false;
-			}
 
-			bool appended_text = false;
-			if (add_this_object) {
-				if (this_token_object->get_id() == ObjectId::Text && last_token_object && last_token_object->get_id() == ObjectId::Text) {
-					auto* last_text = static_cast<InkObjectText*>(current_knot.objects.back());
-					last_text->append_text(static_cast<InkObjectText*>(this_token_object)->get_text_contents());
-					if (this_token_object == last_object) {
-						last_object = last_text;
+	// first pass is used for constants and lists
+	bool second_pass = false;
+
+	for (int i = 0; i < 2; ++i) {
+		while (token_index < token_stream.size()) {
+			const InkLexer::Token& this_token = token_stream[token_index];
+			if (second_pass || this_token.token == InkToken::KeywordConst || this_token.token == InkToken::NewLine) {
+				if (InkObject* this_token_object = compile_token(token_stream, this_token, result_knots, second_pass)) {
+					Knot& current_knot = result_knots[current_knot_index];
+					bool add_this_object = true;
+					if (!this_token_object->has_any_contents(false)) {
+						add_this_object = false;
+					} else if (this_token_object->get_id() == ObjectId::LineBreak && current_knot.objects.empty()) {
+						add_this_object = false;
 					}
 
-					delete this_token_object;
-					this_token_object = nullptr;
-					appended_text = true;
+					bool appended_text = false;
+					if (add_this_object) {
+						if (this_token_object->get_id() == ObjectId::Text && last_token_object && last_token_object->get_id() == ObjectId::Text) {
+							auto* last_text = static_cast<InkObjectText*>(current_knot.objects.back());
+							last_text->append_text(static_cast<InkObjectText*>(this_token_object)->get_text_contents());
+							if (this_token_object == last_object) {
+								last_object = last_text;
+							}
+
+							delete this_token_object;
+							this_token_object = nullptr;
+							appended_text = true;
+						} else {
+							current_knot.objects.push_back(this_token_object);
+							if (!current_knot.has_content && this_token_object->contributes_content_to_knot()) {
+								current_knot.has_content = true;
+							}
+						}
+					} else {
+						delete this_token_object;
+						this_token_object = nullptr;
+					}
+
+					if (!appended_text) {
+						last_token_object = this_token_object;
+					}
 				} else {
-					current_knot.objects.push_back(this_token_object);
-					if (!current_knot.has_content && this_token_object->contributes_content_to_knot()) {
-						current_knot.has_content = true;
-					}
+					last_token_object = nullptr;
 				}
-			} else {
-				delete this_token_object;
-				this_token_object = nullptr;
 			}
-
-			if (!appended_text) {
-				last_token_object = this_token_object;
-			}
-		} else {
-			last_token_object = nullptr;
+			
+			++token_index;
 		}
-		
-		++token_index;
+
+		second_pass = true;
+		token_index = 0;
+		at_line_start = true;
 	}
 
 	InkStoryData* result = new InkStoryData(result_knots, std::move(story_variable_info));
 	return result;
 }
 
-InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots)
+InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots, bool second_pass)
 {
 	bool end_line = false;
 	InkObject* result_object = nullptr;
@@ -404,7 +416,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 	switch (token.token) {
 		case InkToken::NewLine: {
 			// i don't understand ink's newline continuation rules either
-			if (last_object) {
+			if (second_pass && last_object) {
 				switch (last_object->get_id()) {
 					case ObjectId::Logic:
 						for (const ExpressionParserV2::Token& logic_token : static_cast<InkObjectLogic*>(last_object)->contents_shunted_tokens.tokens) {
@@ -666,7 +678,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							}
 						}
 
-						if (InkObject* in_choice_object = compile_token(all_tokens, in_choice_token, story_knots)) {
+						if (InkObject* in_choice_object = compile_token(all_tokens, in_choice_token, story_knots, second_pass)) {
 							InkChoiceEntry& choice_entry = choice_stack.back();
 							if (!in_result && (in_choice_object->get_id() == ObjectId::LineBreak || in_choice_object->get_id() == ObjectId::Divert)) {
 								in_result = true;
@@ -837,7 +849,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				}
 				
 				if (in_choice_line && !past_choice_initial_braces) {
-					items_conditions.back().second.objects.push_back(compile_token(all_tokens, all_tokens[token_index], story_knots));
+					items_conditions.back().second.objects.push_back(compile_token(all_tokens, all_tokens[token_index], story_knots, second_pass));
 				} else {
 					switch (all_tokens[token_index].token) {
 						case InkToken::Colon: {
@@ -993,7 +1005,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						}
 
 						default: {
-							if (InkObject* compiled_object = compile_token(all_tokens, all_tokens[token_index], story_knots)) {
+							if (InkObject* compiled_object = compile_token(all_tokens, all_tokens[token_index], story_knots, second_pass)) {
 								// HACK: get rid of whitespace in switch results if they're text
 								if (is_switch && compiled_object->get_id() == ObjectId::Text) {
 									const Knot& target_array = in_else ? items_else : items_conditions.back().second;
@@ -1332,12 +1344,23 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 					--token_index;
 
-					try {
-						ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info);
-						expression_shunted.uuid = current_uuid++;
-						result_object = new InkObjectGlobalVariable(identifier, token.token == InkToken::KeywordConst, expression_shunted);
-					} catch (...) {
-						throw std::runtime_error("Malformed value of VAR/CONST statement");
+					// const is only evaluated on first pass
+					// var is only evaluated on second pass
+					if (second_pass == (token.token == InkToken::KeywordVar)) {
+						// TODO: disallow calling functions
+						try {
+							ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info);
+							expression_shunted.uuid = current_uuid++;
+							//result_object = new InkObjectGlobalVariable(identifier, token.token == InkToken::KeywordConst, expression_shunted);
+							if (second_pass) {
+								result_object = new InkObjectGlobalVariable(identifier, false, expression_shunted);
+							} else {
+								ExpressionParserV2::Variant expression_result = ExpressionParserV2::execute_expression_tokens(expression_shunted.tokens, story_variable_info).value();
+								story_variable_info.constants.emplace(identifier, expression_result);
+							}
+						} catch (...) {
+							throw std::runtime_error("Malformed value of VAR/CONST statement");
+						}
 					}
 				} else {
 					throw std::runtime_error("Malformed VAR/CONST statement");

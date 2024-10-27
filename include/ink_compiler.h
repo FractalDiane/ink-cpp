@@ -92,7 +92,7 @@ private:
 	void init_compiler();
 
 	InkStoryData* compile(const std::string& script);
-	InkObject* compile_token(std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots);
+	InkObject* compile_token(std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots, bool second_pass);
 
 	static std::vector<InkLexer::Token> remove_comments(const std::vector<InkLexer::Token>& tokens);
 	static InkLexer::Token next_token(const std::vector<InkLexer::Token>& tokens, std::size_t index);
