@@ -125,7 +125,6 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 					++index;
 				}
 				current_text_escaped = true;
-				//++index;
 			} break;
 
 			case '*':
@@ -321,7 +320,7 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 	std::vector<InkLexer::Token> token_stream = lexer.lex_script(script);
 	token_stream = remove_comments(token_stream);
 
-	std::vector<Knot> result_knots;// = {{"_S", {}, {}}};
+	std::vector<Knot> result_knots;
 	Knot start_knot;
 	start_knot.name = "_S";
 	start_knot.uuid = Uuid(current_uuid++);
@@ -349,7 +348,6 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 
 	token_index = 0;
 
-	// first pass is used for constants and lists
 	CompilerPass current_pass = CompilerPass::Includes;
 	cached_global_variables.reserve(16);
 	
@@ -425,6 +423,11 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 
 		switch (current_pass) {
 			case CompilerPass::Includes: {
+				if (!include_sublevel_tokens.empty()) {
+					token_stream.push_back(InkLexer::Token(InkToken::NewLine, std::string()));
+					token_stream.insert(token_stream.end(), include_sublevel_tokens.begin(), include_sublevel_tokens.end());
+				}
+
 				current_pass = CompilerPass::ConstantsLists;
 			} break;
 
@@ -438,7 +441,6 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 						}
 					}
 					
-					//story_state.variable_info.variables[name] = new_list_var;
 					story_variable_info.variables.emplace(list.first, new_list_var);
 				}
 
@@ -1401,8 +1403,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 					--token_index;
 
-					// const is only evaluated on the first pass
-					// var is only evaluated between the first and second pass
+					// const is only evaluated on the second pass
+					// var is only evaluated between the second and third pass
 					if (current_pass == CompilerPass::ConstantsLists) {
 						try {
 							ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info);
@@ -1417,22 +1419,6 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							throw std::runtime_error("Malformed value of VAR/CONST statement");
 						}
 					}
-					/*if (second_pass == (token.token == InkToken::KeywordVar)) {
-						// TODO: disallow calling functions
-						try {
-							ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info);
-							expression_shunted.uuid = current_uuid++;
-							//result_object = new InkObjectGlobalVariable(identifier, token.token == InkToken::KeywordConst, expression_shunted);
-							if (second_pass) {
-								result_object = new InkObjectGlobalVariable(identifier, false, expression_shunted);
-							} else {
-								ExpressionParserV2::Variant expression_result = ExpressionParserV2::execute_expression_tokens(expression_shunted.tokens, story_variable_info).value();
-								story_variable_info.constants.emplace(identifier, expression_result);
-							}
-						} catch (...) {
-							throw std::runtime_error("Malformed value of VAR/CONST statement");
-						}
-					}*/
 				} else {
 					throw std::runtime_error("Malformed VAR/CONST statement");
 				}
@@ -1534,8 +1520,6 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						Uuid new_list_uuid = story_variable_info.add_list_definition(identifier, entries);
 						cached_list_variables.push_back({std::move(identifier), {new_list_uuid, std::move(entries)}});
 					}
-					
-					//result_object = new InkObjectList(identifier, new_list_uuid, entries);
 				} else {
 					throw std::runtime_error("Malformed LIST definition");
 				}
@@ -1557,27 +1541,6 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				++include_statement_length;
 			}
 
-			/*InkCompiler include_compiler;
-			include_compiler.set_current_uuid(current_uuid);
-			InkStory include_story = include_compiler.compile_file(strip_string_edges(path, true, true, true));
-			current_uuid = include_compiler.get_current_uuid();
-			for (const auto& included_knot : include_story.story_data->knots) {
-				bool already_exists = false;
-				for (Knot& existing_knot : story_knots) {
-					if (existing_knot.name == included_knot.second.name) {
-						existing_knot.append_knot(included_knot.second);
-						already_exists = true;
-						break;
-					}
-				}
-
-				if (!already_exists) {
-					story_knots.push_back(included_knot.second);
-				}
-			}
-
-			include_story.story_data->knots.clear();*/
-
 			std::ifstream include_file{strip_string_edges(path, true, true, true)};
 			std::stringstream buffer;
 			buffer << include_file.rdbuf();
@@ -1587,9 +1550,25 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			InkLexer include_lexer;
 			std::vector<InkLexer::Token> include_token_stream = include_lexer.lex_script(include_file_text);
 			include_token_stream = remove_comments(include_token_stream);
+			
+			std::vector<InkLexer::Token> toplevel_tokens;
+			toplevel_tokens.reserve(include_token_stream.size());
 
+			std::size_t index = 0;
+			while (index < include_token_stream.size()) {
+				bool reached_other_knot = include_token_stream[index].token == InkToken::NewLine && index < include_token_stream.size() - 1 && include_token_stream[index + 1].token == InkToken::Equal;
+				toplevel_tokens.push_back(std::move(include_token_stream[index]));
+
+				++index;
+				if (reached_other_knot) {
+					break;
+				}
+			}
+
+			// TODO: replace some of the existing elements and then insert instead of erasing + inserting?
 			all_tokens.erase(all_tokens.begin() + include_statement_index, all_tokens.begin() + include_statement_index + include_statement_length + 2);
-			all_tokens.insert(all_tokens.begin() + include_statement_index, include_token_stream.begin(), include_token_stream.end());
+			all_tokens.insert(all_tokens.begin() + include_statement_index, toplevel_tokens.begin(), toplevel_tokens.end());
+			include_sublevel_tokens.insert(include_sublevel_tokens.end(), include_token_stream.begin() + index, include_token_stream.end());
 
 			token_index = include_statement_index;
 			dont_increment_index = true;

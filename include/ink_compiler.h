@@ -82,6 +82,8 @@ private:
 		Main,
 	};
 
+	std::vector<InkLexer::Token> include_sublevel_tokens;
+
 	ExpressionParserV2::StoryVariableInfo story_variable_info;
 	std::vector<std::pair<std::string, ExpressionParserV2::ShuntedExpression>> cached_global_variables;
 	std::vector<std::pair<std::string, std::pair<Uuid, std::vector<InkListDefinition::Entry>>>> cached_list_variables;
