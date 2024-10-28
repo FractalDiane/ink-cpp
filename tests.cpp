@@ -2062,7 +2062,9 @@ TEST_F(InkProof, Includes) {
 
 TEST_F(InkProof, NestedIncludes) {
 	STORY("ink-proof/25_nested_includes.ink");
-	EXPECT_TEXT("The value of a variable in test file 2 is 5.", "This is the main file", "The value when accessed from knot_in_2 is 5.");
+	EXPECT_TEXT("The value of a variable in test file 2 is 5.");
+	EXPECT_TEXT("This is the main file");
+	EXPECT_TEXT("The value when accessed from knot_in_2 is 5.");
 }
 
 TEST_F(InkProof, FloorCeilingCast) {

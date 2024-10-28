@@ -56,6 +56,7 @@ public:
 class InkCompiler {
 private:
 	std::size_t token_index = 0;
+	bool dont_increment_index = false;
 	InkObject* last_token_object = nullptr;
 	InkObject* last_object = nullptr;
 	std::size_t current_knot_index = 0;
@@ -100,7 +101,7 @@ private:
 	void init_compiler();
 
 	InkStoryData* compile(const std::string& script);
-	InkObject* compile_token(std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots, bool second_pass);
+	InkObject* compile_token(std::vector<InkLexer::Token>& all_tokens, const InkLexer::Token& token, std::vector<Knot>& story_knots, CompilerPass current_pass);
 
 	static std::vector<InkLexer::Token> remove_comments(const std::vector<InkLexer::Token>& tokens);
 	static InkLexer::Token next_token(const std::vector<InkLexer::Token>& tokens, std::size_t index);
