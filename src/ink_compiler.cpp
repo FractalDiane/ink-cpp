@@ -351,11 +351,17 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 
 	// first pass is used for constants and lists
 	bool second_pass = false;
-
+	cached_global_variables.reserve(16);
+	
 	for (int i = 0; i < 2; ++i) {
 		while (token_index < token_stream.size()) {
 			const InkLexer::Token& this_token = token_stream[token_index];
-			if (second_pass || this_token.token == InkToken::KeywordConst || this_token.token == InkToken::NewLine) {
+			if (second_pass
+				|| this_token.token == InkToken::KeywordConst
+				|| this_token.token == InkToken::KeywordVar
+				|| this_token.token == InkToken::KeywordList
+				|| this_token.token == InkToken::KeywordInclude
+				|| this_token.token == InkToken::NewLine) {
 				if (InkObject* this_token_object = compile_token(token_stream, this_token, result_knots, second_pass)) {
 					Knot& current_knot = result_knots[current_knot_index];
 					bool add_this_object = true;
@@ -397,6 +403,28 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 			}
 			
 			++token_index;
+		}
+
+		for (std::pair<std::string, std::pair<Uuid, std::vector<InkListDefinition::Entry>>>& list : cached_list_variables) {
+			InkList new_list_var{story_variable_info.defined_lists};
+			new_list_var.add_origin(list.second.first);
+			for (const InkListDefinition::Entry& entry : list.second.second) {
+				if (entry.is_included_by_default) {
+					new_list_var.add_item(entry.label);
+				}
+			}
+			
+			//story_state.variable_info.variables[name] = new_list_var;
+			story_variable_info.variables.emplace(list.first, new_list_var);
+		}
+
+		for (std::pair<std::string, ExpressionParserV2::ShuntedExpression>& var : cached_global_variables) {
+			try {
+				ExpressionParserV2::Variant expression_result = ExpressionParserV2::execute_expression_tokens(var.second.tokens, story_variable_info).value();
+				story_variable_info.variables.emplace(var.first, expression_result);
+			} catch (...) {
+				throw std::runtime_error("Malformed value of VAR statement");
+			}
 		}
 
 		second_pass = true;
@@ -1344,9 +1372,23 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 					--token_index;
 
-					// const is only evaluated on first pass
-					// var is only evaluated on second pass
-					if (second_pass == (token.token == InkToken::KeywordVar)) {
+					// const is only evaluated on the first pass
+					// var is only evaluated between the first and second pass
+					if (!second_pass) {
+						try {
+							ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info);
+							expression_shunted.uuid = current_uuid++;
+							if (token.token == InkToken::KeywordConst) {
+								ExpressionParserV2::Variant expression_result = ExpressionParserV2::execute_expression_tokens(expression_shunted.tokens, story_variable_info).value();
+								story_variable_info.constants.emplace(identifier, expression_result);
+							} else {
+								cached_global_variables.emplace_back(identifier, expression_shunted);
+							}
+						} catch (...) {
+							throw std::runtime_error("Malformed value of VAR/CONST statement");
+						}
+					}
+					/*if (second_pass == (token.token == InkToken::KeywordVar)) {
 						// TODO: disallow calling functions
 						try {
 							ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info);
@@ -1361,7 +1403,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						} catch (...) {
 							throw std::runtime_error("Malformed value of VAR/CONST statement");
 						}
-					}
+					}*/
 				} else {
 					throw std::runtime_error("Malformed VAR/CONST statement");
 				}
@@ -1459,8 +1501,12 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						(add_entry)();
 					}
 
-					Uuid new_list_uuid = story_variable_info.add_list_definition(identifier, entries);
-					result_object = new InkObjectList(identifier, new_list_uuid, entries);
+					if (!second_pass) {
+						Uuid new_list_uuid = story_variable_info.add_list_definition(identifier, entries);
+						cached_list_variables.push_back({std::move(identifier), {new_list_uuid, std::move(entries)}});
+					}
+					
+					//result_object = new InkObjectList(identifier, new_list_uuid, entries);
 				} else {
 					throw std::runtime_error("Malformed LIST definition");
 				}

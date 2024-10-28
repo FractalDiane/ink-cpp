@@ -75,7 +75,15 @@ private:
 
 	UuidValue current_uuid = 0;
 
+	enum class CompilerPass {
+		Includes,
+		ConstantsLists,
+		Main,
+	};
+
 	ExpressionParserV2::StoryVariableInfo story_variable_info;
+	std::vector<std::pair<std::string, ExpressionParserV2::ShuntedExpression>> cached_global_variables;
+	std::vector<std::pair<std::string, std::pair<Uuid, std::vector<InkListDefinition::Entry>>>> cached_list_variables;
 	
 public:
 	InkStory compile_script(const std::string& script);
