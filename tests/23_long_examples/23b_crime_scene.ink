@@ -1,40 +1,3 @@
-//
-// Set up the game
-//
-
-// TODO: parse lists and consts before anything else
-
-LIST BedKnowledge = neatly_made, crumpled_duvet, hastily_remade, body_on_bed, murdered_in_bed, murdered_while_asleep
-
-LIST KnifeKnowledge = prints_on_knife, joe_seen_prints_on_knife,joe_wants_better_prints, joe_got_better_prints
-
-LIST WindowKnowledge = steam_on_glass, fingerprints_on_glass, fingerprints_on_glass_match_knife
-
-LIST OffOn = off, on
-LIST SeenUnseen = unseen, seen
-
-LIST GlassState = (none), steamed, steam_gone
-LIST BedState = (made_up), covers_shifted, covers_off, bloodstain_visible
-
-LIST Supporters = on_desk, on_floor, on_bed, under_bed, held, with_joe
-
-LIST Inventory = (none), cane, knife
-
-VAR bedroomLightState = (off, on_desk)
-
-VAR knifeState = (under_bed)
-
-
-//
-// Knowledge chains
-//
-
-VAR knowledgeState = ()
-
-//
-// Content
-//
-
 -> murder_scene
 
 // Helper function: popping elements from lists
@@ -48,11 +11,18 @@ VAR knowledgeState = ()
 //  Some are general, some specific to particular items
 //
 
+
+LIST OffOn = off, on
+LIST SeenUnseen = unseen, seen
+
+LIST GlassState = (none), steamed, steam_gone
+LIST BedState = (made_up), covers_shifted, covers_off, bloodstain_visible
+
 //
 // System: inventory
 //
 
-
+LIST Inventory = (none), cane, knife
 
 === function get(x)
     ~ Inventory += x
@@ -62,7 +32,7 @@ VAR knowledgeState = ()
 // Items can be put in and on places
 //
 
-
+LIST Supporters = on_desk, on_floor, on_bed, under_bed, held, with_joe
 
 === function move_to_supporter(ref item_state, new_supporter) ===
     ~ item_state -= LIST_ALL(Supporters)
@@ -73,7 +43,7 @@ VAR knowledgeState = ()
 // Each list is a chain of facts. Each fact supersedes the fact before 
 //
 
-
+VAR knowledgeState = ()
 
 === function reached (x) 
    ~ return knowledgeState ? x 
@@ -98,6 +68,31 @@ VAR knowledgeState = ()
       ~ return false || reach(statesToSet) 
     }	
 
+//
+// Set up the game
+//
+
+VAR bedroomLightState = (off, on_desk)
+
+VAR knifeState = (under_bed)
+
+
+//
+// Knowledge chains
+//
+
+
+LIST BedKnowledge = neatly_made, crumpled_duvet, hastily_remade, body_on_bed, murdered_in_bed, murdered_while_asleep
+
+LIST KnifeKnowledge = prints_on_knife, joe_seen_prints_on_knife,joe_wants_better_prints, joe_got_better_prints
+
+LIST WindowKnowledge = steam_on_glass, fingerprints_on_glass, fingerprints_on_glass_match_knife
+
+
+//
+// Content
+//
+
 === murder_scene ===
     The bedroom. This is where it happened. Now to look for clues.
 - (top)
@@ -112,7 +107,8 @@ VAR knowledgeState = ()
             I lifted back the bedcover. The duvet underneath was crumpled.
             ~ reach (crumpled_duvet)
             ~ BedState = covers_shifted
-    * *     (uncover) {reached(crumpled_duvet)} [Remove the cover]
+    * *     (uncover) {reached(crumpled_duvet)}
+            [Remove the cover]
             Careful not to disturb anything beneath, I removed the cover entirely. The duvet below was rumpled.
             Not the work of the maid, who was conscientious to a point. Clearly this had been thrown on in a hurry.
             ~ reach (hastily_remade)
@@ -135,7 +131,8 @@ VAR knowledgeState = ()
             -> top
     - -     -> bedhub
 
-*   {darkunder && bedroomLightState ? on_floor && bedroomLightState ? on} [ Look under the bed ]
+*   {darkunder && bedroomLightState ? on_floor && bedroomLightState ? on}
+    [ Look under the bed ]
     I peered under the bed. Something glinted back at me.
     - - (reaching)
     * *     [ Reach for it ]
@@ -209,7 +206,8 @@ VAR knowledgeState = ()
     * *     (greasy) [Look at the glass]
             { GlassState ? steamed: -> downy }
             The glass in the window was greasy. No one had cleaned it in a while, inside or out.
-    * *     { GlassState ? steamed && not see_prints_on_glass && downy && greasy } [ Look at the steam ]
+    * *     { GlassState ? steamed && not see_prints_on_glass && downy && greasy }
+            [ Look at the steam ]
             A cold day outside. Natural my breath should steam. -> see_prints_on_glass ->
     + +     {GlassState ? steam_gone} [ Breathe on the glass ]
             I breathed gently on the glass once more. { reached (fingerprints_on_glass): The fingerprints reappeared. }
@@ -251,7 +249,8 @@ VAR knowledgeState = ()
 
 
 = compare_prints (-> backto)
-    *   { between ((fingerprints_on_glass, prints_on_knife),     fingerprints_on_glass_match_knife) } [Compare the prints on the knife and the window ]
+    *   { between ((fingerprints_on_glass, prints_on_knife),     fingerprints_on_glass_match_knife) } 
+[Compare the prints on the knife and the window ]
         Holding the bloodied knife near the window, I breathed to bring out the prints once more, and compared them as best I could.
         Hardly scientific, but they seemed very similar - very similiar indeed.
         ~ reach (fingerprints_on_glass_match_knife)
@@ -267,17 +266,20 @@ VAR knowledgeState = ()
     *   {bedroomLightState !? on} [ Turn on lamp ]
         -> operate_lamp ->
 
-    *   { bedroomLightState !? on_bed  && BedState ? bloodstain_visible } [ Move the light to the bed ]
+    *   { bedroomLightState !? on_bed  && BedState ? bloodstain_visible }
+        [ Move the light to the bed ]
         ~ move_to_supporter(bedroomLightState, on_bed)
 
         I moved the light over to the bloodstain and peered closely at it. It had soaked deeply into the fibres of the cotton sheet.
         There was no doubt about it. This was where the blow had been struck.
         ~ reach (murdered_in_bed)
 
-    *   { bedroomLightState !? on_desk } {TURNS_SINCE(-> floorit) >= 2 } [ Move the light back to the desk ]
+    *   { bedroomLightState !? on_desk } {TURNS_SINCE(-> floorit) >= 2 }
+        [ Move the light back to the desk ]
         ~ move_to_supporter(bedroomLightState, on_desk)
         I moved the light back to the desk, setting it down where it had originally been.
-    *   (floorit) { bedroomLightState !? on_floor && darkunder } [Move the light to the floor ]
+    *   (floorit) { bedroomLightState !? on_floor && darkunder }
+        [Move the light to the floor ]
         ~ move_to_supporter(bedroomLightState, on_floor)
         I picked the light up and set it down on the floor.
     -   -> top

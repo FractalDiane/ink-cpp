@@ -21,8 +21,7 @@ VAR post3 = ()
 
     }
 
-TODO: fix refs not working with a space before them
-=== function move_ring(ref from, ref to) ===
+=== function move_ring( ref from, ref to ) ===
     ~ temp whichRingToMove = LIST_MIN(from)
     ~ from -= whichRingToMove
     ~ to += whichRingToMove
@@ -73,7 +72,8 @@ TODO: fix refs not working with a space before them
     -> DONE
 
 = move_post(from_post_num, to_post_num, ref from_post_list, ref to_post_list)
-    +   { can_move(from_post_list, to_post_list) } [ Move a ring from {name(from_post_num)} to {name(to_post_num)} ]
+    +   { can_move(from_post_list, to_post_list) }
+        [ Move a ring from {name(from_post_num)} to {name(to_post_num)} ]
         { move_ring(from_post_list, to_post_list) }
         { stopping:
         -   The priests far below construct a great harness, and after many years of work, the great stone ring is lifted up into the air, and swung over to the next of the temples.

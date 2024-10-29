@@ -588,11 +588,12 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							std::vector<std::string> split = split_string(all_params, ',', true);
 							std::vector<InkWeaveContent::Parameter> params;
 							for (const std::string& param : split) {
-								// TODO: handle multiple spaces
-								if (param.starts_with("ref ")) {
-									params.push_back({param.substr(4), true});
+								std::string trimmed = strip_string_edges(param, true, true, true);
+								if (trimmed.starts_with("ref ")) {
+									std::string trimmed_without_ref = strip_string_edges(trimmed.substr(4), true, true, true);
+									params.push_back({trimmed_without_ref, true});
 								} else {
-									params.push_back({param, false});
+									params.push_back({trimmed, false});
 								}
 							}
 
@@ -641,11 +642,12 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						std::vector<std::string> split = split_string(all_params, ',', true);
 						std::vector<InkWeaveContent::Parameter> params;
 						for (const std::string& param : split) {
-							// TODO: handle multiple spaces
-							if (param.starts_with("ref ")) {
-								params.push_back({param.substr(4), true});
+							std::string trimmed = strip_string_edges(param, true, true, true);
+							if (trimmed.starts_with("ref ")) {
+								std::string trimmed_without_ref = strip_string_edges(trimmed.substr(4), true, true, true);
+								params.push_back({trimmed_without_ref, true});
 							} else {
-								params.push_back({param, false});
+								params.push_back({trimmed, false});
 							}
 						}
 							
