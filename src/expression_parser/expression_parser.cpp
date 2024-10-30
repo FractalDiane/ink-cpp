@@ -805,6 +805,7 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(
 
 			case TokenType::Function: {
 				this_token.fetch_function_value(story_variable_info);
+				story_variable_info.called_lookahead_unsafe_function |= !this_token.function_lookahead_safe;
 
 				std::vector<Token> func_args;
 				for (std::uint8_t i = 0; i < this_token.function_argument_count; ++i) {

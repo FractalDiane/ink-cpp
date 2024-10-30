@@ -1912,16 +1912,31 @@ TEST_F(MiscellaneousTests, VariableObservation) {
 
 static int function_test_value = 0;
 
+void increase_value(int amount) {
+	function_test_value += amount;
+}
+
 TEST_F(MiscellaneousTests, BindExternalFunctions) {
-	STORY("miscellaneous/bind_external_function.ink"); 
-	std::function lambda = [](int amount) { function_test_value += amount; };
-	story.bind_external_function("increase_value", lambda);
+	STORY("miscellaneous/bind_external_function.ink");
+	story.bind_external_function("increase_value", increase_value);
+	story.bind_external_function<int>("increase_value", [](int amount) { function_test_value += amount; });
 
 	EXPECT_EQ(function_test_value, 0);
 	EXPECT_TEXT("hello");
 	EXPECT_EQ(function_test_value, 5);
 	EXPECT_TEXT("hello 2");
 	EXPECT_EQ(function_test_value, 15);
+}
+
+double dot_product(double x1, double y1, double x2, double y2) {
+	return x1 * x2 + y1 * y2;
+}
+
+TEST_F(MiscellaneousTests, ExternalFunctionReturnValues) {
+	STORY("miscellaneous/external_function_return_values.ink");
+	story.bind_external_function("dot_product", dot_product, true);
+
+	EXPECT_TEXT("The dot product of (6.2, 8.9) and (1.07, 5.2) is 52.914");
 }
 #pragma endregion
 

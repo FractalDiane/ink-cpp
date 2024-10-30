@@ -127,8 +127,9 @@ struct StoryVariableInfo {
 
 	// HACK: find some better way to store these+argument counts
 	std::unordered_map<std::string, std::pair<InkFunction, std::uint8_t>> builtin_functions;
-	std::unordered_map<std::string, InkFunction> external_functions;
+	std::unordered_map<std::string, std::pair<InkFunction, bool>> external_functions;
 	std::unordered_set<std::string> declared_external_functions;
+	bool called_lookahead_unsafe_function = false;
 
 	std::unordered_map<std::string, std::vector<VariableObserverFunc>> observers;
 
@@ -261,6 +262,7 @@ struct Token {
 	InkFunction function;
 	FunctionFetchType function_fetch_type = FunctionFetchType::StoryKnot;
 	std::uint8_t function_argument_count = 0;
+	bool function_lookahead_safe = true;
 
 	std::string variable_name;
 

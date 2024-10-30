@@ -29,12 +29,13 @@ namespace {
 
 	CoercionResult<double> try_coerce_to_float(const std::string& what) {
 		try {
-			#if INK_DOUBLE_PRECISION_FLOATS
+			/*#if INK_DOUBLE_PRECISION_FLOATS
 			double coerced = std::stod(what);
 			#else
 			double coerced = std::stof(what);
-			#endif
+			#endif*/
 
+			double coerced = std::stod(what);
 			return {coerced, true};
 		} catch (...) {
 			return {0.0, false};
@@ -160,7 +161,8 @@ void Token::fetch_function_value(const StoryVariableInfo& story_vars) {
 		if (auto builtin_func = story_vars.builtin_functions.find(value); builtin_func != story_vars.builtin_functions.end()) {
 			function = builtin_func->second.first;
 		} else if (auto external_func = story_vars.external_functions.find(value); external_func != story_vars.external_functions.end()) {
-			function = external_func->second;
+			function = external_func->second.first;
+			function_lookahead_safe = external_func->second.second;
 		}
 	}
 }
@@ -215,11 +217,7 @@ Variant Token::call_function(const std::vector<Variant>& arguments, const StoryV
 			} break;
 
 			case FunctionFetchType::External: {
-				if (auto func = story_variable_info.external_functions.find(value); func != story_variable_info.external_functions.end()) {
-					return (func->second)(arguments);
-				} else {
-					throw std::runtime_error("Tried calling an unknown function");
-				}
+				return (function)(arguments);
 			} break;
 
 			case FunctionFetchType::ListSubscript: {
@@ -1935,7 +1933,6 @@ Variant::operator bool() const {
 	}
 }*/
 
-//#define VCON_TO(type) Variant::operator type() const { return static_cast<type>(static_cast<i64>(*this)); }
 #define VCON_TO(type) Variant::operator type() const {\
 	switch (value.index()) {\
 		case Variant_Bool:\
