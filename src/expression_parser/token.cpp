@@ -27,12 +27,12 @@ namespace {
 		}
 	}
 
-	CoercionResult<ink_float> try_coerce_to_float(const std::string& what) {
+	CoercionResult<double> try_coerce_to_float(const std::string& what) {
 		try {
 			#if INK_DOUBLE_PRECISION_FLOATS
-			ink_float coerced = std::stod(what);
+			double coerced = std::stod(what);
 			#else
-			ink_float coerced = std::stof(what);
+			double coerced = std::stof(what);
 			#endif
 
 			return {coerced, true};
@@ -215,12 +215,11 @@ Variant Token::call_function(const std::vector<Variant>& arguments, const StoryV
 			} break;
 
 			case FunctionFetchType::External: {
-				// TODO: external functions
-				/*if (auto func = story_variable_info.deferred_functions.find(value); func != story_variable_info.deferred_functions.end()) {
+				if (auto func = story_variable_info.external_functions.find(value); func != story_variable_info.external_functions.end()) {
 					return (func->second)(arguments);
 				} else {
 					throw std::runtime_error("Tried calling an unknown function");
-				}*/
+				}
 			} break;
 
 			case FunctionFetchType::ListSubscript: {
@@ -269,8 +268,8 @@ VCON(signed long)
 VCON(unsigned long)
 VCON(signed long long)
 VCON(unsigned long long)
-Variant::Variant(float val) : value(static_cast<ink_float>(val)), _has_value(true) {}
-Variant::Variant(double val) : value(static_cast<ink_float>(val)), _has_value(true) {}
+Variant::Variant(float val) : value(static_cast<double>(val)), _has_value(true) {}
+Variant::Variant(double val) : value(static_cast<double>(val)), _has_value(true) {}
 Variant::Variant(const std::string& val) : value(val), _has_value(true) {}
 Variant::Variant(const InkList& val) : value(val), _has_value(true) {}
 //Variant::Variant(const VariantValue& val) : value(val), has_value(true) {}
@@ -300,7 +299,7 @@ std::string Variant::to_printable_string() const {
 			} break;
 				
 			case Variant_Float: {
-				ink_float float_val = v<ink_float>(value);
+				double float_val = v<double>(value);
 
 				// ink prints to 7 figures of precision but ignores trailing zeroes
 				if (std::rint(float_val) == float_val) {
@@ -359,7 +358,7 @@ Variant Variant::operator+(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<bool>(value)) + static_cast<ink_float>(v<ink_float>(rhs.value));
+					return static_cast<double>(v<bool>(value)) + static_cast<double>(v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -379,7 +378,7 @@ Variant Variant::operator+(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<i64>(value)) + v<ink_float>(rhs.value);
+					return static_cast<double>(v<i64>(value)) + v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -391,15 +390,15 @@ Variant Variant::operator+(const Variant& rhs) const {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					return v<ink_float>(value) + static_cast<ink_float>(v<bool>(rhs.value));
+					return v<double>(value) + static_cast<double>(v<bool>(rhs.value));
 				} break;
 
 				case Variant_Int: {
-					return v<ink_float>(value) + static_cast<ink_float>(v<i64>(rhs.value));
+					return v<double>(value) + static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					return v<ink_float>(value) + v<ink_float>(rhs.value);
+					return v<double>(value) + v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -443,7 +442,7 @@ Variant Variant::operator-(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<bool>(value)) - static_cast<ink_float>(v<ink_float>(rhs.value));
+					return static_cast<double>(v<bool>(value)) - static_cast<double>(v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -463,7 +462,7 @@ Variant Variant::operator-(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<i64>(value)) - v<ink_float>(rhs.value);
+					return static_cast<double>(v<i64>(value)) - v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -475,15 +474,15 @@ Variant Variant::operator-(const Variant& rhs) const {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					return v<ink_float>(value) - static_cast<ink_float>(v<bool>(rhs.value));
+					return v<double>(value) - static_cast<double>(v<bool>(rhs.value));
 				} break;
 
 				case Variant_Int: {
-					return v<ink_float>(value) - static_cast<ink_float>(v<i64>(rhs.value));
+					return v<double>(value) - static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					return v<ink_float>(value) - v<ink_float>(rhs.value);
+					return v<double>(value) - v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -519,7 +518,7 @@ Variant Variant::operator*(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<bool>(value)) * static_cast<ink_float>(v<ink_float>(rhs.value));
+					return static_cast<double>(v<bool>(value)) * static_cast<double>(v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -539,7 +538,7 @@ Variant Variant::operator*(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<i64>(value)) * v<ink_float>(rhs.value);
+					return static_cast<double>(v<i64>(value)) * v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -551,15 +550,15 @@ Variant Variant::operator*(const Variant& rhs) const {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					return v<ink_float>(value) * static_cast<ink_float>(v<bool>(rhs.value));
+					return v<double>(value) * static_cast<double>(v<bool>(rhs.value));
 				} break;
 
 				case Variant_Int: {
-					return v<ink_float>(value) * static_cast<ink_float>(v<i64>(rhs.value));
+					return v<double>(value) * static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					return v<ink_float>(value) * v<ink_float>(rhs.value);
+					return v<double>(value) * v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -587,7 +586,7 @@ Variant Variant::operator/(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<bool>(value)) / static_cast<ink_float>(v<ink_float>(rhs.value));
+					return static_cast<double>(v<bool>(value)) / static_cast<double>(v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -607,7 +606,7 @@ Variant Variant::operator/(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<i64>(value)) / v<ink_float>(rhs.value);
+					return static_cast<double>(v<i64>(value)) / v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -619,15 +618,15 @@ Variant Variant::operator/(const Variant& rhs) const {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					return v<ink_float>(value) / static_cast<ink_float>(v<bool>(rhs.value));
+					return v<double>(value) / static_cast<double>(v<bool>(rhs.value));
 				} break;
 
 				case Variant_Int: {
-					return v<ink_float>(value) / static_cast<ink_float>(v<i64>(rhs.value));
+					return v<double>(value) / static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					return v<ink_float>(value) / v<ink_float>(rhs.value);
+					return v<double>(value) / v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -655,7 +654,7 @@ Variant Variant::operator%(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return std::fmod(static_cast<ink_float>(v<bool>(value)), static_cast<ink_float>(v<ink_float>(rhs.value)));
+					return std::fmod(static_cast<double>(v<bool>(value)), static_cast<double>(v<double>(rhs.value)));
 				} break;
 
 				default: {
@@ -675,7 +674,7 @@ Variant Variant::operator%(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return std::fmod(static_cast<ink_float>(v<i64>(value)), v<ink_float>(rhs.value));
+					return std::fmod(static_cast<double>(v<i64>(value)), v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -687,15 +686,15 @@ Variant Variant::operator%(const Variant& rhs) const {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					return std::fmod(v<ink_float>(value), static_cast<ink_float>(v<bool>(rhs.value)));
+					return std::fmod(v<double>(value), static_cast<double>(v<bool>(rhs.value)));
 				} break;
 
 				case Variant_Int: {
-					return std::fmod(v<ink_float>(value), static_cast<ink_float>(v<i64>(rhs.value)));
+					return std::fmod(v<double>(value), static_cast<double>(v<i64>(rhs.value)));
 				} break;
 
 				case Variant_Float: {
-					return std::fmod(v<ink_float>(value), v<ink_float>(rhs.value));
+					return std::fmod(v<double>(value), v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -725,8 +724,8 @@ void Variant::operator+=(const Variant& rhs) {
 				} break;
 
 				case Variant_Float: {
-					value = static_cast<ink_float>(v<bool>(value));
-					v<ink_float>(value) += v<ink_float>(rhs.value);
+					value = static_cast<double>(v<bool>(value));
+					v<double>(value) += v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -746,8 +745,8 @@ void Variant::operator+=(const Variant& rhs) {
 				} break;
 
 				case Variant_Float: {
-					value = static_cast<ink_float>(v<i64>(value));
-					v<ink_float>(value) += v<ink_float>(rhs.value);
+					value = static_cast<double>(v<i64>(value));
+					v<double>(value) += v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -759,15 +758,15 @@ void Variant::operator+=(const Variant& rhs) {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					v<ink_float>(value) += static_cast<ink_float>(v<bool>(rhs.value));
+					v<double>(value) += static_cast<double>(v<bool>(rhs.value));
 				} break;
 
 				case Variant_Int: {
-					v<ink_float>(value) += static_cast<ink_float>(v<i64>(rhs.value));
+					v<double>(value) += static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					v<ink_float>(value) += v<ink_float>(rhs.value);
+					v<double>(value) += v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -813,8 +812,8 @@ void Variant::operator-=(const Variant& rhs) {
 				} break;
 
 				case Variant_Float: {
-					value = static_cast<ink_float>(v<bool>(value));
-					v<ink_float>(value) -= v<ink_float>(rhs.value);
+					value = static_cast<double>(v<bool>(value));
+					v<double>(value) -= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -834,8 +833,8 @@ void Variant::operator-=(const Variant& rhs) {
 				} break;
 
 				case Variant_Float: {
-					value = static_cast<ink_float>(v<i64>(value));
-					v<ink_float>(value) -= v<ink_float>(rhs.value);
+					value = static_cast<double>(v<i64>(value));
+					v<double>(value) -= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -847,15 +846,15 @@ void Variant::operator-=(const Variant& rhs) {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					v<ink_float>(value) -= static_cast<ink_float>(v<bool>(rhs.value));
+					v<double>(value) -= static_cast<double>(v<bool>(rhs.value));
 				} break;
 
 				case Variant_Int: {
-					v<ink_float>(value) -= static_cast<ink_float>(v<i64>(rhs.value));
+					v<double>(value) -= static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					v<ink_float>(value) -= v<ink_float>(rhs.value);
+					v<double>(value) -= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -893,8 +892,8 @@ void Variant::operator*=(const Variant& rhs) {
 				} break;
 
 				case Variant_Float: {
-					value = static_cast<ink_float>(v<bool>(value));
-					v<ink_float>(value) *= v<ink_float>(rhs.value);
+					value = static_cast<double>(v<bool>(value));
+					v<double>(value) *= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -914,8 +913,8 @@ void Variant::operator*=(const Variant& rhs) {
 				} break;
 
 				case Variant_Float: {
-					value = static_cast<ink_float>(v<i64>(value));
-					v<ink_float>(value) *= v<ink_float>(rhs.value);
+					value = static_cast<double>(v<i64>(value));
+					v<double>(value) *= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -927,15 +926,15 @@ void Variant::operator*=(const Variant& rhs) {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					v<ink_float>(value) *= static_cast<ink_float>(v<bool>(rhs.value));
+					v<double>(value) *= static_cast<double>(v<bool>(rhs.value));
 				} break;
 
 				case Variant_Int: {
-					v<ink_float>(value) *= static_cast<ink_float>(v<i64>(rhs.value));
+					v<double>(value) *= static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					v<ink_float>(value) *= v<ink_float>(rhs.value);
+					v<double>(value) *= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -965,8 +964,8 @@ void Variant::operator/=(const Variant& rhs) {
 				} break;
 
 				case Variant_Float: {
-					value = static_cast<ink_float>(v<bool>(value));
-					v<ink_float>(value) /= v<ink_float>(rhs.value);
+					value = static_cast<double>(v<bool>(value));
+					v<double>(value) /= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -986,8 +985,8 @@ void Variant::operator/=(const Variant& rhs) {
 				} break;
 
 				case Variant_Float: {
-					value = static_cast<ink_float>(v<i64>(value));
-					v<ink_float>(value) /= v<ink_float>(rhs.value);
+					value = static_cast<double>(v<i64>(value));
+					v<double>(value) /= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -999,15 +998,15 @@ void Variant::operator/=(const Variant& rhs) {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					v<ink_float>(value) /= static_cast<ink_float>(v<bool>(rhs.value));
+					v<double>(value) /= static_cast<double>(v<bool>(rhs.value));
 				} break;
 
 				case Variant_Int: {
-					v<ink_float>(value) /= static_cast<ink_float>(v<i64>(rhs.value));
+					v<double>(value) /= static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					v<ink_float>(value) /= v<ink_float>(rhs.value);
+					v<double>(value) /= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1037,8 +1036,8 @@ void Variant::operator%=(const Variant& rhs) {
 				} break;
 
 				case Variant_Float: {
-					value = static_cast<ink_float>(v<bool>(value));
-					value = std::fmod(v<ink_float>(value), v<ink_float>(rhs.value));
+					value = static_cast<double>(v<bool>(value));
+					value = std::fmod(v<double>(value), v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -1058,8 +1057,8 @@ void Variant::operator%=(const Variant& rhs) {
 				} break;
 
 				case Variant_Float: {
-					value = static_cast<ink_float>(v<i64>(value));
-					value = std::fmod(v<ink_float>(value), v<ink_float>(rhs.value));
+					value = static_cast<double>(v<i64>(value));
+					value = std::fmod(v<double>(value), v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -1071,15 +1070,15 @@ void Variant::operator%=(const Variant& rhs) {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					value = std::fmod(v<ink_float>(value), static_cast<ink_float>(v<bool>(rhs.value)));
+					value = std::fmod(v<double>(value), static_cast<double>(v<bool>(rhs.value)));
 				} break;
 
 				case Variant_Int: {
-					value = std::fmod(v<ink_float>(value), static_cast<ink_float>(v<i64>(rhs.value)));
+					value = std::fmod(v<double>(value), static_cast<double>(v<i64>(rhs.value)));
 				} break;
 
 				case Variant_Float: {
-					value = std::fmod(v<ink_float>(value), v<ink_float>(rhs.value));
+					value = std::fmod(v<double>(value), v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -1107,7 +1106,7 @@ Variant Variant::operator==(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return v<bool>(value) == static_cast<bool>(v<ink_float>(rhs.value));
+					return v<bool>(value) == static_cast<bool>(v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -1127,7 +1126,7 @@ Variant Variant::operator==(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<i64>(value)) == v<ink_float>(rhs.value);
+					return static_cast<double>(v<i64>(value)) == v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1139,15 +1138,15 @@ Variant Variant::operator==(const Variant& rhs) const {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					return static_cast<bool>(v<ink_float>(value)) == v<bool>(rhs.value);
+					return static_cast<bool>(v<double>(value)) == v<bool>(rhs.value);
 				} break;
 
 				case Variant_Int: {
-					return v<ink_float>(value) == static_cast<ink_float>(v<i64>(rhs.value));
+					return v<double>(value) == static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					return v<ink_float>(value) == v<ink_float>(rhs.value);
+					return v<double>(value) == v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1174,9 +1173,9 @@ Variant Variant::operator==(const Variant& rhs) const {
 
 				// i hate it too!
 				case Variant_Float: {
-					CoercionResult<ink_float> coerced = try_coerce_to_float(v<std::string>(value));
+					CoercionResult<double> coerced = try_coerce_to_float(v<std::string>(value));
 					if (coerced.success) {
-						return coerced.value == v<ink_float>(rhs.value);
+						return coerced.value == v<double>(rhs.value);
 					} else {
 						return false;
 					}
@@ -1215,7 +1214,7 @@ Variant Variant::operator!=(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return v<bool>(value) != static_cast<bool>(v<ink_float>(rhs.value));
+					return v<bool>(value) != static_cast<bool>(v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -1235,7 +1234,7 @@ Variant Variant::operator!=(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<i64>(value)) != v<ink_float>(rhs.value);
+					return static_cast<double>(v<i64>(value)) != v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1247,15 +1246,15 @@ Variant Variant::operator!=(const Variant& rhs) const {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					return static_cast<bool>(v<ink_float>(value)) != v<bool>(rhs.value);
+					return static_cast<bool>(v<double>(value)) != v<bool>(rhs.value);
 				} break;
 
 				case Variant_Int: {
-					return v<ink_float>(value) != static_cast<ink_float>(v<i64>(rhs.value));
+					return v<double>(value) != static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					return v<ink_float>(value) != v<ink_float>(rhs.value);
+					return v<double>(value) != v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1282,9 +1281,9 @@ Variant Variant::operator!=(const Variant& rhs) const {
 
 				// i hate it too!
 				case Variant_Float: {
-					CoercionResult<ink_float> coerced = try_coerce_to_float(v<std::string>(value));
+					CoercionResult<double> coerced = try_coerce_to_float(v<std::string>(value));
 					if (coerced.success) {
-						return coerced.value != v<ink_float>(rhs.value);
+						return coerced.value != v<double>(rhs.value);
 					} else {
 						return true;
 					}
@@ -1323,7 +1322,7 @@ Variant Variant::operator<(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<bool>(value)) < v<ink_float>(rhs.value);
+					return static_cast<double>(v<bool>(value)) < v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1344,7 +1343,7 @@ Variant Variant::operator<(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<i64>(value)) < v<ink_float>(rhs.value);
+					return static_cast<double>(v<i64>(value)) < v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1356,15 +1355,15 @@ Variant Variant::operator<(const Variant& rhs) const {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					return v<ink_float>(value) < static_cast<ink_float>(v<bool>(rhs.value));
+					return v<double>(value) < static_cast<double>(v<bool>(rhs.value));
 				} break;
 
 				case Variant_Int: {
-					return v<ink_float>(value) < static_cast<ink_float>(v<i64>(rhs.value));
+					return v<double>(value) < static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					return v<ink_float>(value) < v<ink_float>(rhs.value);
+					return v<double>(value) < v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1400,7 +1399,7 @@ Variant Variant::operator>(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<bool>(value)) > v<ink_float>(rhs.value);
+					return static_cast<double>(v<bool>(value)) > v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1421,7 +1420,7 @@ Variant Variant::operator>(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<i64>(value)) > v<ink_float>(rhs.value);
+					return static_cast<double>(v<i64>(value)) > v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1433,15 +1432,15 @@ Variant Variant::operator>(const Variant& rhs) const {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					return v<ink_float>(value) > static_cast<ink_float>(v<bool>(rhs.value));
+					return v<double>(value) > static_cast<double>(v<bool>(rhs.value));
 				} break;
 
 				case Variant_Int: {
-					return v<ink_float>(value) > static_cast<ink_float>(v<i64>(rhs.value));
+					return v<double>(value) > static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					return v<ink_float>(value) > v<ink_float>(rhs.value);
+					return v<double>(value) > v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1477,7 +1476,7 @@ Variant Variant::operator<=(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<bool>(value)) <= v<ink_float>(rhs.value);
+					return static_cast<double>(v<bool>(value)) <= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1498,7 +1497,7 @@ Variant Variant::operator<=(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<i64>(value)) <= v<ink_float>(rhs.value);
+					return static_cast<double>(v<i64>(value)) <= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1510,15 +1509,15 @@ Variant Variant::operator<=(const Variant& rhs) const {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					return v<ink_float>(value) <= static_cast<ink_float>(v<bool>(rhs.value));
+					return v<double>(value) <= static_cast<double>(v<bool>(rhs.value));
 				} break;
 
 				case Variant_Int: {
-					return v<ink_float>(value) <= static_cast<ink_float>(v<i64>(rhs.value));
+					return v<double>(value) <= static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					return v<ink_float>(value) <= v<ink_float>(rhs.value);
+					return v<double>(value) <= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1554,7 +1553,7 @@ Variant Variant::operator>=(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<bool>(value)) >= v<ink_float>(rhs.value);
+					return static_cast<double>(v<bool>(value)) >= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1575,7 +1574,7 @@ Variant Variant::operator>=(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<ink_float>(v<i64>(value)) >= v<ink_float>(rhs.value);
+					return static_cast<double>(v<i64>(value)) >= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1587,15 +1586,15 @@ Variant Variant::operator>=(const Variant& rhs) const {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					return v<ink_float>(value) >= static_cast<ink_float>(v<bool>(rhs.value));
+					return v<double>(value) >= static_cast<double>(v<bool>(rhs.value));
 				} break;
 
 				case Variant_Int: {
-					return v<ink_float>(value) >= static_cast<ink_float>(v<i64>(rhs.value));
+					return v<double>(value) >= static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					return v<ink_float>(value) >= v<ink_float>(rhs.value);
+					return v<double>(value) >= v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1631,7 +1630,7 @@ Variant Variant::operator&&(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return v<bool>(value) && static_cast<bool>(v<ink_float>(rhs.value));
+					return v<bool>(value) && static_cast<bool>(v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -1651,7 +1650,7 @@ Variant Variant::operator&&(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<bool>(static_cast<ink_float>(v<i64>(value)) && v<ink_float>(rhs.value));
+					return static_cast<bool>(static_cast<double>(v<i64>(value)) && v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -1663,15 +1662,15 @@ Variant Variant::operator&&(const Variant& rhs) const {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					return static_cast<bool>(v<ink_float>(value)) && v<bool>(rhs.value);
+					return static_cast<bool>(v<double>(value)) && v<bool>(rhs.value);
 				} break;
 
 				case Variant_Int: {
-					return v<ink_float>(value) && static_cast<ink_float>(v<i64>(rhs.value));
+					return v<double>(value) && static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					return v<ink_float>(value) && v<ink_float>(rhs.value);
+					return v<double>(value) && v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1699,7 +1698,7 @@ Variant Variant::operator||(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return v<bool>(value) || static_cast<bool>(v<ink_float>(rhs.value));
+					return v<bool>(value) || static_cast<bool>(v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -1719,7 +1718,7 @@ Variant Variant::operator||(const Variant& rhs) const {
 				} break;
 
 				case Variant_Float: {
-					return static_cast<bool>(static_cast<ink_float>(v<i64>(value)) || v<ink_float>(rhs.value));
+					return static_cast<bool>(static_cast<double>(v<i64>(value)) || v<double>(rhs.value));
 				} break;
 
 				default: {
@@ -1731,15 +1730,15 @@ Variant Variant::operator||(const Variant& rhs) const {
 		case Variant_Float: {
 			switch (rhs.value.index()) {
 				case Variant_Bool: {
-					return static_cast<bool>(v<ink_float>(value)) || v<bool>(rhs.value);
+					return static_cast<bool>(v<double>(value)) || v<bool>(rhs.value);
 				} break;
 
 				case Variant_Int: {
-					return v<ink_float>(value) || static_cast<ink_float>(v<i64>(rhs.value));
+					return v<double>(value) || static_cast<double>(v<i64>(rhs.value));
 				} break;
 
 				case Variant_Float: {
-					return v<ink_float>(value) || v<ink_float>(rhs.value);
+					return v<double>(value) || v<double>(rhs.value);
 				} break;
 
 				default: {
@@ -1761,7 +1760,7 @@ Variant Variant::operator-() const {
 		} break;
 
 		case Variant_Float: {
-			return -v<ink_float>(value);
+			return -v<double>(value);
 		} break;
 
 		default: {
@@ -1781,7 +1780,7 @@ Variant Variant::operator!() const {
 		} break;
 
 		case Variant_Float: {
-			return !v<ink_float>(value);
+			return !v<double>(value);
 		} break;
 
 		case Variant_List: {
@@ -1802,7 +1801,7 @@ Variant Variant::operator!() const {
 		} break;
 
 		case Variant_Float: {
-			++v<ink_float>(value);
+			++v<double>(value);
 			return *this;
 		} break;
 
@@ -1820,7 +1819,7 @@ Variant& Variant::operator--() {
 		} break;
 
 		case Variant_Float: {
-			--v<ink_float>(value);
+			--v<double>(value);
 			return *this;
 		} break;
 
@@ -1839,8 +1838,8 @@ void Variant::operator++(int) {
 		} break;
 
 		case Variant_Float: {
-			//Variant result = v<ink_float>(value);
-			++v<ink_float>(value);
+			//Variant result = v<double>(value);
+			++v<double>(value);
 			//return result;
 		} break;
 
@@ -1863,8 +1862,8 @@ void Variant::operator--(int) {
 		} break;
 
 		case Variant_Float: {
-			//Variant result = v<ink_float>(value);
-			--v<ink_float>(value);
+			//Variant result = v<double>(value);
+			--v<double>(value);
 			//return result;
 		} break;
 
@@ -1913,7 +1912,7 @@ Variant::operator bool() const {
 		case Variant_Int:
 			return static_cast<bool>(v<i64>(value));
 		case Variant_Float:
-			return static_cast<bool>(v<ink_float>(value));
+			return static_cast<bool>(v<double>(value));
 		case Variant_String:
 			return !v<std::string>(value).empty();
 		case Variant_List:
@@ -1923,27 +1922,65 @@ Variant::operator bool() const {
 	}
 }
 
-Variant::operator i64() const {
+/*Variant::operator i64() const {
 	switch (value.index()) {
 		case Variant_Bool:
 			return static_cast<i64>(v<bool>(value));
 		case Variant_Int:
 			return v<i64>(value);
 		case Variant_Float:
-			return static_cast<i64>(v<ink_float>(value));
+			return static_cast<i64>(v<double>(value));
 		default:
 			return 0;
 	}
+}*/
+
+//#define VCON_TO(type) Variant::operator type() const { return static_cast<type>(static_cast<i64>(*this)); }
+#define VCON_TO(type) Variant::operator type() const {\
+	switch (value.index()) {\
+		case Variant_Bool:\
+			return static_cast<type>(v<bool>(value));\
+		case Variant_Int:\
+			return static_cast<type>(v<i64>(value));\
+		case Variant_Float:\
+			return static_cast<type>(v<double>(value));\
+		default:\
+			return 0;\
+	}\
 }
 
-Variant::operator ink_float() const {
+VCON_TO(signed short);
+VCON_TO(unsigned short);
+VCON_TO(signed int);
+VCON_TO(unsigned int);
+VCON_TO(signed long);
+VCON_TO(unsigned long);
+VCON_TO(signed long long);
+VCON_TO(unsigned long long);
+
+#undef VCON_TO
+
+Variant::operator float() const {
 	switch (value.index()) {
 		case Variant_Bool:
-			return static_cast<ink_float>(v<bool>(value));
+			return static_cast<float>(v<bool>(value));
 		case Variant_Int:
-			return static_cast<ink_float>(v<i64>(value));
+			return static_cast<float>(v<i64>(value));
 		case Variant_Float:
-			return v<ink_float>(value);
+			return static_cast<float>(v<double>(value));
+		default:
+			return 0.0f;
+	}
+}
+
+Variant::operator double() const {
+	switch (value.index()) {
+		case Variant_Bool:
+			return static_cast<double>(v<bool>(value));
+		case Variant_Int:
+			return static_cast<double>(v<i64>(value));
+		case Variant_Float:
+			return v<double>(value);
 		default:
 			return 0.0;
 	}
@@ -1982,7 +2019,7 @@ ByteVec Serializer<Variant>::operator()(const Variant& variant) {
 			} break;
 
 			case Variant_Float: {
-				Serializer<ink_float> s;
+				Serializer<double> s;
 				ByteVec result2 = s(variant);
 				result.insert(result.end(), result2.begin(), result2.end());
 			} break;
@@ -2017,7 +2054,7 @@ Variant Deserializer<Variant>::operator()(const ByteVec& bytes, std::size_t& ind
 		} break;
 
 		case Variant_Float: {
-			Deserializer<ink_float> ds;
+			Deserializer<double> ds;
 			return Variant(ds(bytes, index));
 		} break;
 
@@ -2050,7 +2087,7 @@ ByteVec Serializer<Token>::operator()(const Token& token) {
 		} break;
 
 		case TokenType::LiteralNumberFloat: {
-			Serializer<ink_float> s;
+			Serializer<double> s;
 			result2 = s(token.value);
 		} break;
 
@@ -2092,7 +2129,7 @@ ByteVec Serializer<Token>::operator()(const Token& token) {
 Token Deserializer<Token>::operator()(const ByteVec& bytes, std::size_t& index) {
 	Deserializer<std::uint8_t> ds8;
 	Deserializer<std::int64_t> dsi64;
-	Deserializer<ink_float> dsdb;
+	Deserializer<double> dsdb;
 	Deserializer<std::string> dsstring;
 
 	TokenType type = static_cast<TokenType>(ds8(bytes, index));
@@ -2117,7 +2154,7 @@ Token Deserializer<Token>::operator()(const ByteVec& bytes, std::size_t& index) 
 		} break;
 
 		case TokenType::LiteralNumberFloat: {
-			ink_float value = dsdb(bytes, index);
+			double value = dsdb(bytes, index);
 			return Token::literal_float(value);
 		} break;
 

@@ -13,11 +13,11 @@
 #include <unordered_set>
 #include <functional>
 
-#if INK_DOUBLE_PRECISION_FLOATS
+/*#if INK_DOUBLE_PRECISION_FLOATS
 using ink_float = double;
 #else
 using ink_float = float;
-#endif
+#endif*/
 
 namespace ExpressionParserV2 {
 
@@ -30,7 +30,7 @@ enum {
 };
 
 #define i64 std::int64_t
-using VariantValue = std::variant<bool, i64, ink_float, std::string, InkList>;
+using VariantValue = std::variant<bool, i64, double, std::string, InkList>;
 
 class Variant {
 private:
@@ -99,10 +99,21 @@ public:
 	Variant operator_intersect(const Variant& rhs) const;
 
 	operator bool() const;
-	operator i64() const;
-	operator ink_float() const;
+	//operator i64() const;
+	//operator ink_float() const;
+	operator float() const;
+	operator double() const;
 	operator std::string() const;
 	operator InkList() const;
+
+	operator signed short() const;
+	operator unsigned short() const;
+	operator signed int() const;
+	operator unsigned int() const;
+	operator signed long() const;
+	operator unsigned long() const;
+	operator signed long long() const;
+	operator unsigned long long() const;
 };
 
 using InkFunction = std::function<Variant(const std::vector<Variant>&)>;
@@ -117,6 +128,7 @@ struct StoryVariableInfo {
 	// HACK: find some better way to store these+argument counts
 	std::unordered_map<std::string, std::pair<InkFunction, std::uint8_t>> builtin_functions;
 	std::unordered_map<std::string, InkFunction> external_functions;
+	std::unordered_set<std::string> declared_external_functions;
 
 	std::unordered_map<std::string, std::vector<VariableObserverFunc>> observers;
 
@@ -307,7 +319,7 @@ struct Token {
 		return {.type = TokenType::LiteralNumberInt, .value = val};
 	}
 
-	static Token literal_float(ink_float val) {
+	static Token literal_float(double val) {
 		return {.type = TokenType::LiteralNumberFloat, .value = val};
 	}
 

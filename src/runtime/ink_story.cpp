@@ -747,3 +747,14 @@ void InkStory::unobserve_variable(ExpressionParserV2::VariableObserverFunc obser
 void InkStory::unobserve_variable(const std::string& variable_name, ExpressionParserV2::VariableObserverFunc observer) {
 	story_state.variable_info.unobserve_variable(variable_name, observer);
 }
+
+void InkStory::bind_external_function_generic(const std::string& function_name, ExpressionParserV2::InkFunction function, bool lookahead_safe) {
+	story_state.variable_info.external_functions[function_name] = function;
+}
+
+void InkStory::bind_external_function(const std::string& function_name, std::function<void()> function, bool lookahead_safe) {
+	bind_external_function_generic(function_name, [function](const std::vector<ExpressionParserV2::Variant>& args) {
+		function();
+		return ExpressionParserV2::Variant();
+	}, lookahead_safe);
+}

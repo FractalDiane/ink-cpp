@@ -166,10 +166,10 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	EXPECT_EQ(static_cast<std::int64_t>(t2), 361);
 
 	Variant t3 = execute_expression("5.0 * 4.2", blank_variable_info).value();
-	EXPECT_EQ(static_cast<ink_float>(t3), 21.0);
+	EXPECT_EQ(static_cast<double>(t3), 21.0);
 
 	Variant t4 = execute_expression("5.0 - 4.2 - 3.7 / 2.5", blank_variable_info).value();
-	EXPECT_TRUE(std::abs(static_cast<ink_float>(t4) - -0.68) < 0.0001);
+	EXPECT_TRUE(std::abs(static_cast<double>(t4) - -0.68) < 0.0001);
 
 	Variant t5 = execute_expression("5 == 2", blank_variable_info).value();
 	EXPECT_EQ(static_cast<bool>(t5), false);
@@ -199,13 +199,13 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	EXPECT_EQ(static_cast<std::int64_t>(t13), 35);
 
 	Variant t14 = execute_expression("POW(3, 2)", blank_variable_info).value();
-	EXPECT_EQ(static_cast<ink_float>(t14), 9);
+	EXPECT_EQ(static_cast<double>(t14), 9);
 
 	Variant t15 = execute_expression("-> my_knot", blank_variable_info).value();
 	EXPECT_EQ(static_cast<std::string>(t15), "my_knot");
 
 	Variant t16 = execute_expression("POW(FLOOR(3.5), FLOOR(2.9)", blank_variable_info).value();
-	EXPECT_EQ(static_cast<ink_float>(t16), 9);
+	EXPECT_EQ(static_cast<double>(t16), 9);
 
 	Variant t17 = execute_expression("(5 * 5) - (3 * 3) + 3", blank_variable_info).value();
 	EXPECT_EQ(static_cast<std::int64_t>(t17), 19);
@@ -218,7 +218,7 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	ExpressionParser::StoryVariableInfo vars2;
 	vars2.variables = {{"test", 6}};
 	Variant t19 = execute_expression("POW(test, 2)", vars2).value();
-	EXPECT_EQ(static_cast<ink_float>(t19), 36);
+	EXPECT_EQ(static_cast<double>(t19), 36);
 
 	ExpressionParser::StoryVariableInfo vars3;
 	vars3.variables = {{"x", 5}};
@@ -1908,6 +1908,20 @@ TEST_F(MiscellaneousTests, VariableObservation) {
 	story.continue_story();
 	story.continue_story();
 	EXPECT_EQ(static_cast<std::int64_t>(observer_test), 1);
+}
+
+static int function_test_value = 0;
+
+TEST_F(MiscellaneousTests, BindExternalFunctions) {
+	STORY("miscellaneous/bind_external_function.ink"); 
+	std::function lambda = [](int amount) { function_test_value += amount; };
+	story.bind_external_function("increase_value", lambda);
+
+	EXPECT_EQ(function_test_value, 0);
+	EXPECT_TEXT("hello");
+	EXPECT_EQ(function_test_value, 5);
+	EXPECT_TEXT("hello 2");
+	EXPECT_EQ(function_test_value, 15);
 }
 #pragma endregion
 

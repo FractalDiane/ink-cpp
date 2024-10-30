@@ -366,7 +366,7 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 					if (this_token.token == InkToken::KeywordConst
 					|| this_token.token == InkToken::KeywordVar
 					|| this_token.token == InkToken::KeywordList
-					|| this_token.token == InkToken::KeywordInclude
+					|| this_token.token == InkToken::KeywordExternal
 					|| this_token.token == InkToken::NewLine) {
 						compile_token(token_stream, this_token, result_knots, current_pass);
 					}
@@ -1575,6 +1575,60 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			token_index = include_statement_index;
 			dont_increment_index = true;
 			end_line = true;
+		} break;
+
+		case InkToken::KeywordExternal: {
+			if (at_line_start) {
+				if (next_token_is(all_tokens, token_index, InkToken::Text)) {
+					if (next_token_is(all_tokens, token_index + 1, InkToken::LeftParen)) {
+							std::string function_name = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
+							++token_index;
+
+							// TODO: dry it
+							std::string all_params;
+							all_params.reserve(50);
+							bool found_arrow = false;
+							while (all_tokens[token_index].token != InkToken::RightParen) {
+								if (all_tokens[token_index].token != InkToken::Arrow) {
+									if (found_arrow) {
+										all_params += strip_string_edges(all_tokens[token_index].text_contents, true, false, true);
+										found_arrow = false;
+									} else {
+										all_params += all_tokens[token_index].text_contents;
+									}
+								} else {
+									found_arrow = true;
+								}
+								
+								++token_index;
+							}
+							
+							if (current_pass == CompilerPass::ConstantsLists) {
+								story_variable_info.declared_external_functions.insert(function_name);
+							}
+
+							//--token_index;
+
+							/*std::vector<std::string> split = split_string(all_params, ',', true);
+							std::vector<InkWeaveContent::Parameter> params;
+							for (const std::string& param : split) {
+								std::string trimmed = strip_string_edges(param, true, true, true);
+								if (trimmed.starts_with("ref ")) {
+									std::string trimmed_without_ref = strip_string_edges(trimmed.substr(4), true, true, true);
+									params.push_back({trimmed_without_ref, true});
+								} else {
+									params.push_back({trimmed, false});
+								}
+							}*/
+						} else {
+							throw std::runtime_error("Malformed EXTERNAL declaration");
+						}
+				} else {
+					throw std::runtime_error("Malformed EXTERNAL declaration");
+				}
+			} else {
+				result_object = new InkObjectText("EXTERNAL");
+			}
 		} break;
 
 		case InkToken::Text: {
