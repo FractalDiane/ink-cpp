@@ -237,11 +237,11 @@ void InkStory::update_visit_count_variables(std::vector<ExpressionParserV2::Shun
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool InkStory::can_continue() {
+bool InkStory::can_continue() const {
 	return !story_state.should_end_story
 	&& (!story_state.at_choice || story_state.selected_choice.has_value())
 	&& !story_state.current_knots_stack.empty()
-	&& (!story_state.current_knot().next_stitch || story_state.current_knot().index != story_state.current_knot().next_stitch->index)
+	&& (!story_state.current_knot_c().next_stitch || story_state.current_knot_c().index != story_state.current_knot_c().next_stitch->index)
 	&& !story_state.current_knots_stack.empty()
 	&& story_state.index_in_knot() < story_state.current_knot_size();
 }

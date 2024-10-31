@@ -63,7 +63,7 @@ public:
 	const InkStoryState& get_story_state() const { return story_state; }
 	void print_info() const;
 
-	bool can_continue();
+	bool can_continue() const;
 	std::string continue_story();
 	std::string continue_story_maximally();
 
