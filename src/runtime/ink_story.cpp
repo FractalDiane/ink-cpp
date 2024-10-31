@@ -670,10 +670,6 @@ std::vector<std::string> InkStory::get_current_choices() const {
 	return result;
 }
 
-const std::vector<std::string>& InkStory::get_current_tags() const {
-	return story_state.current_tags;
-}
-
 void InkStory::choose_choice_index(std::size_t index) {
 	if (!story_state.choice_divert_index.has_value() && index < story_state.current_choices.size()) {
 		story_state.selected_choice = index;

@@ -68,7 +68,8 @@ public:
 	std::string continue_story_maximally();
 
 	std::vector<std::string> get_current_choices() const;
-	const std::vector<std::string>& get_current_tags() const;
+	const std::vector<std::string>& get_current_tags() const { return story_state.current_tags; }
+	std::vector<std::string> get_current_tags_v() const { return story_state.current_tags; }
 
 	void choose_choice_index(std::size_t index);
 
