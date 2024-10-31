@@ -188,7 +188,7 @@ void InkStory::bind_ink_functions() {
 }
 
 void InkStory::try_remove_upper_knots(const GetContentResult& target) {
-	for (int i = story_state.current_knots_stack.size() - 1; i >= 0; --i) {
+	for (std::size_t i = story_state.current_knots_stack.size() - 1; i-- > 0;) {
 		const Knot* this_knot = story_state.current_knots_stack[i].knot;
 		if (this_knot == target.knot) {
 			while (story_state.current_knots_stack.back().knot != this_knot) {
