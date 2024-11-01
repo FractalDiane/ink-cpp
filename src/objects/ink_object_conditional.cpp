@@ -5,10 +5,13 @@
 ByteVec Serializer<InkObjectConditional::Entry>::operator()(const InkObjectConditional::Entry& entry) {
 	VectorSerializer<ExpressionParserV2::Token> stokens;
 	Serializer<Knot> sknot;
+	Serializer<Uuid> suuid;
 
-	ByteVec result = stokens(entry.first.tokens);
-	ByteVec result2 = sknot(entry.second);
+	ByteVec result = suuid(entry.first.uuid);
+	ByteVec result2 = stokens(entry.first.tokens);
+	ByteVec result3 = sknot(entry.second);
 	result.insert(result.end(), result2.begin(), result2.end());
+	result.insert(result.end(), result3.begin(), result3.end());
 
 	return result;
 }
@@ -16,9 +19,12 @@ ByteVec Serializer<InkObjectConditional::Entry>::operator()(const InkObjectCondi
 InkObjectConditional::Entry Deserializer<InkObjectConditional::Entry>::operator()(const ByteVec& bytes, std::size_t& index) {
 	VectorDeserializer<ExpressionParserV2::Token> dstokens;
 	Deserializer<Knot> dsknot;
+	Deserializer<Uuid> dsuuid;
 	
 	InkObjectConditional::Entry result;
+	Uuid uuid = dsuuid(bytes, index);
 	result.first = ExpressionParserV2::ShuntedExpression(dstokens(bytes, index));
+	result.first.uuid = uuid;
 	result.second = dsknot(bytes, index);
 
 	return result;
@@ -125,13 +131,15 @@ void InkObjectConditional::execute(InkStoryState& story_state, InkStoryEvalResul
 		}
 
 		for (auto& entry : branches) {
-			ExpressionParserV2::ExecuteResult condition_result = prepare_next_function_call(entry.first, story_state, eval_result, story_state.variable_info);
-			if (!condition_result.has_value() && condition_result.error().reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
-				return;
-			}
+			if (!conditions_fully_prepared.contains(entry.first.uuid)) {
+				ExpressionParserV2::ExecuteResult condition_result = prepare_next_function_call(entry.first, story_state, eval_result, story_state.variable_info);
+				if (!condition_result.has_value() && condition_result.error().reason == ExpressionParserV2::NulloptResult::Reason::FoundKnotFunction) {
+					return;
+				}
 
-			if (condition_result.has_value()) {
-				if (*condition_result == result) {
+				conditions_fully_prepared.insert(entry.first.uuid);
+
+				if (condition_result.has_value() && *condition_result == result) {
 					entry.second.function_prep_type = story_state.current_knot().knot->function_prep_type;
 					story_state.current_knots_stack.push_back({&(entry.second), 0});
 					return;
