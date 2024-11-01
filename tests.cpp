@@ -14,10 +14,9 @@ protected:\
 	InkCompiler compiler;\
 }
 
-#define STORY(path) InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path)
-//#define STORY(path) compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" path, std::string(INKCPP_WORKING_DIR "/tests/" path) + "b");
-//	InkStory story{std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"};
-
+//#define STORY(path) InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path)
+#define STORY(path) compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" path, std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"); InkStory story{std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"};
+	
 #define EXPECT_TEXT(...) {\
 		std::vector<std::string> seq = {__VA_ARGS__};\
 		for (const std::string& expected_text : seq) {\

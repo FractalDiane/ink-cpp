@@ -2201,5 +2201,69 @@ Token Deserializer<Token>::operator()(const ByteVec& bytes, std::size_t& index) 
 	}	
 }
 
+ByteVec Serializer<StoryVariableInfo>::operator()(const StoryVariableInfo& variable_info) {
+	Serializer<std::uint16_t> ssize;
+	Serializer<std::string> sstring;
+	Serializer<Variant> svariant;
+
+	ByteVec result = ssize(static_cast<std::uint16_t>(variable_info.variables.size()));
+	for (const auto& var : variable_info.variables) {
+		ByteVec name = sstring(var.first);
+		ByteVec value = svariant(var.second);
+
+		result.insert(result.end(), name.begin(), name.end());
+		result.insert(result.end(), value.begin(), value.end());
+	}
+
+	ByteVec constants_size = ssize(static_cast<std::uint16_t>(variable_info.constants.size()));
+	result.insert(result.end(), constants_size.begin(), constants_size.end());
+	for (const auto& constant : variable_info.constants) {
+		ByteVec name = sstring(constant.first);
+		ByteVec value = svariant(constant.second);
+
+		result.insert(result.end(), name.begin(), name.end());
+		result.insert(result.end(), value.begin(), value.end());
+	}
+
+	ByteVec external_functions_size = ssize(static_cast<std::uint16_t>(variable_info.declared_external_functions.size()));
+	result.insert(result.end(), external_functions_size.begin(), external_functions_size.end());
+	for (const std::string& func : variable_info.declared_external_functions) {
+		ByteVec name = sstring(func);
+		result.insert(result.end(), name.begin(), name.end());
+	}
+
+	return result;
+}
+
+StoryVariableInfo Deserializer<StoryVariableInfo>::operator()(const ByteVec& bytes, std::size_t& index) {
+	Deserializer<std::uint16_t> dssize;
+	Deserializer<std::string> dsstring;
+	Deserializer<Variant> dsvariant;
+
+	StoryVariableInfo result;
+
+	std::size_t vars_size = static_cast<std::size_t>(dssize(bytes, index));
+	for (std::size_t i = 0; i < vars_size; ++i) {
+		std::string name = dsstring(bytes, index);
+		Variant value = dsvariant(bytes, index);
+		result.variables[name] = value;
+	}
+
+	std::size_t consts_size = static_cast<std::size_t>(dssize(bytes, index));
+	for (std::size_t i = 0; i < consts_size; ++i) {
+		std::string name = dsstring(bytes, index);
+		Variant value = dsvariant(bytes, index);
+		result.constants[name] = value;
+	}
+
+	std::size_t funcs_size = static_cast<std::size_t>(dssize(bytes, index));
+	for (std::size_t i = 0; i < funcs_size; ++i) {
+		std::string name = dsstring(bytes, index);
+		result.declared_external_functions.insert(name);
+	}
+
+	return result;
+}
+
 #undef i64
 #undef v

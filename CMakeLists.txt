@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.24)
 project(ink_cpp)
 set(CMAKE_CXX_STANDARD 23)
 
+add_compile_definitions(INKB_VERSION=1)
+
 set(SRC_UTIL
 	src/ink_utils.cpp
 	src/serialization.cpp

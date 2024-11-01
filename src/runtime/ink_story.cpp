@@ -43,11 +43,13 @@ InkStory::InkStory(const std::string& inkb_file) {
 		throw std::runtime_error(std::format("The version of this .inkb file ({}) does not match the version of your ink-cpp runtime ({}); please recompile your ink file", version, INKB_VERSION));
 	}
 
+	Deserializer<ExpressionParserV2::StoryVariableInfo> dsvars;
+	ExpressionParserV2::StoryVariableInfo variable_info = dsvars(bytes, index);
+
 	VectorDeserializer<Knot> dsknots;
 	std::vector<Knot> knots = dsknots(bytes, index);
 
-	// TODO: read variable info from file
-	story_data = new InkStoryData(knots, {});
+	story_data = new InkStoryData(knots, std::move(variable_info));
 	VectorDeserializer<std::string> dsorder;
 	story_data->knot_order = dsorder(bytes, index);
 	

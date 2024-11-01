@@ -32,8 +32,12 @@ std::vector<std::uint8_t> InkStoryData::get_serialized_bytes() const {
 	ByteVec result = {'I', 'N', 'K', 'B', INKB_VERSION};
 	result.reserve(2048);
 
+	Serializer<ExpressionParserV2::StoryVariableInfo> svars;
+	ByteVec var_info_bytes = svars(variable_info);
+	result.insert(result.end(), var_info_bytes.begin(), var_info_bytes.end());
+
 	Serializer<std::uint16_t> ssize;
-	std::vector<std::uint8_t> size_bytes = ssize(static_cast<std::uint16_t>(knots.size()));
+	ByteVec size_bytes = ssize(static_cast<std::uint16_t>(knots.size()));
 	result.insert(result.end(), size_bytes.begin(), size_bytes.end());
 
 	for (const auto& entry : knots) {

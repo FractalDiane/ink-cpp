@@ -15,8 +15,6 @@ private:
 public:
 	InkObjectDivert() : target_knot{}, arguments{}, type{DivertType::ToKnot} {}
 	InkObjectDivert(const ExpressionParserV2::ShuntedExpression& target, const std::vector<ExpressionParserV2::ShuntedExpression>& arguments, DivertType type) : target_knot{target}, arguments{arguments}, type{type} {}
-	
-	virtual ~InkObjectDivert() override;
 
 	virtual ObjectId get_id() const override { return ObjectId::Divert; }
 	virtual ByteVec to_bytes() const override;

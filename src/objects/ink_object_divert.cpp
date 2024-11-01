@@ -2,14 +2,6 @@
 
 #include <format>
 
-InkObjectDivert::~InkObjectDivert() {
-	/*target_knot.dealloc_tokens();
-
-	for (ExpressionParser::ShuntedExpression& argument : arguments) {
-		argument.dealloc_tokens();
-	}*/
-}
-
 std::vector<std::uint8_t> InkObjectDivert::to_bytes() const {
 	VectorSerializer<ExpressionParserV2::Token> starget;
 	Serializer<std::uint8_t> s8;
@@ -17,10 +9,11 @@ std::vector<std::uint8_t> InkObjectDivert::to_bytes() const {
 	
 	ByteVec result = starget(target_knot.tokens);
 	ByteVec result2 = s8(static_cast<std::uint8_t>(type));
-
 	ByteVec result3 = s16(static_cast<std::uint16_t>(arguments.size()));
+
 	result.insert(result.end(), result2.begin(), result2.end());
 	result.insert(result.end(), result3.begin(), result3.end());
+	
 	for (const auto& arg : arguments) {
 		ByteVec result_arg = starget(arg.tokens);
 		result.insert(result.end(), result_arg.begin(), result_arg.end());

@@ -27,14 +27,14 @@ ByteVec InkObjectSequence::to_bytes() const {
 InkObject* InkObjectSequence::populate_from_bytes(const ByteVec& bytes, std::size_t& index) {
 	Deserializer<std::uint8_t> ds8;
 	Deserializer<std::uint16_t> ds16;
-	VectorDeserializer<InkObject*> dsobjects;
+	Deserializer<Knot> dsknot;
 
 	sequence_type = static_cast<InkSequenceType>(ds8(bytes, index));
 	multiline = static_cast<bool>(ds8(bytes, index));
 
 	std::uint16_t objects_size = ds16(bytes, index);
 	for (std::uint16_t i = 0; i < objects_size; ++i) {
-		items.push_back(dsobjects(bytes, index));
+		items.push_back(dsknot(bytes, index));
 	}
 
 	fill_shuffle_indices();

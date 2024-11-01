@@ -405,4 +405,14 @@ struct Deserializer<ExpressionParserV2::Token> {
 	ExpressionParserV2::Token operator()(const ByteVec& bytes, std::size_t& index);
 };
 
+template <>
+struct Serializer<ExpressionParserV2::StoryVariableInfo> {
+	ByteVec operator()(const ExpressionParserV2::StoryVariableInfo& variable_info);
+};
+
+template <>
+struct Deserializer<ExpressionParserV2::StoryVariableInfo> {
+	ExpressionParserV2::StoryVariableInfo operator()(const ByteVec& bytes, std::size_t& index);
+};
+
 #undef i64

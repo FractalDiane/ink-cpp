@@ -11,6 +11,7 @@ ByteVec Serializer<InkChoiceEntry>::operator()(const InkChoiceEntry& entry) {
 	Serializer<std::uint16_t> s16;
 	Serializer<Knot> sknot;
 	Serializer<GatherPoint> sgatherpoint;
+	Serializer<Uuid> suuid;
 	VectorSerializer<InkObject*> sobjects;
 	VectorSerializer<ExpressionParserV2::Token> stokens;
 
@@ -32,8 +33,10 @@ ByteVec Serializer<InkChoiceEntry>::operator()(const InkChoiceEntry& entry) {
 	ByteVec result8 = s16(static_cast<std::uint16_t>(entry.conditions.size()));
 	result.insert(result.end(), result8.begin(), result8.end());
 
-	for (const auto& vec : entry.conditions) {
-		ByteVec result_tokens = stokens(vec.tokens);
+	for (const ExpressionParserV2::ShuntedExpression& condition : entry.conditions) {
+		ByteVec result_uuid = suuid(condition.uuid);
+		result.insert(result.end(), result_uuid.begin(), result_uuid.end());
+		ByteVec result_tokens = stokens(condition.tokens);
 		result.insert(result.end(), result_tokens.begin(), result_tokens.end());
 	}
 
@@ -45,6 +48,7 @@ InkChoiceEntry Deserializer<InkChoiceEntry>::operator()(const ByteVec& bytes, st
 	Deserializer<std::uint16_t> ds16;
 	Deserializer<Knot> dsknot;
 	Deserializer<GatherPoint> dsgatherpoint;
+	Deserializer<Uuid> dsuuid;
 	VectorDeserializer<InkObject*> dsobjects;
 	VectorDeserializer<ExpressionParserV2::Token> dstokens;
 
@@ -59,7 +63,10 @@ InkChoiceEntry Deserializer<InkChoiceEntry>::operator()(const ByteVec& bytes, st
 
 	std::uint16_t conditions_size = ds16(bytes, index);
 	for (std::uint16_t i = 0; i < conditions_size; ++i) {
-		result.conditions.push_back(ExpressionParserV2::ShuntedExpression(dstokens(bytes, index)));
+		Uuid uuid = dsuuid(bytes, index);
+		ExpressionParserV2::ShuntedExpression expression{dstokens(bytes, index)};
+		expression.uuid = uuid;
+		result.conditions.push_back(std::move(expression));
 	}
 
 	return result;
