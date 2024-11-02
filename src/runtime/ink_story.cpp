@@ -29,6 +29,25 @@ InkStory::InkStory(const std::string& inkb_file) {
 	infile.read(reinterpret_cast<char*>(bytes.data()), infile_size);
 	infile.close();
 
+	deserialize_bytes(bytes);
+	init_story();
+}
+
+InkStory::InkStory(const ByteVec& bytes) {
+	deserialize_bytes(bytes);
+	init_story();
+}
+
+InkStory::InkStory(ByteVec&& bytes) {
+	deserialize_bytes(bytes);
+	init_story();
+}
+
+void InkStory::print_info() const {
+	story_data->print_info();
+}
+
+void InkStory::deserialize_bytes(const ByteVec& bytes) {
 	constexpr const char* expected_header = "INKB";
 	for (std::size_t i = 0; i < 4; ++i) {
 		if (static_cast<signed char>(bytes[i]) != expected_header[i]) {
@@ -54,11 +73,6 @@ InkStory::InkStory(const std::string& inkb_file) {
 	story_data->knot_order = dsorder(bytes, index);
 	
 	loaded_from_file = true;
-	init_story();
-}
-
-void InkStory::print_info() const {
-	story_data->print_info();
 }
 
 void InkStory::init_story() {

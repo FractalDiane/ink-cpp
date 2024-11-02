@@ -30,6 +30,7 @@ private:
 	friend class InkCompiler;
 
 private:
+	void deserialize_bytes(const ByteVec& bytes);
 	void init_story();
 	void bind_ink_functions();
 	void update_expression_list_origins(std::vector<ExpressionParserV2::ShuntedExpression*>&& expressions);
@@ -42,6 +43,8 @@ public:
 	explicit InkStory() : story_data{nullptr} {}
 	explicit InkStory(InkStoryData* data) : story_data{data} { init_story(); }
 	explicit InkStory(const std::string& inkb_file);
+	explicit InkStory(const ByteVec& bytes);
+	explicit InkStory(ByteVec&& bytes);
 	~InkStory() { delete story_data; }
 
 	InkStory(const InkStory& from) = delete;

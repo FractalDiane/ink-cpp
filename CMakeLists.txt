@@ -66,13 +66,16 @@ FetchContent_MakeAvailable(googletest)
 
 add_library(ink_backend STATIC ${SRC_UTIL} ${SRC_OBJECTS} ${SRC_RUNTIME})
 
-add_executable(inkc main_compiler.cpp ${SRC_COMPILER} ${SRC_UTIL})
-add_dependencies(inkc ink_backend)
-target_link_libraries(inkc PUBLIC ink_backend)
+add_library(ink_compiler STATIC ${SRC_COMPILER} ${SRC_UTIL})
+target_link_libraries(ink_compiler PUBLIC ink_backend)
 
-add_executable(ink main_runner.cpp ${SRC_COMPILER})
-add_dependencies(ink ink_backend)
-target_link_libraries(ink PUBLIC ink_backend)
+add_executable(inkc main_compiler.cpp)
+add_dependencies(inkc ink_compiler)
+target_link_libraries(inkc PUBLIC ink_compiler)
+
+add_executable(ink main_runner.cpp)
+add_dependencies(ink ink_compiler)
+target_link_libraries(ink PUBLIC ink_compiler)
 
 #if(CMAKE_BUILD_TYPE EQUAL Debug)
 	add_executable(ink_main main.cpp ${SRC_COMPILER} ${SRC_UTIL})
