@@ -452,3 +452,87 @@ InkListDefinition::Entry Deserializer<InkListDefinition::Entry>::operator()(cons
 
 	return result;
 }
+
+ByteVec Serializer<InkListDefinition>::operator()(const InkListDefinition& definition) {
+	Serializer<std::string> sstring;
+	Serializer<std::uint32_t> ssize;
+	Serializer<InkListDefinition::Entry> sentry;
+	Serializer<Uuid> suuid;
+
+	ByteVec result = sstring(definition.get_name());
+
+	ByteVec uuid = suuid(definition.get_uuid());
+	result.insert(result.end(), uuid.begin(), uuid.end());
+
+	ByteVec size = ssize(static_cast<std::uint16_t>(definition.get_all_entries().size()));
+	result.insert(result.end(), size.begin(), size.end());
+
+	for (const auto& entry : definition.get_all_entries()) {
+		InkListDefinition::Entry stored_entry;
+		stored_entry.label = entry.first;
+		stored_entry.value = entry.second;
+
+		ByteVec bytes = sentry(stored_entry);
+		result.insert(result.end(), bytes.begin(), bytes.end());
+	}
+
+	return result;
+}
+
+InkListDefinition Deserializer<InkListDefinition>::operator()(const ByteVec& bytes, std::size_t& index) {
+	Deserializer<std::string> dsstring;
+	Deserializer<std::uint32_t> dssize;
+	Deserializer<InkListDefinition::Entry> dsentry;
+	Deserializer<Uuid> dsuuid;
+
+	std::string name = dsstring(bytes, index);
+	Uuid uuid = dsuuid(bytes, index);
+
+	std::size_t size = static_cast<std::size_t>(dssize(bytes, index));
+	std::vector<InkListDefinition::Entry> entries;
+	entries.reserve(size);
+	for (std::size_t i = 0; i < size; ++i) {
+		entries.push_back(dsentry(bytes, index));
+	}
+
+	return InkListDefinition(name, entries, uuid);
+}
+
+ByteVec Serializer<InkListDefinitionMap>::operator()(const InkListDefinitionMap& map) {
+	Serializer<std::uint32_t> ssize;
+	Serializer<Uuid> suuid;
+	Serializer<InkListDefinition> sdefinition;
+
+	ByteVec result = suuid(map.current_list_definition_uuid);
+
+	ByteVec size = ssize(static_cast<std::uint32_t>(map.defined_lists.size()));
+	result.insert(result.end(), size.begin(), size.end());
+	for (const auto& list : map.defined_lists) {
+		ByteVec uuid = suuid(list.first);
+		ByteVec definition = sdefinition(list.second);
+
+		result.insert(result.end(), uuid.begin(), uuid.end());
+		result.insert(result.end(), definition.begin(), definition.end());
+	}
+
+	return result;
+}
+
+InkListDefinitionMap Deserializer<InkListDefinitionMap>::operator()(const ByteVec& bytes, std::size_t& index) {
+	Deserializer<std::uint32_t> dssize;
+	Deserializer<Uuid> dsuuid;
+	Deserializer<InkListDefinition> dsdefinition;
+
+	InkListDefinitionMap result;
+	result.current_list_definition_uuid = dsuuid(bytes, index).get();
+
+	std::size_t size = static_cast<std::size_t>(dssize(bytes, index));
+	for (std::size_t i = 0; i < size; ++i) {
+		Uuid uuid = dsuuid(bytes, index);
+		InkListDefinition definition = dsdefinition(bytes, index);
+
+		result.defined_lists.emplace(std::move(uuid), std::move(definition));
+	}
+
+	return result;
+}

@@ -60,6 +60,12 @@ public:
 	Variant(const Variant& from);
 	Variant& operator=(const Variant& from);
 
+	//VariantValue& get() { return value; }
+	template <typename T>
+	T& get() { return std::get<T>(value); }
+	template <typename T>
+	const T& get() const { return std::get<T>(value); }
+
 	inline bool has_value() const { return _has_value; }
 	inline std::size_t index() const { return value.index(); }
 	std::string to_printable_string() const;

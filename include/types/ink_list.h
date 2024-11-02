@@ -46,6 +46,7 @@ public:
 
 	inline Uuid get_uuid() const { return uuid; }
 	inline const std::string& get_name() const { return name; }
+	inline const std::unordered_map<std::string, std::int64_t>& get_all_entries() const { return list_entries; }
 };
 
 struct InkListDefinitionMap {
@@ -110,6 +111,8 @@ public:
 	
 	InkList(const InkList& from);
 	InkList& operator=(const InkList& from);
+
+	void set_owning_definition_map(const InkListDefinitionMap* map) { owning_definition_map = map; }
 
 	void add_item(const std::string& item_name);
 	void add_item(const InkListItem& item);
@@ -200,4 +203,24 @@ struct Serializer<InkListDefinition::Entry> {
 template <>
 struct Deserializer<InkListDefinition::Entry> {
 	InkListDefinition::Entry operator()(const ByteVec& bytes, std::size_t& index);
+};
+
+template <>
+struct Serializer<InkListDefinition> {
+	ByteVec operator()(const InkListDefinition& definition);
+};
+
+template <>
+struct Deserializer<InkListDefinition> {
+	InkListDefinition operator()(const ByteVec& bytes, std::size_t& index);
+};
+
+template <>
+struct Serializer<InkListDefinitionMap> {
+	ByteVec operator()(const InkListDefinitionMap& map);
+};
+
+template <>
+struct Deserializer<InkListDefinitionMap> {
+	InkListDefinitionMap operator()(const ByteVec& bytes, std::size_t& index);
 };

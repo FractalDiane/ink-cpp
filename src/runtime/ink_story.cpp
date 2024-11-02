@@ -53,6 +53,7 @@ InkStory::InkStory(const std::string& inkb_file) {
 	VectorDeserializer<std::string> dsorder;
 	story_data->knot_order = dsorder(bytes, index);
 	
+	loaded_from_file = true;
 	init_story();
 }
 
@@ -81,6 +82,21 @@ void InkStory::init_story() {
 
 	story_state.variable_info = std::move(story_data->variable_info);
 	bind_ink_functions();
+
+	if (loaded_from_file) {
+		// lists are loaded with no owning definition map and this is the first place it can be set without dangling pointer issues
+		for (auto& var : story_state.variable_info.variables) {
+			if (var.second.index() == ExpressionParserV2::Variant_List) {
+				var.second.get<InkList>().set_owning_definition_map(&story_state.variable_info.defined_lists);
+			}
+		}
+
+		for (auto& constant : story_state.variable_info.constants) {
+			if (constant.second.index() == ExpressionParserV2::Variant_List) {
+				constant.second.get<InkList>().set_owning_definition_map(&story_state.variable_info.defined_lists);
+			}
+		}
+	}
 
 	story_state.current_knots_stack = {{&(story_data->knots[story_data->knot_order[0]]), 0}};
 	story_state.variable_info.current_weave_uuid = story_state.current_knot().knot->uuid;
@@ -180,7 +196,8 @@ void InkStory::bind_ink_functions() {
 		if (minimum.index() == Variant_Int && maximum.index() == Variant_Int) {
 			return list.range(static_cast<std::int64_t>(minimum), static_cast<std::int64_t>(maximum));
 		} else if (minimum.index() == Variant_List && maximum.index() == Variant_List) {
-			return list.range(static_cast<InkList>(minimum), static_cast<InkList>(maximum));
+			//return list.range(static_cast<InkList>(minimum), static_cast<InkList>(maximum));
+			return list.range(minimum.get<InkList>(), maximum.get<InkList>());
 		} else {
 			return list;
 		}

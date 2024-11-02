@@ -2027,6 +2027,12 @@ ByteVec Serializer<Variant>::operator()(const Variant& variant) {
 				result.insert(result.end(), result2.begin(), result2.end());
 			} break;
 
+			case Variant_List: {
+				Serializer<InkList> s;
+				ByteVec result2 = s(variant);
+				result.insert(result.end(), result2.begin(), result2.end());
+			} break;
+
 			default: break;
 		}
 
@@ -2057,6 +2063,11 @@ Variant Deserializer<Variant>::operator()(const ByteVec& bytes, std::size_t& ind
 
 		case Variant_String: {
 			Deserializer<std::string> ds;
+			return Variant(ds(bytes, index));
+		} break;
+
+		case Variant_List: {
+			Deserializer<InkList> ds;
 			return Variant(ds(bytes, index));
 		} break;
 
@@ -2094,6 +2105,11 @@ ByteVec Serializer<Token>::operator()(const Token& token) {
 			result2 = s(token.value);
 		} break;
 
+		case TokenType::LiteralList: {
+			Serializer<InkList> s;
+			result2 = s(token.value);
+		} break;
+
 		case TokenType::Operator: {
 			result2.push_back(static_cast<std::uint8_t>(token.operator_type));
 			result2.push_back(static_cast<std::uint8_t>(token.operator_unary_type));
@@ -2128,6 +2144,7 @@ Token Deserializer<Token>::operator()(const ByteVec& bytes, std::size_t& index) 
 	Deserializer<std::int64_t> dsi64;
 	Deserializer<double> dsdb;
 	Deserializer<std::string> dsstring;
+	Deserializer<InkList> dslist;
 
 	TokenType type = static_cast<TokenType>(ds8(bytes, index));
 	switch (type) {
@@ -2161,13 +2178,16 @@ Token Deserializer<Token>::operator()(const ByteVec& bytes, std::size_t& index) 
 			return type == TokenType::LiteralString ? Token::literal_string(value) : Token::literal_knotname(value, true);
 		} break;
 
+		case TokenType::LiteralList: {
+			InkList value = dslist(bytes, index);
+			return Token::literal_list(value);
+		} break;
+
 		case TokenType::Operator: {
 			OperatorType op_type = static_cast<OperatorType>(ds8(bytes, index));
 			OperatorUnaryType unary_type = static_cast<OperatorUnaryType>(ds8(bytes, index));
 			return Token::operat(op_type, unary_type);
 		} break;
-
-		
 
 		case TokenType::ParenComma: {
 			ParenCommaType paren_comma_type = static_cast<ParenCommaType>(ds8(bytes, index));
@@ -2184,6 +2204,8 @@ Token Deserializer<Token>::operator()(const ByteVec& bytes, std::size_t& index) 
 					return Token::function_builtin(name, nullptr, args);
 				case FunctionFetchType::External:
 					return Token::function_external(name, args);
+				case FunctionFetchType::ListSubscript:
+					return Token::function_list_subscript(name, args == 0);
 				case FunctionFetchType::StoryKnot:
 				default:
 					return Token::function_story_knot(name, args);
@@ -2205,6 +2227,7 @@ ByteVec Serializer<StoryVariableInfo>::operator()(const StoryVariableInfo& varia
 	Serializer<std::uint16_t> ssize;
 	Serializer<std::string> sstring;
 	Serializer<Variant> svariant;
+	Serializer<InkListDefinitionMap> slists;
 
 	ByteVec result = ssize(static_cast<std::uint16_t>(variable_info.variables.size()));
 	for (const auto& var : variable_info.variables) {
@@ -2232,6 +2255,9 @@ ByteVec Serializer<StoryVariableInfo>::operator()(const StoryVariableInfo& varia
 		result.insert(result.end(), name.begin(), name.end());
 	}
 
+	ByteVec defined_lists = slists(variable_info.defined_lists);
+	result.insert(result.end(), defined_lists.begin(), defined_lists.end());
+
 	return result;
 }
 
@@ -2239,6 +2265,7 @@ StoryVariableInfo Deserializer<StoryVariableInfo>::operator()(const ByteVec& byt
 	Deserializer<std::uint16_t> dssize;
 	Deserializer<std::string> dsstring;
 	Deserializer<Variant> dsvariant;
+	Deserializer<InkListDefinitionMap> dslists;
 
 	StoryVariableInfo result;
 
@@ -2246,6 +2273,7 @@ StoryVariableInfo Deserializer<StoryVariableInfo>::operator()(const ByteVec& byt
 	for (std::size_t i = 0; i < vars_size; ++i) {
 		std::string name = dsstring(bytes, index);
 		Variant value = dsvariant(bytes, index);
+
 		result.variables[name] = value;
 	}
 
@@ -2253,6 +2281,7 @@ StoryVariableInfo Deserializer<StoryVariableInfo>::operator()(const ByteVec& byt
 	for (std::size_t i = 0; i < consts_size; ++i) {
 		std::string name = dsstring(bytes, index);
 		Variant value = dsvariant(bytes, index);
+
 		result.constants[name] = value;
 	}
 
@@ -2261,6 +2290,8 @@ StoryVariableInfo Deserializer<StoryVariableInfo>::operator()(const ByteVec& byt
 		std::string name = dsstring(bytes, index);
 		result.declared_external_functions.insert(name);
 	}
+
+	result.defined_lists = dslists(bytes, index);
 
 	return result;
 }

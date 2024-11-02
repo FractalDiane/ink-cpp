@@ -25,6 +25,8 @@ private:
 	InkStoryData* story_data;
 	InkStoryState story_state;
 
+	bool loaded_from_file = false;
+
 	friend class InkCompiler;
 
 private:

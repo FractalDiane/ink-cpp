@@ -481,7 +481,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						for (const ExpressionParserV2::Token& logic_token : static_cast<InkObjectLogic*>(last_object)->contents_shunted_tokens.tokens) {
 							if (logic_token.type == ExpressionParserV2::TokenType::Function) {
 								for (const Knot& knot : story_knots) {
-									if (knot.is_function && knot.has_content && knot.name == static_cast<std::string>(logic_token.value)) {
+									//if (knot.is_function && knot.has_content && knot.name == static_cast<std::string>(logic_token.value)) {
+									if (knot.is_function && knot.has_content && knot.name == logic_token.value.get<std::string>()) {
 										goto add_newline;
 									}
 								}

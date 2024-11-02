@@ -274,7 +274,8 @@ void try_coalesce_list(const std::string& expression, std::vector<Token>& result
 
 	InkList new_list{story_var_info.defined_lists};
 	for (const Token* token : list_entries) {
-		new_list.add_item(static_cast<InkList>(token->value).single_item());
+		//new_list.add_item(static_cast<InkList>(token->value).single_item());
+		new_list.add_item(token->value.get<InkList>().single_item());
 	}
 
 	while (result.size() > end_index) {
