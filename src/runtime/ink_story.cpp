@@ -96,11 +96,27 @@ void InkStory::init_story() {
 				constant.second.get<InkList>().set_owning_definition_map(&story_state.variable_info.defined_lists);
 			}
 		}
+
+		for (auto& knot : story_data->knots) {
+			for (InkObject* object : knot.second.objects) {
+				update_expression_list_origins(object->get_all_expressions());
+			}
+		}
 	}
 
 	story_state.current_knots_stack = {{&(story_data->knots[story_data->knot_order[0]]), 0}};
 	story_state.variable_info.current_weave_uuid = story_state.current_knot().knot->uuid;
 	story_state.setup_next_stitch();
+}
+
+void InkStory::update_expression_list_origins(std::vector<ExpressionParserV2::ShuntedExpression*>&& expressions) {
+	for (ExpressionParserV2::ShuntedExpression* expression : expressions) {
+		for (ExpressionParserV2::Token& token : expression->tokens) {
+			if (token.type == ExpressionParserV2::TokenType::LiteralList) {
+				token.value.get<InkList>().set_owning_definition_map(&story_state.variable_info.defined_lists);
+			}
+		}
+	}
 }
 
 void InkStory::bind_ink_functions() {

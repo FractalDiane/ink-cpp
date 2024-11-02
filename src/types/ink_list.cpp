@@ -365,33 +365,37 @@ ByteVec InkList::to_bytes() const {
 		values.push_back(value);
 	}
 
-	/*std::vector<Uuid> origins;
+	std::vector<Uuid> origins;
 	origins.reserve(all_origins.size());
 	for (Uuid origin : all_origins) {
 		origins.push_back(origin);
-	}*/
+	}
 
 	VectorSerializer<InkListItem> sitems;
-	//VectorSerializer<Uuid> sorigins;
+	VectorSerializer<Uuid> sorigins;
 
 	ByteVec result = sitems(values);
-	//ByteVec result2 = sorigins(origins);
-	//result.insert(result.end(), result2.begin(), result2.end());
+	ByteVec result2 = sorigins(origins);
+	result.insert(result.end(), result2.begin(), result2.end());
 	return result;
 }
 
 InkList InkList::from_bytes(const ByteVec& bytes, std::size_t& index) {
 	VectorDeserializer<InkListItem> dsitems;
-	//VectorDeserializer<Uuid> dsorigins;
+	VectorDeserializer<Uuid> dsorigins;
 
 	std::vector<InkListItem> items = dsitems(bytes, index);
-	//std::vector<Uuid> origins = dsorigins(bytes, index);
+	std::vector<Uuid> origins = dsorigins(bytes, index);
 
 	InkList result;
 	for (const InkListItem& item : items) {
 		result.add_item(item);
 	}
 
+	for (Uuid origin : origins) {
+		result.add_origin(origin);
+	}
+	
 	return result;
 }
 
@@ -403,9 +407,11 @@ ByteVec Serializer<InkListItem>::operator()(const InkListItem& item) {
 	ByteVec result = sstring(item.label);
 	ByteVec result2 = svalue(item.value);
 	ByteVec result3 = sorigin(item.origin_list_uuid);
+	ByteVec result4 = sstring(item.origin_list_name);
 
 	result.insert(result.end(), result2.begin(), result2.end());
 	result.insert(result.end(), result3.begin(), result3.end());
+	result.insert(result.end(), result4.begin(), result4.end());
 	return result;
 }
 
@@ -417,8 +423,9 @@ InkListItem Deserializer<InkListItem>::operator()(const ByteVec& bytes, std::siz
 	std::string label = dsstring(bytes, index);
 	std::int64_t value = dsvalue(bytes, index);
 	Uuid origin = dsorigin(bytes, index);
+	std::string origin_name = dsstring(bytes, index);
 
-	return InkListItem(label, value, origin, std::string());
+	return InkListItem(label, value, origin, origin_name);
 }
 
 ByteVec Serializer<InkList>::operator()(const InkList& list) {

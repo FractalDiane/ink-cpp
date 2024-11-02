@@ -32,6 +32,7 @@ private:
 private:
 	void init_story();
 	void bind_ink_functions();
+	void update_expression_list_origins(std::vector<ExpressionParserV2::ShuntedExpression*>&& expressions);
 
 	void try_remove_upper_knots(const GetContentResult& target);
 	void apply_knot_args(const InkWeaveContent* target, InkStoryEvalResult& eval_result);
