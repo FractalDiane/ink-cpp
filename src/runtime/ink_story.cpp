@@ -130,7 +130,7 @@ void InkStory::bind_ink_functions() {
 	EXP_FUNC("TURNS_SINCE", 1, {
 		const Variant& knot = arguments[0];
 
-		if (GetContentResult content = story_data->get_content(static_cast<std::string>(knot), story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch(), false); content.found_any) {
+		if (GetContentResult content = story_data->get_content(knot.get<std::string>(), story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch(), false); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
 			if (story_state.story_tracking.get_content_stats(content.get_target(), stats)) {
 				return stats.turns_since_visited;
@@ -143,7 +143,7 @@ void InkStory::bind_ink_functions() {
 	EXP_FUNC("READ_COUNT", 1, {
 		const Variant& knot = arguments[0];
 
-		if (GetContentResult content = story_data->get_content(static_cast<std::string>(knot), story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch(), false); content.found_any) {
+		if (GetContentResult content = story_data->get_content(knot.get<std::string>(), story_state.current_nonchoice_knot().knot, story_state.current_knots_stack, story_state.current_stitch(), false); content.found_any) {
 			InkStoryTracking::SubKnotStats stats;
 			if (story_state.story_tracking.get_content_stats(content.get_target(), stats)) {
 				return stats.times_visited;
@@ -212,7 +212,6 @@ void InkStory::bind_ink_functions() {
 		if (minimum.index() == Variant_Int && maximum.index() == Variant_Int) {
 			return list.range(static_cast<std::int64_t>(minimum), static_cast<std::int64_t>(maximum));
 		} else if (minimum.index() == Variant_List && maximum.index() == Variant_List) {
-			//return list.range(static_cast<InkList>(minimum), static_cast<InkList>(maximum));
 			return list.range(minimum.get<InkList>(), maximum.get<InkList>());
 		} else {
 			return list;

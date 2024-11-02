@@ -169,7 +169,7 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 			}
 		}
 
-		eval_result.target_knot = static_cast<std::string>(nullopt_result.function.value);
+		eval_result.target_knot = nullopt_result.function.value.get<std::string>();
 		eval_result.divert_type = DivertType::Function;
 
 		if (story_state.current_knot().knot->function_prep_type == FunctionPrepType::ChoiceTextInterpolate && get_id() == ObjectId::Interpolation) {

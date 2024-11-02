@@ -180,7 +180,7 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	EXPECT_EQ(static_cast<bool>(t7), true);
 
 	Variant t8 = execute_expression(R"("hello" + " " + "there")", blank_variable_info).value();
-	EXPECT_EQ(static_cast<std::string>(t8), "hello there");
+	EXPECT_EQ(t8.get<std::string>(), "hello there");
 
 	/*Variant t9 = execute_expression("++5", blank_variable_info).value();
 	EXPECT_EQ(static_cast<std::int64_t>(t9), 6);
@@ -201,7 +201,7 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	EXPECT_EQ(static_cast<double>(t14), 9);
 
 	Variant t15 = execute_expression("-> my_knot", blank_variable_info).value();
-	EXPECT_EQ(static_cast<std::string>(t15), "my_knot");
+	EXPECT_EQ(t15.get<std::string>(), "my_knot");
 
 	Variant t16 = execute_expression("POW(FLOOR(3.5), FLOOR(2.9)", blank_variable_info).value();
 	EXPECT_EQ(static_cast<double>(t16), 9);

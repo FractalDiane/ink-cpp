@@ -223,13 +223,13 @@ Variant Token::call_function(const std::vector<Variant>& arguments, const StoryV
 			case FunctionFetchType::ListSubscript: {
 				if (function_argument_count > 0) {
 					for (auto& entry : story_variable_info.defined_lists.defined_lists) {
-						if (entry.second.get_name() == static_cast<std::string>(value)) {
+						if (entry.second.get_name() == value.get<std::string>()) {
 							return entry.second.get_sublist_from_value(arguments[0], &story_variable_info.defined_lists);
 						}
 					}
 				} else {
 					for (auto& entry : story_variable_info.defined_lists.defined_lists) {
-						if (entry.second.get_name() == static_cast<std::string>(value)) {
+						if (entry.second.get_name() == value.get<std::string>()) {
 							InkList empty_list{&story_variable_info.defined_lists};
 							empty_list.add_origin(entry.first);
 							return empty_list;
@@ -237,7 +237,7 @@ Variant Token::call_function(const std::vector<Variant>& arguments, const StoryV
 					}
 				}
 				
-				throw std::runtime_error("Could not find list entry" + std::to_string(static_cast<std::int64_t>(arguments[0])) + " for list " + static_cast<std::string>(value));
+				throw std::runtime_error("Could not find list entry" + std::to_string(static_cast<std::int64_t>(arguments[0])) + " for list " + value.get<std::string>());
 			} break;
 
 			case FunctionFetchType::StoryKnot:

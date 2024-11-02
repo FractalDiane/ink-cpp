@@ -43,7 +43,7 @@ std::string InkObjectDivert::get_target(InkStoryState& story_state, const Expres
 
 	ExpressionParserV2::ExecuteResult target_var = ExpressionParserV2::execute_expression_tokens(target_knot.tokens, story_state.variable_info);
 	if (target_var.has_value() && target_var->index() == ExpressionParserV2::Variant_String) {
-		target = static_cast<std::string>(*target_var);
+		target = target_var->get<std::string>();
 	} else if (!target_knot.tokens.empty()) {
 		target = target_knot.tokens[0].variable_name;
 	}
@@ -56,7 +56,7 @@ std::string InkObjectDivert::to_string() const {
 	for (const ExpressionParserV2::Token& token : target_knot.tokens) {
 		switch (token.type) {
 			case ExpressionParserV2::TokenType::LiteralString:
-				result += static_cast<std::string>(token.value);
+				result += token.value.get<std::string>();
 				break;
 			case ExpressionParserV2::TokenType::Variable:
 				result += token.variable_name;
