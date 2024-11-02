@@ -131,6 +131,13 @@ InkObject::ExpressionsVec InkObjectChoice::get_all_expressions() {
 				result.insert(result.end(), object_expressions.begin(), object_expressions.end());
 			}
 		}
+
+		for (InkObject* object : entry.result.objects) {
+			ExpressionsVec object_expressions = object->get_all_expressions();
+			if (!object_expressions.empty()) {
+				result.insert(result.end(), object_expressions.begin(), object_expressions.end());
+			}
+		}
 	}
 
 	return result;
