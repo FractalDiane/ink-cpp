@@ -5,18 +5,24 @@
 #include "expression_parser/expression_parser.h"
 
 ByteVec InkObjectInterpolation::to_bytes() const {
+	Serializer<Uuid> suuid;
 	VectorSerializer<ExpressionParserV2::Token> s;
-	return s(what_to_interpolate.tokens);
+
+	ByteVec result = suuid(what_to_interpolate.uuid);
+	ByteVec result2 = s(what_to_interpolate.tokens);
+	result.insert(result.end(), result2.begin(), result2.end());
+
+	return result;
 }
 
 InkObject* InkObjectInterpolation::populate_from_bytes(const ByteVec& bytes, std::size_t& index) {
+	Deserializer<Uuid> dsuuid;
 	VectorDeserializer<ExpressionParserV2::Token> ds;
-	what_to_interpolate = ExpressionParserV2::ShuntedExpression(ds(bytes, index));
-	return this;
-}
 
-InkObjectInterpolation::~InkObjectInterpolation() {
-	
+	Uuid uuid = dsuuid(bytes, index);
+	what_to_interpolate = ExpressionParserV2::ShuntedExpression(ds(bytes, index));
+	what_to_interpolate.uuid = uuid;
+	return this;
 }
 
 void InkObjectInterpolation::execute(InkStoryState& story_state, InkStoryEvalResult& eval_result) {

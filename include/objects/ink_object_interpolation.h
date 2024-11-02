@@ -10,8 +10,6 @@ private:
 
 public:
 	InkObjectInterpolation(const struct ExpressionParserV2::ShuntedExpression& interpolation) : what_to_interpolate{interpolation} {}
- 
-	virtual ~InkObjectInterpolation() override;
 
 	virtual ObjectId get_id() const override { return ObjectId::Interpolation; }
 
