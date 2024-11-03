@@ -94,7 +94,7 @@ void InkStory::init_story() {
 		}
 	}
 
-	story_state.variable_info = std::move(story_data->variable_info);
+	story_state.variable_info = story_data->variable_info;
 	bind_ink_functions();
 
 	if (loaded_from_file) {
