@@ -37,7 +37,7 @@ private:
 
 	void try_remove_upper_knots(const GetContentResult& target);
 	void apply_knot_args(const InkWeaveContent* target, InkStoryEvalResult& eval_result);
-	void update_visit_count_variables(std::vector<ExpressionParserV2::ShuntedExpression*>&& expressions);
+	bool update_visit_count_variables(std::vector<ExpressionParserV2::ShuntedExpression*>&& expressions);
 
 public:
 	explicit InkStory() : story_data{nullptr} {}

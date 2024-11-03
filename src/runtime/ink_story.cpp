@@ -268,7 +268,8 @@ void InkStory::apply_knot_args(const InkWeaveContent* target, InkStoryEvalResult
 	eval_result.divert_args.clear();
 }
 
-void InkStory::update_visit_count_variables(std::vector<ExpressionParserV2::ShuntedExpression*>&& expressions) {
+bool InkStory::update_visit_count_variables(std::vector<ExpressionParserV2::ShuntedExpression*>&& expressions) {
+	bool any_unsafe_funcs = false;
 	for (ExpressionParserV2::ShuntedExpression* expression : expressions) {
 		for (ExpressionParserV2::Token& token : expression->tokens) {
 			if (token.type == ExpressionParserV2::TokenType::Variable) {
@@ -278,9 +279,13 @@ void InkStory::update_visit_count_variables(std::vector<ExpressionParserV2::Shun
 					story_state.story_tracking.get_content_stats(content.get_target(), target_count);
 					story_state.variable_info.constants[token.variable_name] = target_count.times_visited;
 				}
+			} else if (token.type == ExpressionParserV2::TokenType::Function && token.function_fetch_type == ExpressionParserV2::FunctionFetchType::External) {
+				any_unsafe_funcs |= !story_state.variable_info.external_functions[token.value.get<std::string>()].second;
 			}
 		}
 	}
+
+	return any_unsafe_funcs;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -331,9 +336,9 @@ std::string InkStory::continue_story() {
 		}
 		
 		// are we stopping here?
-		if (story_state.variable_info.called_lookahead_unsafe_function && eval_result.has_any_contents(true)) {
-			break;
-		}
+		//if (story_state.variable_info.called_lookahead_unsafe_function && eval_result.has_any_contents(true)) {
+		//	break;
+		//}
 
 		if (eval_result.reached_newline
 		&& eval_result.has_any_contents(true)
@@ -347,7 +352,11 @@ std::string InkStory::continue_story() {
 			}
 		}
 
-		update_visit_count_variables(current_object->get_all_expressions());
+		bool any_unsafe_funcs = update_visit_count_variables(current_object->get_all_expressions());
+		if (any_unsafe_funcs && eval_result.reached_newline && eval_result.has_any_contents(true)) {
+			break;
+		}
+
 		current_object->execute(story_state, eval_result);
 		
 		// after collecting the options from a choice, a thread returns to its origin
