@@ -67,6 +67,7 @@ public:
 
 	InkStoryData* get_story_data() const { return story_data; }
 	const InkStoryState& get_story_state() const { return story_state; }
+	ByteVec get_serialized_bytes() const { return story_data->get_serialized_bytes(true, story_state.variable_info); }
 	void print_info() const;
 
 	bool can_continue() const;

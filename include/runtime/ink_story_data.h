@@ -43,7 +43,7 @@ public:
 	InkStoryData(const std::vector<Knot>& story_knots, ExpressionParserV2::StoryVariableInfo&& variable_info);
 	~InkStoryData();
 
-	std::vector<std::uint8_t> get_serialized_bytes() const;
+	ByteVec get_serialized_bytes(bool override_variable_info, const ExpressionParserV2::StoryVariableInfo& overridden_info = {}) const;
 
 	void print_info() const;
 

@@ -270,7 +270,7 @@ InkStory InkCompiler::compile_file(const std::string& file_path)
 
 void InkCompiler::save_data_to_file(InkStoryData* story_data, const std::string& out_file_path) {
 	std::ofstream outfile{out_file_path, std::ios::binary};
-	std::vector<std::uint8_t> bytes = story_data->get_serialized_bytes();
+	ByteVec bytes = story_data->get_serialized_bytes(false);
 	for (std::uint8_t byte : bytes) {
 		outfile << byte;
 	}

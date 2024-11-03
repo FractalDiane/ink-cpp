@@ -28,12 +28,12 @@ InkStoryData::~InkStoryData() {
 	}
 }
 
-std::vector<std::uint8_t> InkStoryData::get_serialized_bytes() const {
+ByteVec InkStoryData::get_serialized_bytes(bool override_variable_info, const ExpressionParserV2::StoryVariableInfo& overridden_info) const {
 	ByteVec result = {'I', 'N', 'K', 'B', INKB_VERSION};
 	result.reserve(2048);
 
 	Serializer<ExpressionParserV2::StoryVariableInfo> svars;
-	ByteVec var_info_bytes = svars(variable_info);
+	ByteVec var_info_bytes = svars(override_variable_info ? overridden_info : variable_info);
 	result.insert(result.end(), var_info_bytes.begin(), var_info_bytes.end());
 
 	Serializer<std::uint16_t> ssize;
