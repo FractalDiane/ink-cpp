@@ -98,7 +98,7 @@ void StoryVariableInfo::unobserve_variable(const std::string& variable_name) {
 void StoryVariableInfo::unobserve_variable(VariableObserverFunc observer) {
 	for (auto& entry : observers) {
 		std::erase_if(entry.second,
-			[observer](VariableObserverFunc this_observer) { return this_observer == observer; }
+			[observer](VariableObserverFunc this_observer) { return this_observer.target<VariableObserverFunc>() == observer.target<VariableObserverFunc>(); }
 		);
 	}
 }
@@ -106,7 +106,7 @@ void StoryVariableInfo::unobserve_variable(VariableObserverFunc observer) {
 void StoryVariableInfo::unobserve_variable(const std::string& variable_name, VariableObserverFunc observer) {
 	if (auto entry = observers.find(variable_name); entry != observers.end()) {
 		std::erase_if(entry->second,
-			[observer](VariableObserverFunc this_observer) { return this_observer == observer; }
+			[observer](VariableObserverFunc this_observer) { return this_observer.target<VariableObserverFunc>() == observer.target<VariableObserverFunc>(); }
 		);
 	}
 }
