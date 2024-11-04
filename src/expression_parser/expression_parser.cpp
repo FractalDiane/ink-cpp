@@ -677,6 +677,9 @@ std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix) {
 }
 
 #define OP_BIN(type, op) case OperatorType::type: {\
+	if (stack.size() < 2) {\
+		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed));\
+	}\
 	const Token& right = stack.back();\
 	const Token& left = stack[stack.size() - 2];\
 	Token result = Token::from_variant(left.value op right.value);\
@@ -686,6 +689,9 @@ std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix) {
 } break;
 
 #define OP_BIN_F(type, func) case OperatorType::type: {\
+	if (stack.size() < 2) {\
+		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed));\
+	}\
 	const Token& right = stack.back();\
 	const Token& left = stack[stack.size() - 2];\
 	Token result = Token::from_variant(left.value.operator_##func(right.value));\
@@ -695,6 +701,9 @@ std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix) {
 } break;
 
 #define OP_UN_PRE(type, op) case OperatorType::type: {\
+	if (stack.empty()) {\
+		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed));\
+	}\
 	const Token& operand = stack.back();\
 	Token result = Token::from_variant(op operand.value);\
 	stack.pop_back();\
@@ -702,6 +711,9 @@ std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix) {
 } break;
 
 #define OP_BIN_ASSIGN(_type, func) case OperatorType::_type: {\
+	if (stack.size() < 2) {\
+		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed));\
+	}\
 	Token& value = stack.back();\
 	Token& var = stack[stack.size() - 2];\
 	if (var.type != TokenType::Variable) {\
@@ -717,6 +729,7 @@ std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix) {
 ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(std::vector<Token>& expression_tokens, StoryVariableInfo& story_variable_info) {
 	std::vector<Token> stack;
 	std::size_t index = 0;
+
 	while (index < expression_tokens.size()) {
 		Token& this_token = expression_tokens[index];
 

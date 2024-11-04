@@ -147,7 +147,11 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 	if (result.has_value()) {
 		expression.pop_entry();
 		return *result;
-	} else if (result.error().reason == ExpressionParserV2::NulloptResult::Reason::NoReturnValue) {
+	} else if (result.error().reason == ExpressionParserV2::NulloptResult::Reason::NoReturnValue ) {
+		expression.pop_entry();
+		return std::unexpected(result.error());
+	} else if (result.error().reason == ExpressionParserV2::NulloptResult::Reason::Failed) {
+		// TODO: report some error
 		expression.pop_entry();
 		return std::unexpected(result.error());
 	}

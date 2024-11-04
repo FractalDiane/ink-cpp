@@ -217,7 +217,11 @@ Variant Token::call_function(const std::vector<Variant>& arguments, const StoryV
 			} break;
 
 			case FunctionFetchType::External: {
-				return (function)(arguments);
+				if (function) {
+					return (function)(arguments);
+				} else {
+					return Variant();
+				}
 			} break;
 
 			case FunctionFetchType::ListSubscript: {

@@ -1741,6 +1741,11 @@ TEST_F(MiscBugTests, ChoiceDivertScope) {
 		EXPECT_TEXT(i == 1 ? "hi3" : "hi");
 	}
 }
+
+TEST_F(MiscBugTests, AddNullToNumber) {
+	STORY("22_misc_bugs/22m_add_null_to_number.ink");
+	EXPECT_TEXT("Eight is");
+}
 #pragma endregion
 
 #pragma region Long Example Tests
