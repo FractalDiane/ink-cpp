@@ -1009,7 +1009,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 									found_dash = true;
 								} else {
 									InkLexer::Token next = next_token(all_tokens, token_index);
-									if (implicit_else || next.token == InkToken::Text && next.text_contents == "else") {
+									if (implicit_else || (next.token == InkToken::Text && next.text_contents == "else")) {
 										in_else = true;
 										if (!implicit_else) {
 											token_index += 2;

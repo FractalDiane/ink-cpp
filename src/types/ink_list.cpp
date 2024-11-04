@@ -316,8 +316,6 @@ InkList InkList::range(const InkList& from, const InkList& to) const {
 	InkList result{owning_definition_map};
 
 	bool in_range = false;
-	std::optional<std::int64_t> minimum = std::nullopt;
-	std::optional<std::int64_t> maximum = std::nullopt;
 	InkListItem from_item = from.single_item();
 	InkListItem to_item = to.single_item();
 	for (const InkListItem& item : current_values) {
