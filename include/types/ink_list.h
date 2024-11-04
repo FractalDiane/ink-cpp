@@ -11,6 +11,8 @@
 #include <unordered_map>
 #include <optional>
 
+class InkList;
+
 class InkListDefinition {
 public:
 	struct Entry {

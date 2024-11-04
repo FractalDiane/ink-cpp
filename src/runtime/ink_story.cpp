@@ -16,10 +16,6 @@
 #include <stdexcept>
 #include <iostream>
 
-#ifndef INKB_VERSION
-#define INKB_VERSION 0
-#endif
-
 InkStory::InkStory(const std::string& inkb_file) {
 	std::ifstream infile{inkb_file, std::ios::binary};
 
