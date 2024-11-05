@@ -68,15 +68,15 @@ void InkStoryData::print_info() const {
 #include "objects/ink_object_choice.h"
 
 GetContentResult find_gather_point_recursive(const std::string& path, std::size_t dots, Knot* topmost_knot, std::vector<KnotStatus>& knots_stack, Knot* new_knot, Stitch* enclosing_stitch, Stitch* current_story_stitch, bool use_stitch, bool update_stack, bool top) {
-	KnotStatus* this_knot_status = nullptr;
+	std::size_t this_knot_status_index = SIZE_MAX;
 	if (update_stack && !top) {
 		knots_stack.push_back({new_knot, 0});
-		this_knot_status = &knots_stack.back();
+		this_knot_status_index = knots_stack.size() - 1;
 	} else {
 		bool found_knot = false;
-		for (KnotStatus& knot : knots_stack) {
-			if (knot.knot == topmost_knot) {
-				this_knot_status = &knot;
+		for (std::size_t i = 0; i < knots_stack.size(); ++i) {
+			if (knots_stack[i].knot == topmost_knot) {
+				this_knot_status_index = i;
 				found_knot = true;
 				break;
 			}
@@ -85,7 +85,7 @@ GetContentResult find_gather_point_recursive(const std::string& path, std::size_
 		if (!found_knot) {
 			knots_stack.clear();
 			knots_stack.push_back({topmost_knot, 0});
-			this_knot_status = &knots_stack.front();
+			this_knot_status_index = 0;
 		}
 	}
 
@@ -140,7 +140,7 @@ GetContentResult find_gather_point_recursive(const std::string& path, std::size_
 				GetContentResult result = find_gather_point_recursive(path, dots, topmost_knot, knots_stack, knot, enclosing_stitch, current_story_stitch, false, update_stack, false);
 				if (result.found_any) {
 					if (update_stack) {
-						this_knot_status->index = i;
+						knots_stack[this_knot_status_index].index = i;
 					}
 
 					return result;
