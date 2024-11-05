@@ -83,6 +83,7 @@ public:
 
 	std::optional<ExpressionParserV2::Variant> get_variable(const std::string& name) const;
 	void set_variable(const std::string& name, ExpressionParserV2::Variant&& value);
+	const ExpressionParserV2::StoryVariableInfo& get_variable_info() const { return story_state.variable_info; }
 
 	void observe_variable(const std::string& variable_name, ExpressionParserV2::VariableObserverFunc callback);
 	void unobserve_variable(const std::string& variable_name);
