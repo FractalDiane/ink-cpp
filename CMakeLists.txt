@@ -96,7 +96,7 @@ else()
 	if (CMAKE_BUILD_TYPE EQUAL Release)
 		list(APPEND INK_COMPILE_OPTIONS -O3)
 	else()
-		list(APPEND INK_COMPILE_OPTIONS -Og -g3)
+		list(APPEND INK_COMPILE_OPTIONS -O0 -g3)
 	endif()
 endif()
 

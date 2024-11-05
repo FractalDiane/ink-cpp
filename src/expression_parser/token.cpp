@@ -278,7 +278,7 @@ Variant::Variant(const InkList& val) : value(val), _has_value(true) {}
 
 #undef VCON
 
-Variant::Variant(const Variant& from) : value(from.value) {}
+Variant::Variant(const Variant& from) : value(from.value), _has_value(from._has_value) {}
 
 Variant& Variant::operator=(const Variant& from) {
 	if (this != &from) {
