@@ -5,6 +5,10 @@
 #include <cstdint>
 #include <cstring>
 
+#ifndef INKB_VERSION
+#define INKB_VERSION 0
+#endif
+
 using ByteVec = std::vector<std::uint8_t>;
 
 template <typename T>

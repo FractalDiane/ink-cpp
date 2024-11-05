@@ -41,8 +41,6 @@ set(SRC_OBJECTS
 	src/objects/ink_object_text.cpp
 )
 
-set(CMAKE_BUILD_TYPE Debug)
-
 ################ GOOGLE TEST
 include(FetchContent)
 FetchContent_Declare(
@@ -86,10 +84,20 @@ include_directories(include)
 
 if(MSVC)
 	set(INK_COMPILE_OPTIONS /Zc:preprocessor /W4 /WX /wd4100)
+
+	if(CMAKE_BUILD_TYPE EQUAL Release)
+		list(APPEND INK_COMPILE_OPTIONS /O2)
+	endif()
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 	set(INK_COMPILE_OPTIONS -Wall -Wpedantic -Werror -Wno-unused-lambda-capture -Wno-unused-parameter -Wno-error=unused-private-field -Wno-reorder)
 else()
 	set(INK_COMPILE_OPTIONS -Wall -Wpedantic -Werror -Wno-unused-parameter -Wno-reorder -lm)
+
+	if (CMAKE_BUILD_TYPE EQUAL Release)
+		list(APPEND INK_COMPILE_OPTIONS -O3)
+	else()
+		list(APPEND INK_COMPILE_OPTIONS -Og -g3)
+	endif()
 endif()
 
 target_compile_options(ink_backend PUBLIC ${INK_COMPILE_OPTIONS})

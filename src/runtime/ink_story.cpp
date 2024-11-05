@@ -332,10 +332,6 @@ std::string InkStory::continue_story() {
 		}
 		
 		// are we stopping here?
-		//if (story_state.variable_info.called_lookahead_unsafe_function && eval_result.has_any_contents(true)) {
-		//	break;
-		//}
-
 		if (eval_result.reached_newline
 		&& eval_result.has_any_contents(true)
 		&& (!story_state.current_nonchoice_knot().knot->is_function || story_state.current_knot().any_new_content || last_knot_had_newline)
@@ -806,13 +802,6 @@ void InkStory::unobserve_variable(const std::string& variable_name, ExpressionPa
 void InkStory::bind_external_function_generic(const std::string& function_name, ExpressionParserV2::InkFunction function, bool lookahead_safe) {
 	story_state.variable_info.external_functions[function_name] = {function, lookahead_safe};
 }
-
-/*void InkStory::bind_external_function(const std::string& function_name, std::function<void()> function, bool lookahead_safe) {
-	bind_external_function_generic(function_name, [function](const std::vector<ExpressionParserV2::Variant>& args) {
-		function();
-		return ExpressionParserV2::Variant();
-	}, lookahead_safe);
-}*/
 
 void InkStory::bind_external_function(const std::string& function_name, void(*function)(), bool lookahead_safe) {
 	bind_external_function_generic(function_name, [function](const std::vector<ExpressionParserV2::Variant>& args) {
