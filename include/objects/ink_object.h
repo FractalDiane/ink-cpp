@@ -19,9 +19,7 @@ enum class ObjectId {
 	Sequence,
 	ChoiceTextMix,
 	Tag,
-	GlobalVariable,
 	Logic,
-	List,
 };
 
 class InkObject {

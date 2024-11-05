@@ -39,7 +39,6 @@ ByteVec InkObject::get_serialized_bytes() const {
 #include "objects/ink_object_choicetextmix.h"
 #include "objects/ink_object_conditional.h"
 #include "objects/ink_object_divert.h"
-#include "objects/ink_object_globalvariable.h"
 #include "objects/ink_object_glue.h"
 #include "objects/ink_object_interpolation.h"
 #include "objects/ink_object_linebreak.h"
@@ -88,10 +87,6 @@ InkObject* InkObject::create_from_id(ObjectId id) {
 
 		case ObjectId::Tag: {
 			return new InkObjectTag("");
-		} break;
-
-		case ObjectId::GlobalVariable: {
-			return new InkObjectGlobalVariable("", false, {});
 		} break;
 
 		case ObjectId::Logic: {
