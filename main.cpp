@@ -24,8 +24,8 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "23_long_examples"
-#define TEST_FILE "23b_crime_scene"
+#define TEST_FOLDER "21_lists"
+#define TEST_FILE "21e_list_values"
 //#define TEST_FOLDER "22_misc_bugs"
 //#define TEST_FILE "22l_choice_divert_scope"
 //#define TEST_FOLDER "23_long_examples"
@@ -34,8 +34,9 @@ void print_vector(const std::vector<T>& vector) {
 int main(int argc, char* argv[]) {
 	InkCompiler compiler;
 	//InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink");
+	InkStory story;
 	compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".ink", INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".inkb");
-	InkStory story{INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".inkb"};
+	story = InkStory(INKCPP_WORKING_DIR "/tests/" TEST_FOLDER "/" TEST_FILE ".inkb");
 	std::cout << story.continue_story() << std::endl;
 	story.choose_choice_index(0);
 	std::cout << story.continue_story() << std::endl;

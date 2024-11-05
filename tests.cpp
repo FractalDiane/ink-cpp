@@ -14,9 +14,17 @@ protected:\
 	InkCompiler compiler;\
 }
 
+static bool serialize_mode = false;
+
 //#define STORY(path) InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path)
-#define STORY(path) compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" path, std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"); InkStory story{std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"};
-	
+//#define STORY(path) compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" path, std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"); InkStory story{std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"};
+
+#define STORY(path) InkStory story; if (serialize_mode) {\
+	compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" path, std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" path) + "b");\
+} else {\
+	story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path);\
+}
+
 #define EXPECT_TEXT(...) {\
 		std::vector<std::string> seq = {__VA_ARGS__};\
 		for (const std::string& expected_text : seq) {\
@@ -2986,7 +2994,14 @@ TEST_F(InkProof, BoolCoercion) {
 #pragma endregion
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-int main() {
+int main(int argc, char* argv[]) {
+	if (argc > 1) {
+		std::string mode = argv[1];
+		if (mode.starts_with("serializ")) {
+			serialize_mode = true;
+		}
+	}
+
 	testing::InitGoogleTest();
 	return RUN_ALL_TESTS();
 }

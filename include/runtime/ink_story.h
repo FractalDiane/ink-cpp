@@ -50,7 +50,7 @@ public:
 	InkStory(const InkStory& from) = delete;
 	InkStory& operator=(const InkStory& other) = delete;
 
-	InkStory(InkStory&& from) : story_data{from.story_data} {
+	InkStory(InkStory&& from) : story_data{from.story_data}, loaded_from_file{from.loaded_from_file} {
 		from.story_data = nullptr;
 		init_story();
 	}
@@ -59,6 +59,7 @@ public:
 		if (this != &other) {
 			story_data = other.story_data;
 			other.story_data = nullptr;
+			loaded_from_file = other.loaded_from_file;
 			init_story();
 		}
 
