@@ -494,6 +494,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					case ObjectId::Sequence:
 					case ObjectId::Glue:
 					case ObjectId::Divert:
+					case ObjectId::Tag:
 					add_newline:
 						result_object = new InkObjectLineBreak();
 						break;
@@ -513,10 +514,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 			++token_index;
 			while (true) {
-				if (all_tokens[token_index].token == InkToken::Hash) {
+				if (all_tokens[token_index].token == InkToken::Hash || all_tokens[token_index].token == InkToken::NewLine) {
 					--token_index;
-					break;
-				} else if (all_tokens[token_index].token == InkToken::NewLine) {
 					break;
 				}
 

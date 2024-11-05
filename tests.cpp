@@ -1754,6 +1754,16 @@ TEST_F(MiscBugTests, AddNullToNumber) {
 	STORY("22_misc_bugs/22m_add_null_to_number.ink");
 	EXPECT_TEXT("Eight is");
 }
+
+TEST_F(MiscBugTests, MultipleTags) {
+	STORY("22_misc_bugs/22n_multiple_tags.ink");
+	EXPECT_TEXT("line 1");
+	EXPECT_TRUE(story.get_current_tags() == std::vector<std::string>({"tag", "tag2"}));
+	EXPECT_TEXT("line 2");
+	EXPECT_TEXT("line 3");
+	EXPECT_TEXT("line 4");
+	EXPECT_TEXT("line 5");
+}
 #pragma endregion
 
 #pragma region Long Example Tests
