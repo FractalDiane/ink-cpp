@@ -325,6 +325,7 @@ std::string Variant::to_printable_string() const {
 
 				std::string result;
 				result.reserve(list.size() * 16);
+				result.push_back('(');
 				
 				std::size_t index = 0;
 				for (auto it = list.cbegin(); it != list.cend(); ++it) {
@@ -335,6 +336,7 @@ std::string Variant::to_printable_string() const {
 					}
 				}
 
+				result.push_back(')');
 				return result;
 			} break;
 				
