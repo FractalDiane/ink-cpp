@@ -1764,6 +1764,15 @@ TEST_F(MiscBugTests, MultipleTags) {
 	EXPECT_TEXT("line 4");
 	EXPECT_TEXT("line 5");
 }
+
+TEST_F(MiscBugTests, BadFormatting) {
+	STORY("22_misc_bugs/22o_bad_formatting.ink");
+	EXPECT_TEXT("");
+	EXPECT_CHOICES("Compare the prints on the knife and the window");
+	story.choose_choice_index(0);
+	EXPECT_TEXT("Holding the bloodied knife near the window, I breathed to bring out the prints once more, and compared them as best I could.");
+	EXPECT_TEXT("Hardly scientific, but they seemed very similar - very similiar indeed.");
+}
 #pragma endregion
 
 #pragma region Long Example Tests

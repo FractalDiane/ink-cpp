@@ -720,6 +720,28 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					while (token_index < all_tokens.size()) {
 						const InkLexer::Token& in_choice_token = all_tokens[token_index];
 						if (in_choice_token.token == InkToken::NewLine) {
+							// do not enter the result stage if there have been no text items
+							// needed for `* { condition } \n [text]`
+							if (!in_result) {
+								if (choice_stack.back().text.empty()) {
+									++token_index;
+									continue;
+								} else {
+									bool continu = true;
+									for (InkObject* object : choice_stack.back().text) {
+										if (object->has_any_contents(true)) {
+											continu = false;
+											break;
+										}
+									}
+
+									if (continu) {
+										++token_index;
+										continue;
+									}
+								}
+							}
+
 							InkLexer::Token next = next_token(all_tokens, token_index);
 							if (next.token == InkToken::Equal || next.token == InkToken::RightBrace) {
 								break;

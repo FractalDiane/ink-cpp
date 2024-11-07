@@ -68,7 +68,7 @@ public:
 
 	inline bool has_value() const { return _has_value; }
 	inline std::size_t index() const { return value.index(); }
-	std::string to_printable_string() const;
+	std::string to_printable_string(bool list_parens = false) const;
 
 	Variant operator+(const Variant& rhs) const;
 	Variant operator-(const Variant& rhs) const;

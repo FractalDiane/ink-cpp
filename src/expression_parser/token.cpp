@@ -289,7 +289,7 @@ Variant& Variant::operator=(const Variant& from) {
 	return *this;
 }
 
-std::string Variant::to_printable_string() const {
+std::string Variant::to_printable_string(bool list_parens) const {
 	if (_has_value) {
 		switch (value.index()) {
 			case Variant_Bool: {
@@ -325,7 +325,9 @@ std::string Variant::to_printable_string() const {
 
 				std::string result;
 				result.reserve(list.size() * 16);
-				result.push_back('(');
+				if (list_parens) {
+					result.push_back('(');
+				}
 				
 				std::size_t index = 0;
 				for (auto it = list.cbegin(); it != list.cend(); ++it) {
@@ -336,7 +338,10 @@ std::string Variant::to_printable_string() const {
 					}
 				}
 
-				result.push_back(')');
+				if (list_parens) {
+					result.push_back(')');
+				}
+				
 				return result;
 			} break;
 				
