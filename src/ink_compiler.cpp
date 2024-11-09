@@ -118,10 +118,11 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 
 			case '\\': {
 				char next = next_char(script_text, index);
-				while (next_char(script_text, index) == next) {
+				while (index < script_text.length() && next_char(script_text, index) == next) {
 					current_text += next;
 					++index;
 				}
+
 				current_text_escaped = true;
 			} break;
 
@@ -131,7 +132,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 					this_token.token = chr == '*' ? InkToken::Asterisk : InkToken::Plus;
 					++index;
 					std::size_t whitespace_skipped = 0;
-					while (true) {
+					while (index < script_text.length()) {
 						char inner_chr = script_text[index];
 						if (inner_chr > ' ' || inner_chr == '\n') {
 							if (inner_chr == chr) {
@@ -163,7 +164,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 				} else if (at_line_start) {
 					this_token.token = InkToken::Dash;
 					++index;
-					while (true) {
+					while (index < script_text.length()) {
 						char inner_chr = script_text[index];
 						if (inner_chr > ' ' || inner_chr == '\n') {
 							if (inner_chr == chr) {
@@ -513,7 +514,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			std::string tag_contents;
 
 			++token_index;
-			while (true) {
+			while (token_index < all_tokens.size()) {
 				if (all_tokens[token_index].token == InkToken::Hash || all_tokens[token_index].token == InkToken::NewLine) {
 					--token_index;
 					break;
