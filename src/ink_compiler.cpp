@@ -565,7 +565,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							std::string all_params;
 							all_params.reserve(50);
 							bool found_arrow = false;
-							while (all_tokens[token_index].token != InkToken::RightParen) {
+							while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::RightParen) {
 								if (all_tokens[token_index].token != InkToken::Arrow) {
 									if (found_arrow) {
 										all_params += strip_string_edges(all_tokens[token_index].text_contents, true, false, true);
@@ -605,7 +605,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							current_knot_index = existing_index;
 						}
 
-						while (all_tokens[token_index].token != InkToken::NewLine) {
+						while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::NewLine) {
 							++token_index;
 						}
 
@@ -629,7 +629,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 						std::string all_params;
 						all_params.reserve(50);
-						while (all_tokens[token_index].token != InkToken::RightParen) {
+						while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::RightParen) {
 							all_params += all_tokens[token_index].text_contents;
 							++token_index;
 						}
@@ -653,7 +653,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 					stitches.push_back(new_stitch);
 
-					while (all_tokens[token_index].token != InkToken::NewLine) {
+					while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::NewLine) {
 						++token_index;
 					}
 
@@ -698,7 +698,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					choice_stack.push_back(InkChoiceEntry(choice_options.size(), current_choice_sticky));
 					anonymous_knot_stack.push_back(&choice_stack.back().result);
 
-					while (all_tokens[token_index].token == InkToken::Text && !all_tokens[token_index].escaped && strip_string_edges(all_tokens[token_index].get_text_contents(), true, true, true).empty()) {
+					while (token_index < all_tokens.size() && all_tokens[token_index].token == InkToken::Text && !all_tokens[token_index].escaped && strip_string_edges(all_tokens[token_index].get_text_contents(), true, true, true).empty()) {
 						++token_index;
 					}
 
@@ -1034,7 +1034,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 											token_index += 2;
 										}
 										
-										while (next_token_is(all_tokens, token_index, InkToken::NewLine) || (strip_string_edges(next_token(all_tokens, token_index).get_text_contents(), true, true, true).empty())) {
+										while (token_index < all_tokens.size() && (next_token_is(all_tokens, token_index, InkToken::NewLine) || (strip_string_edges(next_token(all_tokens, token_index).get_text_contents(), true, true, true).empty()))) {
 											++token_index;
 										}
 
@@ -1061,7 +1061,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 											++token_index;
 										}
 
-										while (next_token_is(all_tokens, token_index, InkToken::NewLine) || (strip_string_edges(next_token(all_tokens, token_index).get_text_contents(), true, true, true).empty())) {
+										while (token_index < all_tokens.size() && (next_token_is(all_tokens, token_index, InkToken::NewLine) || (strip_string_edges(next_token(all_tokens, token_index).get_text_contents(), true, true, true).empty()))) {
 											++token_index;
 										}
 
@@ -1189,7 +1189,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						all_args.reserve(50);
 
 						std::size_t extra_paren_count = 0;
-						while (all_tokens[token_index].token != InkToken::RightParen || extra_paren_count > 0) {
+						while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::RightParen || extra_paren_count > 0) {
 							all_args += all_tokens[token_index].text_contents;
 							if (all_tokens[token_index].token == InkToken::LeftParen) {
 								++extra_paren_count;
@@ -1261,7 +1261,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						all_args.reserve(50);
 
 						std::size_t extra_paren_count = 0;
-						while (all_tokens[token_index].token != InkToken::RightParen || extra_paren_count > 0) {
+						while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::RightParen || extra_paren_count > 0) {
 							all_args += all_tokens[token_index].text_contents;
 							if (all_tokens[token_index].token == InkToken::LeftParen) {
 								++extra_paren_count;
@@ -1316,7 +1316,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				}
 
 				if (!story_knots[current_knot_index].objects.empty() && story_knots[current_knot_index].objects.back()->get_id() == ObjectId::Choice) {
-					while (next_token_is(all_tokens, token_index, InkToken::NewLine)) {
+					while (token_index < all_tokens.size() && next_token_is(all_tokens, token_index, InkToken::NewLine)) {
 						++token_index;
 					}
 				}
@@ -1338,7 +1338,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 				std::string expression;
 				expression.reserve(50);
-				while (all_tokens[token_index].token != InkToken::NewLine) {
+				while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::NewLine) {
 					expression += all_tokens[token_index].get_text_contents();
 					++token_index;
 				}
@@ -1607,7 +1607,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							std::string all_params;
 							all_params.reserve(50);
 							bool found_arrow = false;
-							while (all_tokens[token_index].token != InkToken::RightParen) {
+							while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::RightParen) {
 								if (all_tokens[token_index].token != InkToken::Arrow) {
 									if (found_arrow) {
 										all_params += strip_string_edges(all_tokens[token_index].text_contents, true, false, true);

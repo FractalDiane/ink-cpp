@@ -24,8 +24,8 @@ void print_vector(const std::vector<T>& vector) {
 	std::cout << "}" << std::endl;
 }
 
-#define TEST_FOLDER "21_lists"
-#define TEST_FILE "21e_list_values"
+#define TEST_FOLDER "22_misc_bugs"
+#define TEST_FILE "22p_angel_contract_break"
 //#define TEST_FOLDER "22_misc_bugs"
 //#define TEST_FILE "22l_choice_divert_scope"
 //#define TEST_FOLDER "23_long_examples"

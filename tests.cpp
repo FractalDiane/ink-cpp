@@ -81,6 +81,7 @@ FIXTURE(ThreadTests);
 FIXTURE(ListTests);
 FIXTURE(MiscBugTests);
 FIXTURE(LongExampleTests);
+FIXTURE(ErrorTests);
 
 FIXTURE(MiscellaneousTests);
 
@@ -1969,6 +1970,10 @@ TEST_F(MiscellaneousTests, ExternalFunctionReturnValues) {
 
 	EXPECT_TEXT("The dot product of (6.2, 8.9) and (1.07, 5.2) is 52.914");
 }
+#pragma endregion
+
+#pragma region Error Tests
+
 #pragma endregion
 
 #pragma region InkProof
