@@ -705,7 +705,10 @@ std::string InkStory::continue_story_maximally() {
 		result.push_back('\n');
 	}
 
-	result.pop_back();
+	if (!result.empty()) {
+		result.pop_back();
+	}
+	
 	return result;
 }
 

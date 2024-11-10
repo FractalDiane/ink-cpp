@@ -1793,6 +1793,28 @@ TEST_F(MiscBugTests, PreprocessedInIncludes) {
 	EXPECT_TEXT("2");
 	#undef THIS_PATH
 }
+
+TEST_F(MiscBugTests, PreprocessedInIncludes2) {
+	#define THIS_PATH "22_misc_bugs/22r_preprocessed_in_includes_2.ink"
+	InkStory story;
+	compiler.set_root_include_path(INKCPP_WORKING_DIR "/tests/22_misc_bugs/");
+	if (serialize_mode) {
+		compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH, std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b"); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b");
+	} else {
+		story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH);\
+	}
+
+	//story.bind_external_function("get_five", q22_get_5, true);
+	//story.bind_external_function("double", q22_double, true);
+	EXPECT_TEXT("It is currently afternoon.");
+	#undef THIS_PATH
+}
+
+TEST_F(MiscBugTests, DoubleContinueMaximally) {
+	STORY("22_misc_bugs/22q_preprocessed_in_includes.ink");
+	story.continue_story_maximally();
+	story.continue_story_maximally();
+}
 #pragma endregion
 
 #pragma region Long Example Tests
