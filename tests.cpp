@@ -1771,6 +1771,28 @@ TEST_F(MiscBugTests, BadFormatting) {
 	EXPECT_TEXT("Holding the bloodied knife near the window, I breathed to bring out the prints once more, and compared them as best I could.");
 	EXPECT_TEXT("Hardly scientific, but they seemed very similar - very similiar indeed.");
 }
+
+int q22_get_5() { return 5; }
+int q22_double(int what) { return what * 2; }
+
+TEST_F(MiscBugTests, PreprocessedInIncludes) {
+	#define THIS_PATH "22_misc_bugs/22q_preprocessed_in_includes.ink"
+	InkStory story;
+	compiler.set_root_include_path(INKCPP_WORKING_DIR "/tests/22_misc_bugs/");
+	if (serialize_mode) {
+		compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH, std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b"); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b");
+	} else {
+		story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH);\
+	}
+
+	story.bind_external_function("get_five", q22_get_5, true);
+	story.bind_external_function("double", q22_double, true);
+	EXPECT_TEXT("hello");
+	EXPECT_TEXT("5");
+	EXPECT_TEXT("12");
+	EXPECT_TEXT("2");
+	#undef THIS_PATH
+}
 #pragma endregion
 
 #pragma region Long Example Tests
