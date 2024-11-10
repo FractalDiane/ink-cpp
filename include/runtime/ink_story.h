@@ -242,6 +242,13 @@ void InkStory::bind_external_function(const std::string& function_name, void(*fu
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+template <ConvertibleFromVariant R>
+void InkStory::bind_external_function(const std::string& function_name, R(*function)(), bool lookahead_safe) {
+	bind_external_function_generic(function_name, [function](const std::vector<ExpressionParserV2::Variant>& args) {
+		return function();
+	}, lookahead_safe);
+}
+
 template <ConvertibleFromVariant R, ConvertibleToVariant A1>
 void InkStory::bind_external_function(const std::string& function_name, R(*function)(A1), bool lookahead_safe) {
 	bind_external_function_generic(function_name, [function](const std::vector<ExpressionParserV2::Variant>& args) {

@@ -16,9 +16,6 @@ protected:\
 
 static bool serialize_mode = false;
 
-//#define STORY(path) InkStory story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path)
-//#define STORY(path) compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" path, std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"); InkStory story{std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"};
-
 #define STORY(path) InkStory story; if (serialize_mode) {\
 	compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" path, std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" path) + "b");\
 } else {\
@@ -2121,15 +2118,35 @@ TEST_F(InkProof, Whitespace) {
 }
 
 TEST_F(InkProof, Includes) {
-	STORY("ink-proof/24_includes.ink");
+	//STORY("ink-proof/24_includes.ink");
+	#define THIS_PATH "ink-proof/24_includes.ink"
+	InkStory story;
+	compiler.set_root_include_path(INKCPP_WORKING_DIR "/tests/ink-proof/include/");
+	if (serialize_mode) {
+		compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH, std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b"); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b");
+	} else {
+		story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH);\
+	}
+
 	EXPECT_TEXT("This is include 1.", "This is include 2.", "This is the main file.");
+	#undef THIS_PATH
 }
 
 TEST_F(InkProof, NestedIncludes) {
-	STORY("ink-proof/25_nested_includes.ink");
+	//STORY("ink-proof/25_nested_includes.ink");
+	#define THIS_PATH "ink-proof/25_nested_includes.ink"
+	InkStory story;
+	compiler.set_root_include_path(INKCPP_WORKING_DIR "/tests/ink-proof/include/");
+	if (serialize_mode) {
+		compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH, std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b"); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b");
+	} else {
+		story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH);\
+	}
+
 	EXPECT_TEXT("The value of a variable in test file 2 is 5.");
 	EXPECT_TEXT("This is the main file");
 	EXPECT_TEXT("The value when accessed from knot_in_2 is 5.");
+	#undef THIS_PATH
 }
 
 TEST_F(InkProof, FloorCeilingCast) {

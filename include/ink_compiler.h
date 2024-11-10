@@ -82,6 +82,7 @@ private:
 		Main,
 	};
 
+	std::string root_include_path;
 	std::vector<InkLexer::Token> include_sublevel_tokens;
 
 	ExpressionParserV2::StoryVariableInfo story_variable_info;
@@ -98,6 +99,8 @@ public:
 
 	UuidValue get_current_uuid() const { return current_uuid; }
 	void set_current_uuid(UuidValue value) { current_uuid = value; }
+
+	void set_root_include_path(const std::string& root_path) { root_include_path = root_path; }
 
 private:
 	void init_compiler();

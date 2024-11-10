@@ -1563,7 +1563,9 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				++include_statement_length;
 			}
 
-			std::ifstream include_file{strip_string_edges(path, true, true, true)};
+			std::string final_path = root_include_path + strip_string_edges(path, true, true, true);
+
+			std::ifstream include_file{final_path};
 			std::stringstream buffer;
 			buffer << include_file.rdbuf();
 			std::string include_file_text = buffer.str();

@@ -1,1 +1,1 @@
-INCLUDE ../tests/ink-proof/include/include_2b.ink
+INCLUDE include_2b.ink
