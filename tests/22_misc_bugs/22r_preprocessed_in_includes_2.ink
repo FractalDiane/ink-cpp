@@ -1,4 +1,4 @@
-INCLUDE include_functions.ink
+INCLUDE functions.ink
 
 VAR day = DAY_SECTION_AFTERNOON
 

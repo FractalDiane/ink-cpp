@@ -225,6 +225,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 		if (auto keyword_token = TokenKeywords.find(strip_string_edges(current_text, true, true, true)); keyword_token != TokenKeywords.end()) {
 			if (!any_tokens_this_line || !keyword_token->second.must_be_at_line_start) {
 				this_token.token = keyword_token->second.token;
+				this_token.text_contents = keyword_token->first;
 				current_text.clear();
 			}
 		}
