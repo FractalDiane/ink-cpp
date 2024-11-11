@@ -1575,6 +1575,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			InkLexer include_lexer;
 			std::vector<InkLexer::Token> include_token_stream = include_lexer.lex_script(include_file_text);
 			include_token_stream = remove_comments(include_token_stream);
+			include_token_stream.push_back(InkLexer::Token(InkToken::NewLine, std::string()));
 			
 			std::vector<InkLexer::Token> toplevel_tokens;
 			toplevel_tokens.reserve(include_token_stream.size());

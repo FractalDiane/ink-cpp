@@ -22,6 +22,12 @@ static bool serialize_mode = false;
 	story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path);\
 }
 
+#define STORY_INC(path, include_root) InkStory story; compiler.set_root_include_path(include_root); if (serialize_mode) {\
+	compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" path, std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" path) + "b");\
+} else {\
+	story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path);\
+}
+
 #define EXPECT_TEXT(...) {\
 		std::vector<std::string> seq = {__VA_ARGS__};\
 		for (const std::string& expected_text : seq) {\
@@ -1776,38 +1782,18 @@ int q22_get_5() { return 5; }
 int q22_double(int what) { return what * 2; }
 
 TEST_F(MiscBugTests, PreprocessedInIncludes) {
-	#define THIS_PATH "22_misc_bugs/22q_preprocessed_in_includes.ink"
-	InkStory story;
-	compiler.set_root_include_path(INKCPP_WORKING_DIR "/tests/22_misc_bugs/");
-	if (serialize_mode) {
-		compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH, std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b"); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b");
-	} else {
-		story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH);\
-	}
-
+	STORY_INC("22_misc_bugs/22q_preprocessed_in_includes.ink", INKCPP_WORKING_DIR "/tests/22_misc_bugs/");
 	story.bind_external_function("get_five", q22_get_5, true);
 	story.bind_external_function("double", q22_double, true);
 	EXPECT_TEXT("hello");
 	EXPECT_TEXT("5");
 	EXPECT_TEXT("12");
 	EXPECT_TEXT("2");
-	#undef THIS_PATH
 }
 
 TEST_F(MiscBugTests, PreprocessedInIncludes2) {
-	#define THIS_PATH "22_misc_bugs/22r_preprocessed_in_includes_2.ink"
-	InkStory story;
-	compiler.set_root_include_path(INKCPP_WORKING_DIR "/tests/22_misc_bugs/");
-	if (serialize_mode) {
-		compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH, std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b"); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b");
-	} else {
-		story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH);\
-	}
-
-	//story.bind_external_function("get_five", q22_get_5, true);
-	//story.bind_external_function("double", q22_double, true);
+	STORY_INC("22_misc_bugs/22r_preprocessed_in_includes_2.ink", INKCPP_WORKING_DIR "/tests/22_misc_bugs/");
 	EXPECT_TEXT("It is currently afternoon.");
-	#undef THIS_PATH
 }
 
 TEST_F(MiscBugTests, DoubleContinueMaximally) {
@@ -2162,35 +2148,15 @@ TEST_F(InkProof, Whitespace) {
 }
 
 TEST_F(InkProof, Includes) {
-	//STORY("ink-proof/24_includes.ink");
-	#define THIS_PATH "ink-proof/24_includes.ink"
-	InkStory story;
-	compiler.set_root_include_path(INKCPP_WORKING_DIR "/tests/ink-proof/include/");
-	if (serialize_mode) {
-		compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH, std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b"); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b");
-	} else {
-		story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH);\
-	}
-
+	STORY_INC("ink-proof/24_includes.ink", INKCPP_WORKING_DIR "/tests/ink-proof/include/");
 	EXPECT_TEXT("This is include 1.", "This is include 2.", "This is the main file.");
-	#undef THIS_PATH
 }
 
 TEST_F(InkProof, NestedIncludes) {
-	//STORY("ink-proof/25_nested_includes.ink");
-	#define THIS_PATH "ink-proof/25_nested_includes.ink"
-	InkStory story;
-	compiler.set_root_include_path(INKCPP_WORKING_DIR "/tests/ink-proof/include/");
-	if (serialize_mode) {
-		compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH, std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b"); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" THIS_PATH) + "b");
-	} else {
-		story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" THIS_PATH);\
-	}
-
+	STORY_INC("ink-proof/25_nested_includes.ink", INKCPP_WORKING_DIR "/tests/ink-proof/include/");
 	EXPECT_TEXT("The value of a variable in test file 2 is 5.");
 	EXPECT_TEXT("This is the main file");
 	EXPECT_TEXT("The value when accessed from knot_in_2 is 5.");
-	#undef THIS_PATH
 }
 
 TEST_F(InkProof, FloorCeilingCast) {
