@@ -33,18 +33,18 @@ enum FunctionPrepType {
 struct ChoiceLabelData {
 	struct GatherPoint* label;
 	struct Knot* containing_knot;
-	std::size_t choice_index_in_knot;
-	std::size_t choice_option_index;
+	std::size_t choice_index_in_knot = 0;
+	std::size_t choice_option_index = 0;
 };
 
 struct InkWeaveContent {
 	std::string name;
 	Uuid uuid;
-	WeaveContentType type;
+	WeaveContentType type = WeaveContentType::Knot;
 
 	struct Parameter {
 		std::string name;
-		bool by_ref;
+		bool by_ref = false;
 	};
 
 	std::vector<Parameter> parameters;

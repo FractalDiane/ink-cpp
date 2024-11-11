@@ -94,7 +94,7 @@ else()
 	set(INK_COMPILE_OPTIONS -Wall -Wpedantic -Werror -Wno-unused-parameter -Wno-reorder -lm)
 
 	if (CMAKE_BUILD_TYPE STREQUAL Release)
-		list(APPEND INK_COMPILE_OPTIONS -O3)
+		list(APPEND INK_COMPILE_OPTIONS -O3 -Wno-free-nonheap-object) # GCC false positive bug in O3 mode with std::vector::reserve()
 	else()
 		list(APPEND INK_COMPILE_OPTIONS -O0 -g)
 	endif()

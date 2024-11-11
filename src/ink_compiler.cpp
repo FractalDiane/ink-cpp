@@ -1191,7 +1191,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						all_args.reserve(50);
 
 						std::size_t extra_paren_count = 0;
-						while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::RightParen || extra_paren_count > 0) {
+						while (token_index < all_tokens.size() && (all_tokens[token_index].token != InkToken::RightParen || extra_paren_count > 0)) {
 							all_args += all_tokens[token_index].text_contents;
 							if (all_tokens[token_index].token == InkToken::LeftParen) {
 								++extra_paren_count;
@@ -1263,7 +1263,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						all_args.reserve(50);
 
 						std::size_t extra_paren_count = 0;
-						while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::RightParen || extra_paren_count > 0) {
+						while (token_index < all_tokens.size() && (all_tokens[token_index].token != InkToken::RightParen || extra_paren_count > 0)) {
 							all_args += all_tokens[token_index].text_contents;
 							if (all_tokens[token_index].token == InkToken::LeftParen) {
 								++extra_paren_count;
