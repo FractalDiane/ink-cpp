@@ -1957,6 +1957,11 @@ TEST_F(MiscellaneousTests, UnicodeSupport) {
 	EXPECT_TEXT("Well, it's £1 for a five-minute argument, but it'll be £8 for a course of ten.");
 }
 
+TEST_F(MiscellaneousTests, UnicodeSupport2) {
+	STORY("miscellaneous/unicode_support_2.ink");
+	EXPECT_TEXT("♪ doop de doop ♪");
+}
+
 static int observer_test = 0;
 
 TEST_F(MiscellaneousTests, VariableObservation) {

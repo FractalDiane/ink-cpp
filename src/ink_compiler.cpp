@@ -134,7 +134,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 					std::size_t whitespace_skipped = 0;
 					while (index < script_text.length()) {
 						char inner_chr = script_text[index];
-						if (inner_chr > ' ' || inner_chr == '\n') {
+						if (!is_whitespace(inner_chr) || inner_chr == '\n') {
 							if (inner_chr == chr) {
 								++this_token.count;
 							} else {
@@ -166,7 +166,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 					++index;
 					while (index < script_text.length()) {
 						char inner_chr = script_text[index];
-						if (inner_chr > ' ' || inner_chr == '\n') {
+						if (!is_whitespace(inner_chr) || inner_chr == '\n') {
 							if (inner_chr == chr) {
 								++this_token.count;
 							} else {
@@ -214,7 +214,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 			default: {
 				if (auto token_char = TokenChars.find(chr); token_char != TokenChars.end()) {
 					this_token.token = token_char->second;
-				} else if (any_tokens_this_line || !current_text.empty() || chr > ' ') {
+				} else if (any_tokens_this_line || !current_text.empty() || !is_whitespace(chr)) {
 					current_text += chr;
 					end_text = false;
 					at_line_start = false;

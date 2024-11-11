@@ -1,5 +1,7 @@
 #include "expression_parser/expression_parser.h"
 
+#include "ink_utils.h"
+
 #include <cctype>
 #include <unordered_set>
 #include <cmath>
@@ -192,7 +194,7 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 				if (expression[i] == '(') {
 					paren_next = true;
 					break;
-				} else if (expression[i] > ' ') {
+				} else if (!is_whitespace(expression[i])) {
 					break;
 				}
 			}
@@ -309,7 +311,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 			switch (this_char) {
 				case '+': {
 					if (next_char(expression, index) == '+') {
-						if (next_char(expression, index + 1) <= ' ') {
+						if (is_whitespace(next_char(expression, index + 1))) {
 							TRY_ADD_WORD();
 							result.push_back(Token::operat(OperatorType::Increment, UnaryType::Postfix));
 						} else {
@@ -329,7 +331,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 
 				case '-': {
 					if (next_char(expression, index) == '-') {
-						if (next_char(expression, index + 1) <= ' ') {
+						if (is_whitespace(next_char(expression, index + 1))) {
 							TRY_ADD_WORD();
 							result.push_back(Token::operat(OperatorType::Decrement, UnaryType::Postfix));
 						} else {
@@ -346,7 +348,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 						++index;
 					} else {
 						TRY_ADD_WORD();
-						if (next_char(expression, index) > ' ' && (result.empty() || result.back().type == TokenType::Operator || result.back().type == TokenType::ParenComma)) {
+						if (!is_whitespace(next_char(expression, index)) && (result.empty() || result.back().type == TokenType::Operator || result.back().type == TokenType::ParenComma)) {
 							result.push_back(Token::operat(OperatorType::Negative, UnaryType::Prefix));
 						} else {
 							result.push_back(Token::operat(OperatorType::Minus, UnaryType::NotUnary));
@@ -426,7 +428,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 					} else if (next_char(expression, index) == '?') {
 						result.push_back(Token::operat(OperatorType::NotSubstring, UnaryType::NotUnary));
 						++index;
-					} else if (next_char(expression, index) > ' ') {
+					} else if (!is_whitespace(next_char(expression, index))) {
 						result.push_back(Token::operat(OperatorType::Not, UnaryType::Prefix));
 					}
 				} break;
@@ -475,7 +477,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 				} break;
 
 				default: {
-					if (this_char > ' ') {
+					if (!is_whitespace(this_char)) {
 						current_word.push_back(this_char);
 					} else {
 						TRY_ADD_WORD();
