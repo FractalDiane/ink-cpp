@@ -18,9 +18,6 @@ using namespace ExpressionParserV2;
 
 namespace {
 	static const std::unordered_map<std::string, std::pair<OperatorType, OperatorUnaryType>> OperatorKeywords = {
-		//{"temp", TokenKeyword::Type::Temp},
-		//{"true", TokenKeyword::Type::True},
-		//{"false", TokenKeyword::Type::False},
 		{"and", {OperatorType::And, OperatorUnaryType::NotUnary}},
 		{"or", {OperatorType::Or, OperatorUnaryType::NotUnary}},
 		{"not", {OperatorType::Not, OperatorUnaryType::Prefix}},
@@ -219,6 +216,15 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 				result.push_back(token);
 				in_knot_name = false;
 			} else {
+				/*bool is_variable = story_var_info.variables.contains(word);
+				bool is_const = story_var_info.constants.contains(word);
+				if (is_variable || is_const || (!result.empty() && result.back().type == TokenType::Keyword && result.back().keyword_type == KeywordType::Temp)) {
+					Token token = Token::variable(word, story_var_info.constants.contains(word));
+					result.push_back(token);
+				} else {
+					throw ExpressionException(std::format("Undefined variable: {}", word));
+				}*/
+
 				Token token = Token::variable(word, story_var_info.constants.contains(word));
 				result.push_back(token);
 			}

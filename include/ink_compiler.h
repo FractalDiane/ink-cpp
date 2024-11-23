@@ -11,6 +11,7 @@
 #include <list>
 #include <optional>
 #include <expected>
+#include <unordered_set>
 #include <format>
 
 class InkCompilerException {
@@ -104,6 +105,7 @@ private:
 
 	std::string root_include_path;
 	std::vector<InkLexer::Token> include_sublevel_tokens;
+	std::unordered_set<std::string> all_included_files;
 
 	ExpressionParserV2::StoryVariableInfo story_variable_info;
 	std::vector<std::pair<std::string, std::pair<Uuid, std::vector<InkListDefinition::Entry>>>> cached_list_variables;

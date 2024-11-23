@@ -335,6 +335,12 @@ void InkCompiler::init_compiler() {
 	choice_stack.clear();
 
 	current_sequence_index = 0;
+	current_uuid = 0;
+
+	include_sublevel_tokens.clear();
+	all_included_files.clear();
+
+	cached_list_variables.clear();
 }
 
 InkStoryData* InkCompiler::compile(const std::string& script)
@@ -474,31 +480,6 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 					story_variable_info.variables.emplace(list.first, new_list_var);
 				}
 
-				/*for (CachedGlobalVariable& var : cached_global_variables) {
-					for (const ExpressionParserV2::Token& token : var.expression.tokens) {
-						if (token.type == ExpressionParserV2::TokenType::Variable && !story_variable_info.constants.contains(token.variable_name)) {
-							bool is_list_item = false;
-							for (const auto& list : story_variable_info.defined_lists.defined_lists) {
-								if (list.second.get_entry_value(token.variable_name).has_value()) {
-									is_list_item = true;
-									break;
-								}
-							}
-
-							if (!is_list_item) {
-								throw InkCompilerException("VAR declarations can only contain CONSTS, divert targets, or literal numbers and strings", var.declared_line_number);
-							}
-						}
-					}
-
-					try {
-						ExpressionParserV2::Variant expression_result = ExpressionParserV2::execute_expression_tokens(var.expression.tokens, story_variable_info).value();
-						story_variable_info.variables.emplace(var.name, expression_result);
-					} catch (...) {
-						throw std::runtime_error("Malformed value of VAR statement");
-					}
-				}*/
-
 				current_pass = CompilerPass::GlobalVariables;
 			} break;
 
@@ -597,14 +578,15 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 						bool is_new_knot = true;
 						std::size_t existing_index = 0;
-						for (std::size_t i = 0; i < story_knots.size(); ++i)
-						for (const Knot& knot : story_knots) {
-							if (knot.name == new_knot_name) {
-								is_new_knot = false;
-								break;
-							}
+						for (std::size_t i = 0; i < story_knots.size(); ++i) {
+							for (const Knot& knot : story_knots) {
+								if (knot.name == new_knot_name) {
+									is_new_knot = false;
+									break;
+								}
 
-							++existing_index;
+								++existing_index;
+							}
 						}
 
 						new_knot.name = new_knot_name;
@@ -703,7 +685,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						new_stitch.parameters = params;
 					}
 
-					stitches.push_back(new_stitch);
+						stitches.push_back(new_stitch);
 
 					while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::NewLine) {
 						++token_index;
@@ -1488,7 +1470,6 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 									story_variable_info.constants.emplace(identifier, expression_result);
 								} else {
 									story_variable_info.variables.emplace(identifier, expression_result);
-									//cached_global_variables.emplace_back(identifier, all_tokens[token_index].line_number, expression_shunted);
 								}
 							} catch (const ExpressionParserV2::ExpressionException& e) {
 								throw InkCompilerException(e.what(), all_tokens[token_index].line_number);
@@ -1619,6 +1600,10 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 			std::string final_path = root_include_path + strip_string_edges(path, true, true, true);
 
+			if (all_included_files.contains(final_path)) {
+				throw InkCompilerException(std::format("Detected recursive include of file {}", final_path), all_tokens[token_index].line_number);
+			}
+
 			std::ifstream include_file{final_path};
 			if (include_file.fail()) {
 				throw InkCompilerException(std::format("Could not open include file {}", final_path), all_tokens[token_index].line_number);
@@ -1653,6 +1638,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			all_tokens.insert(all_tokens.begin() + include_statement_index, toplevel_tokens.begin(), toplevel_tokens.end());
 			include_sublevel_tokens.insert(include_sublevel_tokens.end(), include_token_stream.begin() + index, include_token_stream.end());
 
+			all_included_files.insert(final_path);
 			token_index = include_statement_index;
 			dont_increment_index = true;
 			end_line = true;
