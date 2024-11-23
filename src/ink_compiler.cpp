@@ -356,7 +356,7 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 	token_index = 0;
 
 	CompilerPass current_pass = CompilerPass::Includes;
-	cached_global_variables.reserve(16);
+	//cached_global_variables.reserve(16);
 	
 	for (int i = 0; i <= static_cast<int>(CompilerPass::Main); ++i) {
 		while (token_index < token_stream.size()) {
@@ -371,9 +371,15 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 
 				case CompilerPass::ConstantsLists: {
 					if (this_token.token == InkToken::KeywordConst
-					|| this_token.token == InkToken::KeywordVar
 					|| this_token.token == InkToken::KeywordList
 					|| this_token.token == InkToken::KeywordExternal
+					|| this_token.token == InkToken::NewLine) {
+						compile_token(token_stream, this_token, result_knots, current_pass);
+					}
+				} break;
+
+				case CompilerPass::GlobalVariables: {
+					if (this_token.token == InkToken::KeywordVar
 					|| this_token.token == InkToken::NewLine) {
 						compile_token(token_stream, this_token, result_knots, current_pass);
 					}
@@ -451,7 +457,7 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 					story_variable_info.variables.emplace(list.first, new_list_var);
 				}
 
-				for (CachedGlobalVariable& var : cached_global_variables) {
+				/*for (CachedGlobalVariable& var : cached_global_variables) {
 					for (const ExpressionParserV2::Token& token : var.expression.tokens) {
 						if (token.type == ExpressionParserV2::TokenType::Variable && !story_variable_info.constants.contains(token.variable_name)) {
 							bool is_list_item = false;
@@ -474,8 +480,12 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 					} catch (...) {
 						throw std::runtime_error("Malformed value of VAR statement");
 					}
-				}
+				}*/
 
+				current_pass = CompilerPass::GlobalVariables;
+			} break;
+
+			case CompilerPass::GlobalVariables: {
 				current_pass = CompilerPass::Main;
 			} break;
 
@@ -1451,18 +1461,21 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 					// const is only evaluated on the second pass
 					// var is only evaluated between the second and third pass
-					if (current_pass == CompilerPass::ConstantsLists) {
-						try {
-							ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info, token.token == InkToken::KeywordConst ? ExpressionParserV2::ContentsAllowed::LiteralsOnly : ExpressionParserV2::ContentsAllowed::ConstantsOnly);
-							expression_shunted.uuid = current_uuid++;
-							if (token.token == InkToken::KeywordConst) {
+					if (current_pass == CompilerPass::ConstantsLists || current_pass == CompilerPass::GlobalVariables) {
+						if ((current_pass == CompilerPass::ConstantsLists) != (token.token == InkToken::KeywordVar)) {
+							try {
+								ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info, token.token == InkToken::KeywordConst ? ExpressionParserV2::ContentsAllowed::LiteralsOnly : ExpressionParserV2::ContentsAllowed::ConstantsOnly);
+								expression_shunted.uuid = current_uuid++;
 								ExpressionParserV2::Variant expression_result = ExpressionParserV2::execute_expression_tokens(expression_shunted.tokens, story_variable_info).value();
-								story_variable_info.constants.emplace(identifier, expression_result);
-							} else {
-								cached_global_variables.emplace_back(identifier, all_tokens[token_index].line_number, expression_shunted);
+								if (token.token == InkToken::KeywordConst) {
+									story_variable_info.constants.emplace(identifier, expression_result);
+								} else {
+									story_variable_info.variables.emplace(identifier, expression_result);
+									//cached_global_variables.emplace_back(identifier, all_tokens[token_index].line_number, expression_shunted);
+								}
+							} catch (const ExpressionParserV2::ExpressionException& e) {
+								throw InkCompilerException(e.what(), all_tokens[token_index].line_number);
 							}
-						} catch (const ExpressionParserV2::ExpressionException& e) {
-							throw InkCompilerException(e.what(), all_tokens[token_index].line_number);
 						}
 					}
 				} else {

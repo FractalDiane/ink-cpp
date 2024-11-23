@@ -2225,7 +2225,7 @@ Token Deserializer<Token>::operator()(const ByteVec& bytes, std::size_t& index) 
 
 		case TokenType::Variable: {
 			std::string name = dsstring(bytes, index);
-			return Token::variable(name);
+			return Token::variable(name, false);
 		} break;
 
 		default: {

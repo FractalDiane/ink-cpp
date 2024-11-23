@@ -219,7 +219,7 @@ void try_add_word(const std::string& expression, std::size_t index, std::vector<
 				result.push_back(token);
 				in_knot_name = false;
 			} else {
-				Token token = Token::variable(word);
+				Token token = Token::variable(word, story_var_info.constants.contains(word));
 				result.push_back(token);
 			}
 		}
@@ -567,6 +567,13 @@ std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix, Co
 
 			case ContentsAllowed::ConstantsOnly: {
 				switch (this_token.type) {
+					case TokenType::Variable: {
+						if (this_token.const_variable) {
+							break;
+						}
+						
+						[[fallthrough]];
+					}
 					case TokenType::Function: {
 						throw ExpressionException("VAR declarations can only contain CONSTS, divert targets, or literal numbers and strings");
 					} break;

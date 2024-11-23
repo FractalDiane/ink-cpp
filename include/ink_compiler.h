@@ -94,20 +94,21 @@ private:
 	enum class CompilerPass {
 		Includes,
 		ConstantsLists,
+		GlobalVariables,
 		Main,
 	};
 
 	std::string root_include_path;
 	std::vector<InkLexer::Token> include_sublevel_tokens;
 
-	struct CachedGlobalVariable {
+	/*struct CachedGlobalVariable {
 		std::string name;
 		std::size_t declared_line_number = 0;
 		ExpressionParserV2::ShuntedExpression expression;
-	};
+	};*/
 
 	ExpressionParserV2::StoryVariableInfo story_variable_info;
-	std::vector<CachedGlobalVariable> cached_global_variables;
+	//std::vector<CachedGlobalVariable> cached_global_variables;
 	std::vector<std::pair<std::string, std::pair<Uuid, std::vector<InkListDefinition::Entry>>>> cached_list_variables;
 	
 public:

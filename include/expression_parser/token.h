@@ -272,6 +272,7 @@ struct Token {
 	bool function_lookahead_safe = true;
 
 	std::string variable_name;
+	bool const_variable = false;
 
 	/*Token(const Variant& from_variant) : value(from_variant) {
 		switch (from_variant.index()) {
@@ -368,8 +369,8 @@ struct Token {
 		return {.type = TokenType::Function, .value = list_name, .function_fetch_type = FunctionFetchType::ListSubscript, .function_argument_count = empty ? (std::uint8_t)0 : (std::uint8_t)1};
 	}
 
-	static Token variable(const std::string& var_name) {
-		return {.type = TokenType::Variable, .variable_name = var_name};
+	static Token variable(const std::string& var_name, bool is_const) {
+		return {.type = TokenType::Variable, .variable_name = var_name, .const_variable = is_const};
 	}
 
 	void fetch_variable_value(const StoryVariableInfo& story_vars);

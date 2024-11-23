@@ -425,7 +425,6 @@ std::string InkStory::continue_story() {
 							story_state.thread_arguments_stack.push_back(thread_args);
 							[[fallthrough]];
 						}
-
 						case DivertType::ToKnot:
 						case DivertType::ToTunnel:
 						case DivertType::FromTunnel: {
