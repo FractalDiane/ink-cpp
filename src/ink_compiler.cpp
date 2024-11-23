@@ -24,9 +24,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-#include <list>
 
-#include <iostream>
 #include <format>
 #include <stdexcept>
 
@@ -258,12 +256,16 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-InkStory InkCompiler::compile_script(const std::string& script) {
-	InkStoryData* story_data = compile(script);
-	return InkStory(story_data);
+std::expected<InkStory, InkCompilerException> InkCompiler::compile_script(const std::string& script) {
+	try {
+		InkStoryData* story_data = compile(script);
+		return InkStory(story_data);
+	} catch (const InkCompilerException& e) {
+		return std::unexpected(e);
+	}
 }
 
-InkStory InkCompiler::compile_file(const std::string& file_path)
+std::expected<InkStory, InkCompilerException> InkCompiler::compile_file(const std::string& file_path)
 {
 	std::ifstream infile{file_path};
 	std::stringstream buffer;
@@ -271,8 +273,12 @@ InkStory InkCompiler::compile_file(const std::string& file_path)
 	std::string file_text = buffer.str();
 	infile.close();
 
-	InkStoryData* story_data = compile(file_text);
-	return InkStory(story_data);
+	try {
+		InkStoryData* story_data = compile(file_text);
+		return InkStory(story_data);
+	} catch (const InkCompilerException& e) {
+		return std::unexpected(e);
+	}
 }
 
 void InkCompiler::save_data_to_file(InkStoryData* story_data, const std::string& out_file_path) {
@@ -285,22 +291,34 @@ void InkCompiler::save_data_to_file(InkStoryData* story_data, const std::string&
 	outfile.close();
 }
 
-void InkCompiler::compile_script_to_file(const std::string& script, const std::string& out_file_path) {
-	InkStoryData* story_data = compile(script);
-	save_data_to_file(story_data, out_file_path);
-	delete story_data;
+InkCompileToFileResult InkCompiler::compile_script_to_file(const std::string& script, const std::string& out_file_path) {
+	try {
+		InkStoryData* story_data = compile(script);
+		save_data_to_file(story_data, out_file_path);
+		delete story_data;
+
+		return 0;
+	} catch (const InkCompilerException& e) {
+		return std::unexpected(e);
+	}
 }
 
-void InkCompiler::compile_file_to_file(const std::string& in_file_path, const std::string& out_file_path) {
+InkCompileToFileResult InkCompiler::compile_file_to_file(const std::string& in_file_path, const std::string& out_file_path) {
 	std::ifstream infile{in_file_path};
 	std::stringstream buffer;
 	buffer << infile.rdbuf();
 	std::string file_text = buffer.str();
 	infile.close();
 
-	InkStoryData* story_data = compile(file_text);
-	save_data_to_file(story_data, out_file_path);
-	delete story_data;
+	try {
+		InkStoryData* story_data = compile(file_text);
+		save_data_to_file(story_data, out_file_path);
+		delete story_data;
+
+		return 0;
+	} catch (const InkCompilerException& e) {
+		return std::unexpected(e);
+	}
 }
 
 void InkCompiler::init_compiler() {

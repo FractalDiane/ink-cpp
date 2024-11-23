@@ -17,15 +17,15 @@ protected:\
 static bool serialize_mode = false;
 
 #define STORY(path) InkStory story; if (serialize_mode) {\
-	compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" path, std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" path) + "b");\
+	static_cast<void>(compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" path, std::string(INKCPP_WORKING_DIR "/tests/" path) + "b")); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" path) + "b");\
 } else {\
-	story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path);\
+	story = *(compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path));\
 }
 
 #define STORY_INC(path, include_root) InkStory story; compiler.set_root_include_path(include_root); if (serialize_mode) {\
-	compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" path, std::string(INKCPP_WORKING_DIR "/tests/" path) + "b"); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" path) + "b");\
+	static_cast<void>(compiler.compile_file_to_file(INKCPP_WORKING_DIR "/tests/" path, std::string(INKCPP_WORKING_DIR "/tests/" path) + "b")); story = InkStory(std::string(INKCPP_WORKING_DIR "/tests/" path) + "b");\
 } else {\
-	story = compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path);\
+	story = *(compiler.compile_file(INKCPP_WORKING_DIR "/tests/" path));\
 }
 
 #define EXPECT_TEXT(...) {\
@@ -2008,24 +2008,30 @@ TEST_F(MiscellaneousTests, ExternalFunctionReturnValues) {
 #pragma region Error Tests
 TEST_F(ErrorTests, InvalidConst) {
 	std::string script = "CONST x = blah";
-	EXPECT_THROW(compiler.compile_script(script), InkCompilerException);
+	InkCompileToStoryResult result = compiler.compile_script(script);
+	EXPECT_FALSE(result.has_value());
 
 	std::string script2 = "CONST x = thing()";
-	EXPECT_THROW(compiler.compile_script(script2), InkCompilerException);
+	InkCompileToStoryResult result2 = compiler.compile_script(script2);
+	EXPECT_FALSE(result2.has_value());
 
 	std::string script3 = "LIST nums = one, two, three\nCONST x = two";
-	EXPECT_THROW(compiler.compile_script(script3), InkCompilerException);
+	InkCompileToStoryResult result3 = compiler.compile_script(script3);
+	EXPECT_FALSE(result3.has_value());
 }
 
 TEST_F(ErrorTests, InvalidVar) {
 	std::string script = "VAR x = blah";
-	EXPECT_THROW(compiler.compile_script(script), InkCompilerException);
+	InkCompileToStoryResult result = compiler.compile_script(script);
+	EXPECT_FALSE(result.has_value());
 
 	std::string script2 = "VAR x = thing()";
-	EXPECT_THROW(compiler.compile_script(script2), InkCompilerException);
+	InkCompileToStoryResult result2 = compiler.compile_script(script2);
+	EXPECT_FALSE(result2.has_value());
 
 	std::string script3 = "LIST nums = one, two, three\nVAR x = two";
-	EXPECT_NO_THROW(compiler.compile_script(script3));
+	InkCompileToStoryResult result3 = compiler.compile_script(script3);
+	EXPECT_TRUE(result3.has_value());
 }
 #pragma endregion
 

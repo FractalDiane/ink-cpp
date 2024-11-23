@@ -16,7 +16,12 @@ int main(int argc, char* argv[]) {
 	}
 
 	std::string infile = argv[1];
-	std::string noext = infile.substr(infile.find('.'));
+	std::string noext = infile.substr(0, infile.find('.'));
+
 	InkCompiler compiler;
-	compiler.compile_file_to_file(infile, argc == 3 ? argv[2] : noext + ".inkb");
+	InkCompileToFileResult compile_result = compiler.compile_file_to_file(infile, argc == 3 ? argv[2] : noext + ".inkb");
+	if (!compile_result.has_value()) {
+		print("Error: {}", compile_result.error().what());
+		return 1;
+	}
 }

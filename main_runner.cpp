@@ -23,7 +23,13 @@ int main(int argc, char* argv[]) {
 		story = InkStory(infile);
 	} else {
 		InkCompiler compiler;
-		story = compiler.compile_file(infile);
+		InkCompileToStoryResult compile_result = compiler.compile_file(infile);
+		if (compile_result.has_value()) {
+			story = std::move(*compile_result);
+		} else {
+			print("Error: {}\n", compile_result.error().what());
+			return 1;
+		}
 	}
 	
 	while (true) {

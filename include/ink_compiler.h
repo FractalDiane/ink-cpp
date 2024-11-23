@@ -8,8 +8,9 @@
 
 #include <string>
 #include <vector>
-#include <unordered_set>
 #include <list>
+#include <optional>
+#include <expected>
 #include <format>
 
 class InkCompilerException {
@@ -24,6 +25,9 @@ public:
 
 	const char* what() const noexcept { return _what.data(); }
 };
+
+typedef std::expected<InkStory, InkCompilerException> InkCompileToStoryResult;
+typedef std::expected<std::size_t, InkCompilerException> InkCompileToFileResult;
 
 class InkLexer {
 public:
@@ -101,23 +105,21 @@ private:
 	std::string root_include_path;
 	std::vector<InkLexer::Token> include_sublevel_tokens;
 
-	/*struct CachedGlobalVariable {
-		std::string name;
-		std::size_t declared_line_number = 0;
-		ExpressionParserV2::ShuntedExpression expression;
-	};*/
-
 	ExpressionParserV2::StoryVariableInfo story_variable_info;
-	//std::vector<CachedGlobalVariable> cached_global_variables;
 	std::vector<std::pair<std::string, std::pair<Uuid, std::vector<InkListDefinition::Entry>>>> cached_list_variables;
 	
 public:
-	InkStory compile_script(const std::string& script);
-	InkStory compile_file(const std::string& file_path);
+	[[nodiscard]]
+	InkCompileToStoryResult compile_script(const std::string& script);
+	[[nodiscard]]
+	InkCompileToStoryResult compile_file(const std::string& file_path);
 
 	void save_data_to_file(InkStoryData* story_data, const std::string& out_file_path);
-	void compile_script_to_file(const std::string& script, const std::string& out_file_path);
-	void compile_file_to_file(const std::string& in_file_path, const std::string& out_file_path);
+
+	[[nodiscard]]
+	InkCompileToFileResult compile_script_to_file(const std::string& script, const std::string& out_file_path);
+	[[nodiscard]]
+	InkCompileToFileResult compile_file_to_file(const std::string& in_file_path, const std::string& out_file_path);
 
 	UuidValue get_current_uuid() const { return current_uuid; }
 	void set_current_uuid(UuidValue value) { current_uuid = value; }
