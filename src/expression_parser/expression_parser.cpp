@@ -543,13 +543,40 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 	return result;
 }
 
-std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix) {
+std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix, ContentsAllowed contents_allowed) {
 	std::vector<std::reference_wrapper<const Token>> postfix;
 	std::stack<std::reference_wrapper<const Token>> stack;
 
 	std::size_t index = 0;
 	while (index < infix.size()) {
 		const Token& this_token = infix[index];
+
+		switch (contents_allowed) {
+			case ContentsAllowed::LiteralsOnly: {
+				switch (this_token.type) {
+					case TokenType::Variable:
+					case TokenType::Function:
+					case TokenType::LiteralList:
+					case TokenType::LiteralKnotName: {
+						throw ExpressionException("CONST declarations can only contain literal numbers and strings");
+					} break;
+
+					default: break;
+				}
+			} break;
+
+			case ContentsAllowed::ConstantsOnly: {
+				switch (this_token.type) {
+					case TokenType::Function: {
+						throw ExpressionException("VAR declarations can only contain CONSTS, divert targets, or literal numbers and strings");
+					} break;
+
+					default: break;
+				}
+			} break;
+
+			default: break;
+		}
 
 		switch (this_token.type) {
 			case TokenType::LiteralBool:
@@ -868,18 +895,18 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression(const std::string& expression, StoryVariableInfo& story_variable_info) {
+ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression(const std::string& expression, StoryVariableInfo& story_variable_info, ContentsAllowed contents_allowed) {
 	std::vector<Token> tokenized = ExpressionParserV2::tokenize_expression(expression, story_variable_info);
-	std::vector<Token> shunted = ExpressionParserV2::shunt(tokenized);
+	std::vector<Token> shunted = ExpressionParserV2::shunt(tokenized, contents_allowed);
 
 	ExecuteResult result = ExpressionParserV2::execute_expression_tokens(shunted, story_variable_info);
 
 	return result;
 }
 
-ShuntedExpression ExpressionParserV2::tokenize_and_shunt_expression(const std::string& expression, StoryVariableInfo& story_variable_info) {
+ShuntedExpression ExpressionParserV2::tokenize_and_shunt_expression(const std::string& expression, StoryVariableInfo& story_variable_info, ContentsAllowed contents_allowed) {
 	std::vector<Token> tokenized = ExpressionParserV2::tokenize_expression(expression, story_variable_info);
-	std::vector<Token> shunted = ExpressionParserV2::shunt(tokenized);
+	std::vector<Token> shunted = ExpressionParserV2::shunt(tokenized, contents_allowed);
 
 	return ShuntedExpression(shunted);
 }

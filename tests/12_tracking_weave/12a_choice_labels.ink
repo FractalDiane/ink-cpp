@@ -28,5 +28,5 @@ You appear to be in trouble.
 
 = throw
 You hurl {throw_something.rock:a rock|a handful of sand} at the guard.
-The guard thrusts his sword through your chest. That went about as well as you expected.
+The guard barely starts to move his sword, and you immediately run away screaming.
 -> END

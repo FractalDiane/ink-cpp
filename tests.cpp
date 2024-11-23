@@ -155,7 +155,7 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 		ExpressionParser::TokenType::LiteralNumberInt,
 	);
 
-	std::vector<ExpressionParser::Token> result_postfix = ExpressionParser::shunt(result);
+	std::vector<ExpressionParser::Token> result_postfix = ExpressionParser::shunt(result, ExpressionParserV2::ContentsAllowed::Any);
 	EXPECT_EQ(result.size(), result_postfix.size());
 	
 	ExpressionParser::ExecuteResult result_token = ExpressionParser::execute_expression_tokens(result_postfix, blank_variable_info);
@@ -167,31 +167,32 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	namespace ExpressionParser = ExpressionParserV2;
 	using ExpressionParser::Variant;
 	using ExpressionParser::execute_expression;
+	using ExpressionParser::ContentsAllowed;
 
 	ExpressionParser::StoryVariableInfo blank_variable_info;
 
-	Variant t1 = execute_expression("5 + 7", blank_variable_info).value();
+	Variant t1 = execute_expression("5 + 7", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<std::int64_t>(t1), 12);
 
-	Variant t2 = execute_expression("5 + 7 * 52 - 8", blank_variable_info).value();
+	Variant t2 = execute_expression("5 + 7 * 52 - 8", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<std::int64_t>(t2), 361);
 
-	Variant t3 = execute_expression("5.0 * 4.2", blank_variable_info).value();
+	Variant t3 = execute_expression("5.0 * 4.2", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<double>(t3), 21.0);
 
-	Variant t4 = execute_expression("5.0 - 4.2 - 3.7 / 2.5", blank_variable_info).value();
+	Variant t4 = execute_expression("5.0 - 4.2 - 3.7 / 2.5", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_TRUE(std::abs(static_cast<double>(t4) - -0.68) < 0.0001);
 
-	Variant t5 = execute_expression("5 == 2", blank_variable_info).value();
+	Variant t5 = execute_expression("5 == 2", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<bool>(t5), false);
 
-	Variant t6 = execute_expression("3 != 6", blank_variable_info).value();
+	Variant t6 = execute_expression("3 != 6", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<bool>(t6), true);
 
-	Variant t7 = execute_expression("7 < 12", blank_variable_info).value();
+	Variant t7 = execute_expression("7 < 12", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<bool>(t7), true);
 
-	Variant t8 = execute_expression(R"("hello" + " " + "there")", blank_variable_info).value();
+	Variant t8 = execute_expression(R"("hello" + " " + "there")", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_EQ(t8.get<std::string>(), "hello there");
 
 	/*Variant t9 = execute_expression("++5", blank_variable_info).value();
@@ -200,45 +201,45 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	Variant t10 = execute_expression("5++", blank_variable_info).value();
 	EXPECT_EQ(static_cast<std::int64_t>(t10), 5);*/
 
-	Variant t11 = execute_expression(R"("hello" ? "llo")", blank_variable_info).value();
+	Variant t11 = execute_expression(R"("hello" ? "llo")", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<bool>(t11), true);
 
-	Variant t12 = execute_expression(R"("hello" ? "blah")", blank_variable_info).value();
+	Variant t12 = execute_expression(R"("hello" ? "blah")", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<bool>(t12), false);
 
-	Variant t13 = execute_expression("5 * (3 + 4)", blank_variable_info).value();
+	Variant t13 = execute_expression("5 * (3 + 4)", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<std::int64_t>(t13), 35);
 
-	Variant t14 = execute_expression("POW(3, 2)", blank_variable_info).value();
+	Variant t14 = execute_expression("POW(3, 2)", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<double>(t14), 9);
 
-	Variant t15 = execute_expression("-> my_knot", blank_variable_info).value();
+	Variant t15 = execute_expression("-> my_knot", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_EQ(t15.get<std::string>(), "my_knot");
 
-	Variant t16 = execute_expression("POW(FLOOR(3.5), FLOOR(2.9)", blank_variable_info).value();
+	Variant t16 = execute_expression("POW(FLOOR(3.5), FLOOR(2.9)", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<double>(t16), 9);
 
-	Variant t17 = execute_expression("(5 * 5) - (3 * 3) + 3", blank_variable_info).value();
+	Variant t17 = execute_expression("(5 * 5) - (3 * 3) + 3", blank_variable_info, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<std::int64_t>(t17), 19);
 
 	ExpressionParser::StoryVariableInfo vars;
 	vars.variables = {{"x", 5}, {"y", 3}, {"c", 3}};
-	execute_expression("x = (x * x) - (y * y) + c", vars);
+	execute_expression("x = (x * x) - (y * y) + c", vars, ContentsAllowed::Any);
 	EXPECT_EQ(static_cast<std::int64_t>(vars.variables["x"]), 19);
 
 	ExpressionParser::StoryVariableInfo vars2;
 	vars2.variables = {{"test", 6}};
-	Variant t19 = execute_expression("POW(test, 2)", vars2).value();
+	Variant t19 = execute_expression("POW(test, 2)", vars2, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<double>(t19), 36);
 
 	ExpressionParser::StoryVariableInfo vars3;
 	vars3.variables = {{"x", 5}};
-	execute_expression("x++", vars3);
+	execute_expression("x++", vars3, ContentsAllowed::Any);
 	EXPECT_EQ(static_cast<std::int64_t>(vars3.variables["x"]), 6);
 
 	ExpressionParser::StoryVariableInfo vars4;
 	vars4.variables = {{"visited_snakes", true}, {"dream_about_snakes", false}};
-	Variant t20 = execute_expression("visited_snakes && not dream_about_snakes", vars4).value();
+	Variant t20 = execute_expression("visited_snakes && not dream_about_snakes", vars4, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<bool>(t20), true);
 }
 #pragma endregion
@@ -887,7 +888,7 @@ TEST_F(TrackingWeaveTests, ChoiceOptionLabels) {
 		EXPECT_CHOICES("Throw rock at guard", "Throw sand at guard");
 		story.choose_choice_index(i);
 		EXPECT_TEXT(i == 0 ? "You hurl a rock at the guard." : "You hurl a handful of sand at the guard.",
-		"The guard thrusts his sword through your chest. That went about as well as you expected.");
+		"The guard barely starts to move his sword, and you immediately run away screaming.");
 	}
 }
 
@@ -2005,7 +2006,27 @@ TEST_F(MiscellaneousTests, ExternalFunctionReturnValues) {
 #pragma endregion
 
 #pragma region Error Tests
+TEST_F(ErrorTests, InvalidConst) {
+	std::string script = "CONST x = blah";
+	EXPECT_THROW(compiler.compile_script(script), InkCompilerException);
 
+	std::string script2 = "CONST x = thing()";
+	EXPECT_THROW(compiler.compile_script(script2), InkCompilerException);
+
+	std::string script3 = "LIST nums = one, two, three\nCONST x = two";
+	EXPECT_THROW(compiler.compile_script(script3), InkCompilerException);
+}
+
+TEST_F(ErrorTests, InvalidVar) {
+	std::string script = "VAR x = blah";
+	EXPECT_THROW(compiler.compile_script(script), InkCompilerException);
+
+	std::string script2 = "VAR x = thing()";
+	EXPECT_THROW(compiler.compile_script(script2), InkCompilerException);
+
+	std::string script3 = "LIST nums = one, two, three\nVAR x = two";
+	EXPECT_NO_THROW(compiler.compile_script(script3));
+}
 #pragma endregion
 
 #pragma region InkProof

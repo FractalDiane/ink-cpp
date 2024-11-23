@@ -82,8 +82,9 @@ namespace {
 		return !tokens.empty() ? tokens.back() : InkLexer::Token();
 	}
 
-	void try_add_text_token(std::vector<InkLexer::Token>& result, const std::string& text, bool& currently_escaped) {
+	void try_add_text_token(std::vector<InkLexer::Token>& result, const std::string& text, bool& currently_escaped, std::size_t line_number) {
 		InkLexer::Token text_token{InkToken::Text, text};
+		text_token.line_number = line_number;
 		text_token.escaped = currently_escaped;
 		if (!text_token.text_contents.empty()) {
 			result.push_back(text_token);
@@ -102,14 +103,20 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 	bool any_tokens_this_line = false;
 	bool at_line_start = true;
 
+	std::size_t line_number = 1;
+
 	while (index < script_text.length()) {
 		Token this_token;
+		this_token.line_number = line_number;
+
 		bool end_text = true;
 		char chr = script_text[index];
+		std::size_t current_line = line_number;
 
 		this_token.text_contents = chr;
 		switch (chr) {
 			case '\n': {
+				++line_number;
 				if (last_token(result).token != InkToken::NewLine || !current_text.empty()) {
 					this_token.token = InkToken::NewLine;
 					at_line_start = true;
@@ -231,7 +238,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 		}
 
 		if (end_text) {
-			try_add_text_token(result, current_text, current_text_escaped);
+			try_add_text_token(result, current_text, current_text_escaped, current_line);
 			current_text.clear();
 		}
 
@@ -244,7 +251,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 		++index;
 	}
 
-	try_add_text_token(result, current_text, current_text_escaped);
+	try_add_text_token(result, current_text, current_text_escaped, line_number);
 
 	return result;
 }
@@ -444,10 +451,26 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 					story_variable_info.variables.emplace(list.first, new_list_var);
 				}
 
-				for (std::pair<std::string, ExpressionParserV2::ShuntedExpression>& var : cached_global_variables) {
+				for (CachedGlobalVariable& var : cached_global_variables) {
+					for (const ExpressionParserV2::Token& token : var.expression.tokens) {
+						if (token.type == ExpressionParserV2::TokenType::Variable && !story_variable_info.constants.contains(token.variable_name)) {
+							bool is_list_item = false;
+							for (const auto& list : story_variable_info.defined_lists.defined_lists) {
+								if (list.second.get_entry_value(token.variable_name).has_value()) {
+									is_list_item = true;
+									break;
+								}
+							}
+
+							if (!is_list_item) {
+								throw InkCompilerException("VAR declarations can only contain CONSTS, divert targets, or literal numbers and strings", var.declared_line_number);
+							}
+						}
+					}
+
 					try {
-						ExpressionParserV2::Variant expression_result = ExpressionParserV2::execute_expression_tokens(var.second.tokens, story_variable_info).value();
-						story_variable_info.variables.emplace(var.first, expression_result);
+						ExpressionParserV2::Variant expression_result = ExpressionParserV2::execute_expression_tokens(var.expression.tokens, story_variable_info).value();
+						story_variable_info.variables.emplace(var.name, expression_result);
 					} catch (...) {
 						throw std::runtime_error("Malformed value of VAR statement");
 					}
@@ -950,7 +973,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 								}
 
 								try {
-									current_condition = ExpressionParserV2::tokenize_and_shunt_expression(condition_string, story_variable_info);
+									current_condition = ExpressionParserV2::tokenize_and_shunt_expression(condition_string, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 								} catch (...) {
 									throw std::runtime_error("Malformed condition in conditional");
 								}
@@ -1068,7 +1091,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 										}
 
 										try {
-											ExpressionParserV2::ShuntedExpression shunted = ExpressionParserV2::tokenize_and_shunt_expression(this_condition, story_variable_info);
+											ExpressionParserV2::ShuntedExpression shunted = ExpressionParserV2::tokenize_and_shunt_expression(this_condition, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 											shunted.uuid = current_uuid++;
 											if (items_conditions.back().first.tokens.empty()) {
 												items_conditions.back().first = shunted;
@@ -1129,7 +1152,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				}
 
 				try {
-					ExpressionParserV2::ShuntedExpression condition_shunted = ExpressionParserV2::tokenize_and_shunt_expression(condition, story_variable_info);
+					ExpressionParserV2::ShuntedExpression condition_shunted = ExpressionParserV2::tokenize_and_shunt_expression(condition, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 					condition_shunted.uuid = current_uuid++;
 					choice_stack.back().conditions.push_back(condition_shunted);
 				} catch (...) {
@@ -1148,7 +1171,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				} else if (!text_items.empty()) {
 					std::string all_text = join_string_vector(text_items, std::string());
 					try {
-						ExpressionParserV2::ShuntedExpression shunted = ExpressionParserV2::tokenize_and_shunt_expression(all_text, story_variable_info);
+						ExpressionParserV2::ShuntedExpression shunted = ExpressionParserV2::tokenize_and_shunt_expression(all_text, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 						shunted.uuid = current_uuid++;
 						result_object = new InkObjectInterpolation(shunted);
 					} catch (...) {
@@ -1178,7 +1201,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					ExpressionParserV2::ShuntedExpression target_tokens;
 					target_tokens.uuid = current_uuid++;
 					try {
-						target_tokens = ExpressionParserV2::tokenize_and_shunt_expression(target, story_variable_info);
+						target_tokens = ExpressionParserV2::tokenize_and_shunt_expression(target, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 					} catch (...) {
 						throw std::runtime_error("Illegal value in divert target");
 					}
@@ -1207,7 +1230,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						std::vector<std::string> split = split_string(all_args, ',', true, true);
 						for (const std::string& arg : split) {
 							try {
-								ExpressionParserV2::ShuntedExpression tokenized = ExpressionParserV2::tokenize_and_shunt_expression(arg, story_variable_info);
+								ExpressionParserV2::ShuntedExpression tokenized = ExpressionParserV2::tokenize_and_shunt_expression(arg, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 								tokenized.uuid = current_uuid++;
 								arguments.push_back(tokenized);
 							} catch (...) {
@@ -1248,7 +1271,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				if (next_token_is(all_tokens, token_index + 1, InkToken::Text)) {
 					std::string target = strip_string_edges(all_tokens[token_index + 2].text_contents, true, true, true);
 					try {
-						target_tokens = ExpressionParserV2::tokenize_and_shunt_expression(target, story_variable_info);
+						target_tokens = ExpressionParserV2::tokenize_and_shunt_expression(target, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 					} catch (...) {
 						throw std::runtime_error("Illegal value in tunnel divert target");
 					}
@@ -1279,7 +1302,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						std::vector<std::string> split = split_string(all_args, ',', true, true);
 						for (const std::string& arg : split) {
 							try {
-								ExpressionParserV2::ShuntedExpression tokenized = ExpressionParserV2::tokenize_and_shunt_expression(arg, story_variable_info);
+								ExpressionParserV2::ShuntedExpression tokenized = ExpressionParserV2::tokenize_and_shunt_expression(arg, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 								tokenized.uuid = current_uuid++;
 								arguments.push_back(tokenized);
 							} catch (...) {
@@ -1346,7 +1369,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				}
 
 				try {
-					ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info);
+					ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 					expression_shunted.uuid = current_uuid++;
 					result_object = new InkObjectLogic(expression_shunted);
 				} catch (...) {
@@ -1430,16 +1453,16 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					// var is only evaluated between the second and third pass
 					if (current_pass == CompilerPass::ConstantsLists) {
 						try {
-							ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info);
+							ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info, token.token == InkToken::KeywordConst ? ExpressionParserV2::ContentsAllowed::LiteralsOnly : ExpressionParserV2::ContentsAllowed::ConstantsOnly);
 							expression_shunted.uuid = current_uuid++;
 							if (token.token == InkToken::KeywordConst) {
 								ExpressionParserV2::Variant expression_result = ExpressionParserV2::execute_expression_tokens(expression_shunted.tokens, story_variable_info).value();
 								story_variable_info.constants.emplace(identifier, expression_result);
 							} else {
-								cached_global_variables.emplace_back(identifier, expression_shunted);
+								cached_global_variables.emplace_back(identifier, all_tokens[token_index].line_number, expression_shunted);
 							}
-						} catch (...) {
-							throw std::runtime_error("Malformed value of VAR/CONST statement");
+						} catch (const ExpressionParserV2::ExpressionException& e) {
+							throw InkCompilerException(e.what(), all_tokens[token_index].line_number);
 						}
 					}
 				} else {

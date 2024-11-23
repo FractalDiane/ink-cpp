@@ -1,0 +1,24 @@
+
+
+include not found
+recursive include
+weave content not found
+->-> invalid placement
+empty divert on non choice
+return in non-function knot
+function as stitch
+multiple parameters with the same name
+function with choices
+function with diverts
+nothing in conditional after :
+duplicate weave content name
+unexpected end of content
+invalid list names
+invalid list values
+
+const has non literals, var has non literals/consts
+variable not found
+function not found (go back and check story knots against functions?)
+list not found
+++ or -- as infix
+invalid operator combo (+-)

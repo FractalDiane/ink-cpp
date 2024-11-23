@@ -1,4 +1,4 @@
-VAR bedroomLightState = (off, on_desk)
+VAR bedroomLightState = (on, on_desk)
 
 VAR knifeState = (under_bed)
 

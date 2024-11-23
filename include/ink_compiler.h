@@ -12,6 +12,19 @@
 #include <list>
 #include <format>
 
+class InkCompilerException {
+private:
+	std::size_t line_number = 0;
+	std::string _what;
+
+public:
+	InkCompilerException(std::string&& _what, std::size_t line_number) : line_number(line_number) {
+		this->_what = std::format("Line {}: {}", line_number, _what);
+	}
+
+	const char* what() const noexcept { return _what.data(); }
+};
+
 class InkLexer {
 public:
 	struct Token {
@@ -19,6 +32,8 @@ public:
 		std::string text_contents;
 		std::uint8_t count;
 		bool escaped;
+		
+		std::size_t line_number;
 
 		Token() : token{InkToken::INVALID}, text_contents{}, count{1}, escaped{false} {}
 		Token(InkToken token, const std::string& text) : token{token}, text_contents{text}, count{1}, escaped{false} {}
@@ -85,8 +100,14 @@ private:
 	std::string root_include_path;
 	std::vector<InkLexer::Token> include_sublevel_tokens;
 
+	struct CachedGlobalVariable {
+		std::string name;
+		std::size_t declared_line_number = 0;
+		ExpressionParserV2::ShuntedExpression expression;
+	};
+
 	ExpressionParserV2::StoryVariableInfo story_variable_info;
-	std::vector<std::pair<std::string, ExpressionParserV2::ShuntedExpression>> cached_global_variables;
+	std::vector<CachedGlobalVariable> cached_global_variables;
 	std::vector<std::pair<std::string, std::pair<Uuid, std::vector<InkListDefinition::Entry>>>> cached_list_variables;
 	
 public:

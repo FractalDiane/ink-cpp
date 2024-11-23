@@ -19,6 +19,16 @@
 #include "uuid.h"
 
 namespace ExpressionParserV2 {
+	class ExpressionException {
+	private:
+		std::string _what;
+
+	public:
+		ExpressionException(std::string&& _what) : _what(_what) {}
+
+		const char* what() const noexcept { return _what.data(); }
+	};
+
 	struct ShuntedExpression {
 	Uuid uuid;
 	std::vector<ExpressionParserV2::Token> tokens;
@@ -55,9 +65,15 @@ namespace ExpressionParserV2 {
 	}
 };
 
+enum class ContentsAllowed {
+	Any,
+	LiteralsOnly,
+	ConstantsOnly,
+};
+
 std::vector<ExpressionParserV2::Token> tokenize_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
 
-std::vector<ExpressionParserV2::Token> shunt(const std::vector<ExpressionParserV2::Token>& infix);
+std::vector<ExpressionParserV2::Token> shunt(const std::vector<ExpressionParserV2::Token>& infix, ContentsAllowed contents_allowed);
 
 struct NulloptResult {
 	enum class Reason {
@@ -78,7 +94,7 @@ struct NulloptResult {
 typedef std::expected<Variant, NulloptResult> ExecuteResult;
 
 ExpressionParserV2::ExecuteResult execute_expression_tokens(std::vector<ExpressionParserV2::Token>& tokens, ExpressionParserV2::StoryVariableInfo& story_variable_info);
-ExpressionParserV2::ExecuteResult execute_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
-ShuntedExpression tokenize_and_shunt_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info);
+ExpressionParserV2::ExecuteResult execute_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info, ContentsAllowed contents_allowed);
+ShuntedExpression tokenize_and_shunt_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info, ContentsAllowed contents_allowed);
 
 }
