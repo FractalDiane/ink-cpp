@@ -57,6 +57,10 @@ bool token_matches(ExpressionParserV2::Token& token, DT data) {
 	}\
 }
 
+#define EXPECT_COMPILE_FAIL(script, err) { InkCompileToStoryResult result = compiler.compile_script(script);\
+	ASSERT_FALSE(result.has_value());\
+	EXPECT_EQ(std::string(result.error().what()), err); }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 FIXTURE(NonStoryFunctionTests);
 FIXTURE(ExpressionParserTests);
@@ -2035,38 +2039,57 @@ TEST_F(ErrorTests, InvalidVar) {
 }
 
 TEST_F(ErrorTests, IncludeDoesntExist) {
-	std::string script = "INCLUDE doesntexist.ink\nhello";
-	InkCompileToStoryResult result = compiler.compile_script(script);
-	ASSERT_FALSE(result.has_value());
-	EXPECT_EQ(std::string(result.error().what()), "Line 1: Could not open include file doesntexist.ink");
+	EXPECT_COMPILE_FAIL(
+		"INCLUDE doesntexist.ink\nhello",
+		"Line 1: Could not open include file doesntexist.ink"
+	);
 }
 
 TEST_F(ErrorTests, ReturnInNonFunction) {
-	std::string script = "-> main\n=== main ===\nhello\nthere\ntest\n~ return 5";
-	InkCompileToStoryResult result = compiler.compile_script(script);
-	ASSERT_FALSE(result.has_value());
-	EXPECT_EQ(std::string(result.error().what()), "Line 6: Return used in non-function knot");
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main ===\nhello\nthere\ntest\n~ return 5",
+		"Line 6: Return used in non-function knot"
+	);
 }
 
 TEST_F(ErrorTests, DivertInFunction) {
-	std::string script = "-> main\n=== main ===\nhello\nthere\n=== function test ===\n~ temp x = 5\n-> main";
-	InkCompileToStoryResult result = compiler.compile_script(script);
-	ASSERT_FALSE(result.has_value());
-	EXPECT_EQ(std::string(result.error().what()), "Line 7: Functions cannot contain diverts");
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main ===\nhello\nthere\n=== function test ===\n~ temp x = 5\n-> main",
+		"Line 7: Functions cannot contain diverts"
+	);
 }
 
 TEST_F(ErrorTests, ChoiceInFunction) {
-	std::string script = "-> main\n=== main ===\nhello\nthere\n=== function test ===\n~ temp x = 5\n* choice one\n* choice two\n-";
-	InkCompileToStoryResult result = compiler.compile_script(script);
-	ASSERT_FALSE(result.has_value());
-	EXPECT_EQ(std::string(result.error().what()), "Line 7: Functions cannot contain choices");
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main ===\nhello\nthere\n=== function test ===\n~ temp x = 5\n* choice one\n* choice two\n-",
+		"Line 7: Functions cannot contain choices"
+	);
 }
 
 TEST_F(ErrorTests, StitchFunction) {
-	std::string script = "-> main\n=== main ===\nhello\nthere\n= function test\n~ return 5";
-	InkCompileToStoryResult result = compiler.compile_script(script);
-	ASSERT_FALSE(result.has_value());
-	EXPECT_EQ(std::string(result.error().what()), "Line 5: Stitches cannot be functions; only knots");
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main ===\nhello\nthere\n= function test\n~ return 5",
+		"Line 5: Stitches cannot be functions; only knots"
+	);
+}
+
+TEST_F(ErrorTests, DuplicateParameters) {
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main ===\nhello\nthere\n=== function test(param1, param1) ===\n~ return 5",
+		"Line 5: Duplicate parameter in knot test: param1"
+	);
+
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main ===\nhello\nthere\n= test2(param1, param1)\n~ return 5",
+		"Line 5: Duplicate parameter in stitch test2: param1"
+	);
+}
+
+TEST_F(ErrorTests, EmptyDivertOnNonChoice) {
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main\nhello\nthere\n->\ntest",
+		"Line 5: Diverts cannot be empty outside of a choice"
+	);
 }
 #pragma endregion
 

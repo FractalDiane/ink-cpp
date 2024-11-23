@@ -1,8 +1,6 @@
 
 weave content not found
 ->-> invalid placement
-empty divert on non choice
-multiple parameters with the same name
 nothing in conditional after :
 duplicate weave content name
 unexpected end of content

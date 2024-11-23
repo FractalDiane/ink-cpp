@@ -618,13 +618,23 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 							std::vector<std::string> split = split_string(all_params, ',', true);
 							std::vector<InkWeaveContent::Parameter> params;
+							std::unordered_set<std::string> parameter_names_used;
 							for (const std::string& param : split) {
 								std::string trimmed = strip_string_edges(param, true, true, true);
+								bool is_duplicate = false;
 								if (trimmed.starts_with("ref ")) {
 									std::string trimmed_without_ref = strip_string_edges(trimmed.substr(4), true, true, true);
 									params.push_back({trimmed_without_ref, true});
+									is_duplicate = parameter_names_used.contains(trimmed_without_ref);
+									parameter_names_used.insert(trimmed_without_ref);
 								} else {
 									params.push_back({trimmed, false});
+									is_duplicate = parameter_names_used.contains(trimmed);
+									parameter_names_used.insert(trimmed);
+								}
+
+								if (is_duplicate) {
+									throw InkCompilerException(std::format("Duplicate parameter in knot {}: {}", new_knot_name, params.back().name), token.line_number);
 								}
 							}
 
@@ -672,13 +682,23 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 						std::vector<std::string> split = split_string(all_params, ',', true);
 						std::vector<InkWeaveContent::Parameter> params;
+						std::unordered_set<std::string> parameter_names_used;
 						for (const std::string& param : split) {
 							std::string trimmed = strip_string_edges(param, true, true, true);
+							bool is_duplicate = false;
 							if (trimmed.starts_with("ref ")) {
 								std::string trimmed_without_ref = strip_string_edges(trimmed.substr(4), true, true, true);
 								params.push_back({trimmed_without_ref, true});
+								is_duplicate = parameter_names_used.contains(trimmed_without_ref);
+								parameter_names_used.insert(trimmed_without_ref);
 							} else {
 								params.push_back({trimmed, false});
+								is_duplicate = parameter_names_used.contains(trimmed);
+								parameter_names_used.insert(trimmed);
+							}
+
+							if (is_duplicate) {
+								throw InkCompilerException(std::format("Duplicate parameter in stitch {}: {}", new_stitch_name, params.back().name), token.line_number);
 							}
 						}
 							
