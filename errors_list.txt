@@ -2,11 +2,7 @@
 weave content not found
 ->-> invalid placement
 empty divert on non choice
-return in non-function knot
-function as stitch
 multiple parameters with the same name
-function with choices
-function with diverts
 nothing in conditional after :
 duplicate weave content name
 unexpected end of content

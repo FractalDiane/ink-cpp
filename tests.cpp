@@ -2040,6 +2040,34 @@ TEST_F(ErrorTests, IncludeDoesntExist) {
 	ASSERT_FALSE(result.has_value());
 	EXPECT_EQ(std::string(result.error().what()), "Line 1: Could not open include file doesntexist.ink");
 }
+
+TEST_F(ErrorTests, ReturnInNonFunction) {
+	std::string script = "-> main\n=== main ===\nhello\nthere\ntest\n~ return 5";
+	InkCompileToStoryResult result = compiler.compile_script(script);
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(std::string(result.error().what()), "Line 6: Return used in non-function knot");
+}
+
+TEST_F(ErrorTests, DivertInFunction) {
+	std::string script = "-> main\n=== main ===\nhello\nthere\n=== function test ===\n~ temp x = 5\n-> main";
+	InkCompileToStoryResult result = compiler.compile_script(script);
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(std::string(result.error().what()), "Line 7: Functions cannot contain diverts");
+}
+
+TEST_F(ErrorTests, ChoiceInFunction) {
+	std::string script = "-> main\n=== main ===\nhello\nthere\n=== function test ===\n~ temp x = 5\n* choice one\n* choice two\n-";
+	InkCompileToStoryResult result = compiler.compile_script(script);
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(std::string(result.error().what()), "Line 7: Functions cannot contain choices");
+}
+
+TEST_F(ErrorTests, StitchFunction) {
+	std::string script = "-> main\n=== main ===\nhello\nthere\n= function test\n~ return 5";
+	InkCompileToStoryResult result = compiler.compile_script(script);
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(std::string(result.error().what()), "Line 5: Stitches cannot be functions; only knots");
+}
 #pragma endregion
 
 #pragma region InkProof

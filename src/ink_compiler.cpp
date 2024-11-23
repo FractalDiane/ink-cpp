@@ -692,6 +692,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					}
 
 					end_line = true;
+				} else if (next_token_is(all_tokens, token_index, InkToken::KeywordFunction)) {
+					throw InkCompilerException("Stitches cannot be functions; only knots", token.line_number);
 				} else {
 					throw std::runtime_error("Expected stitch name");
 				}
@@ -703,6 +705,10 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 		case InkToken::Asterisk:
 		case InkToken::Plus: {
 			if (at_line_start && token.count > choice_level) {
+				if (story_knots[current_knot_index].is_function) {
+					throw InkCompilerException("Functions cannot contain choices", token.line_number);
+				}
+
 				++choice_level;
 				std::list<InkChoiceEntry> choice_options;
 				bool current_choice_sticky = token.token == InkToken::Plus;
@@ -1248,6 +1254,10 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						}
 					}
 
+					if (story_knots[current_knot_index].is_function) {
+						throw InkCompilerException("Functions cannot contain diverts", token.line_number);
+					}
+
 					if (token.token == InkToken::Arrow) {
 						bool to_tunnel = false;
 
@@ -1288,37 +1298,41 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 				// TODO: dry it a ridiculous amount
 				std::vector<ExpressionParserV2::ShuntedExpression> arguments;
-					if (next_token_is(all_tokens, token_index + 2, InkToken::LeftParen)) {
-						token_index += 4;
+				if (next_token_is(all_tokens, token_index + 2, InkToken::LeftParen)) {
+					token_index += 4;
 
-						std::string all_args;
-						all_args.reserve(50);
+					std::string all_args;
+					all_args.reserve(50);
 
-						std::size_t extra_paren_count = 0;
-						while (token_index < all_tokens.size() && (all_tokens[token_index].token != InkToken::RightParen || extra_paren_count > 0)) {
-							all_args += all_tokens[token_index].text_contents;
-							if (all_tokens[token_index].token == InkToken::LeftParen) {
-								++extra_paren_count;
-							} else if (all_tokens[token_index].token == InkToken::RightParen) {
-								--extra_paren_count;
-							}
-
-							++token_index;
+					std::size_t extra_paren_count = 0;
+					while (token_index < all_tokens.size() && (all_tokens[token_index].token != InkToken::RightParen || extra_paren_count > 0)) {
+						all_args += all_tokens[token_index].text_contents;
+						if (all_tokens[token_index].token == InkToken::LeftParen) {
+							++extra_paren_count;
+						} else if (all_tokens[token_index].token == InkToken::RightParen) {
+							--extra_paren_count;
 						}
 
-						--token_index;
+						++token_index;
+					}
 
-						std::vector<std::string> split = split_string(all_args, ',', true, true);
-						for (const std::string& arg : split) {
-							try {
-								ExpressionParserV2::ShuntedExpression tokenized = ExpressionParserV2::tokenize_and_shunt_expression(arg, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
-								tokenized.uuid = current_uuid++;
-								arguments.push_back(tokenized);
-							} catch (...) {
-								throw std::runtime_error("Malformed knot argument");
-							}
+					--token_index;
+
+					std::vector<std::string> split = split_string(all_args, ',', true, true);
+					for (const std::string& arg : split) {
+						try {
+							ExpressionParserV2::ShuntedExpression tokenized = ExpressionParserV2::tokenize_and_shunt_expression(arg, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
+							tokenized.uuid = current_uuid++;
+							arguments.push_back(tokenized);
+						} catch (...) {
+							throw std::runtime_error("Malformed knot argument");
 						}
 					}
+				}
+
+				if (story_knots[current_knot_index].is_function) {
+					throw InkCompilerException("Functions cannot contain diverts", token.line_number);
+				}
 
 				result_object = new InkObjectDivert(target_tokens, arguments, DivertType::FromTunnel);
 				++token_index;
@@ -1327,7 +1341,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			} else if (just_added_divert_to_tunnel) {
 				just_added_divert_to_tunnel = false;
 			} else {
-				throw std::runtime_error("Expected divert target");
+				throw InkCompilerException("Diverts cannot be empty outside of a choice", token.line_number);
 			}
 		} break;
 
@@ -1377,12 +1391,21 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					++token_index;
 				}
 
+				ExpressionParserV2::ShuntedExpression expression_shunted;
 				try {
-					ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
+					expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 					expression_shunted.uuid = current_uuid++;
 					result_object = new InkObjectLogic(expression_shunted);
 				} catch (...) {
 					throw std::runtime_error("Malformed logic statement");
+				}
+
+				if (!story_knots[current_knot_index].is_function) {
+					for (const ExpressionParserV2::Token& tok : expression_shunted.tokens) {
+						if (tok.type == ExpressionParserV2::TokenType::Keyword && tok.keyword_type == ExpressionParserV2::KeywordType::Return) {
+							throw InkCompilerException("Return used in non-function knot", token.line_number);
+						}
+					}
 				}
 
 				--token_index;
@@ -1472,7 +1495,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 									story_variable_info.variables.emplace(identifier, expression_result);
 								}
 							} catch (const ExpressionParserV2::ExpressionException& e) {
-								throw InkCompilerException(e.what(), all_tokens[token_index].line_number);
+								throw InkCompilerException(e.what(), token.line_number);
 							}
 						}
 					}
@@ -1601,12 +1624,12 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			std::string final_path = root_include_path + strip_string_edges(path, true, true, true);
 
 			if (all_included_files.contains(final_path)) {
-				throw InkCompilerException(std::format("Detected recursive include of file {}", final_path), all_tokens[token_index].line_number);
+				throw InkCompilerException(std::format("Detected recursive include of file {}", final_path), token.line_number);
 			}
 
 			std::ifstream include_file{final_path};
 			if (include_file.fail()) {
-				throw InkCompilerException(std::format("Could not open include file {}", final_path), all_tokens[token_index].line_number);
+				throw InkCompilerException(std::format("Could not open include file {}", final_path), token.line_number);
 			}
 
 			std::stringstream buffer;
