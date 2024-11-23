@@ -374,7 +374,6 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 	token_index = 0;
 
 	CompilerPass current_pass = CompilerPass::Includes;
-	//cached_global_variables.reserve(16);
 	
 	for (int i = 0; i <= static_cast<int>(CompilerPass::Main); ++i) {
 		while (token_index < token_stream.size()) {
@@ -1621,6 +1620,10 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 			std::string final_path = root_include_path + strip_string_edges(path, true, true, true);
 
 			std::ifstream include_file{final_path};
+			if (include_file.fail()) {
+				throw InkCompilerException(std::format("Could not open include file {}", final_path), all_tokens[token_index].line_number);
+			}
+
 			std::stringstream buffer;
 			buffer << include_file.rdbuf();
 			std::string include_file_text = buffer.str();

@@ -1798,7 +1798,7 @@ TEST_F(MiscBugTests, PreprocessedInIncludes2) {
 }
 
 TEST_F(MiscBugTests, DoubleContinueMaximally) {
-	STORY("22_misc_bugs/22q_preprocessed_in_includes.ink");
+	STORY("22_misc_bugs/22s_double_continue_maximally.ink");
 	story.continue_story_maximally();
 	story.continue_story_maximally();
 }
@@ -2032,6 +2032,13 @@ TEST_F(ErrorTests, InvalidVar) {
 	std::string script3 = "LIST nums = one, two, three\nVAR x = two";
 	InkCompileToStoryResult result3 = compiler.compile_script(script3);
 	EXPECT_TRUE(result3.has_value());
+}
+
+TEST_F(ErrorTests, IncludeDoesntExist) {
+	std::string script = "INCLUDE doesntexist.ink\nhello";
+	InkCompileToStoryResult result = compiler.compile_script(script);
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(std::string(result.error().what()), "Line 1: Could not open include file doesntexist.ink");
 }
 #pragma endregion
 
