@@ -1569,18 +1569,23 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 							case InkToken::Text: {
 								if (std::string stripped = strip_string_edges(this_token.get_text_contents(), true, true, true); !stripped.empty()) {
+									if (!std::any_of(stripped.begin(), stripped.end(), [](char c) { return !isdigit(c); })) {
+										throw InkCompilerException(std::format("Invalid entry in list {}: {}", identifier, stripped), token.line_number);
+									}
+
 									this_entry_name = stripped;
 								}
 							} break;
 
 							case InkToken::Equal: {
 								if (all_tokens[token_index - 1].token == InkToken::Text && next_token_is(all_tokens, token_index, InkToken::Text)) {
-									try {
-										this_entry_value = std::stoll(all_tokens[token_index + 1].get_text_contents());
-										++token_index;
-									} catch (...) {
-										throw std::runtime_error("Malformed LIST definition: invalid entry value");
+									std::string next_text = all_tokens[token_index + 1].get_text_contents();
+									if (std::any_of(next_text.begin(), next_text.end(), [](char c) { return !isdigit(c) && !is_whitespace(c); })) {
+										throw InkCompilerException(std::format("Invalid value for entry {} in list {}: {}", this_entry_name, identifier, strip_string_edges(next_text, true, true, true)), token.line_number);
 									}
+
+									this_entry_value = std::stoll(next_text);
+									++token_index;
 								} else {
 									throw std::runtime_error("Malformed LIST definition: misplaced '='");
 								}

@@ -2091,6 +2091,25 @@ TEST_F(ErrorTests, EmptyDivertOnNonChoice) {
 		"Line 5: Diverts cannot be empty outside of a choice"
 	);
 }
+
+TEST_F(ErrorTests, InvalidListEntry) {
+	EXPECT_COMPILE_FAIL(
+		"LIST Test = 2fast4me, 12, hello\nVAR x = hello",
+		"Line 1: Invalid entry in list Test: 12"
+	);
+}
+
+TEST_F(ErrorTests, InvalidListValue) {
+	EXPECT_COMPILE_FAIL(
+		"LIST Test = 2fast4me = 6, forty = \"40\", test = 2\nVAR x = hello",
+		"Line 1: Invalid value for entry forty in list Test: \"40\""
+	);
+
+	EXPECT_COMPILE_FAIL(
+		"LIST Test = 2fast4me = 6, forty = 40.02, test = 2\nVAR x = hello",
+		"Line 1: Invalid value for entry forty in list Test: 40.02"
+	);
+}
 #pragma endregion
 
 #pragma region InkProof

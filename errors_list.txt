@@ -4,8 +4,6 @@ weave content not found
 nothing in conditional after :
 duplicate weave content name
 unexpected end of content
-invalid list names
-invalid list values
 
 variable not found
 function not found (go back and check story knots against functions?)
