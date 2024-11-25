@@ -2,7 +2,6 @@
 weave content not found
 ->-> invalid placement
 nothing in conditional after :
-duplicate weave content name
 unexpected end of content
 
 variable not found

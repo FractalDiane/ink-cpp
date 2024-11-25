@@ -256,7 +256,7 @@ std::vector<InkLexer::Token> InkLexer::lex_script(const std::string& script_text
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::expected<InkStory, InkCompilerException> InkCompiler::compile_script(const std::string& script) {
+InkCompileToStoryResult InkCompiler::compile_script(const std::string& script) {
 	try {
 		InkStoryData* story_data = compile(script);
 		return InkStory(story_data);
@@ -265,7 +265,7 @@ std::expected<InkStory, InkCompilerException> InkCompiler::compile_script(const 
 	}
 }
 
-std::expected<InkStory, InkCompilerException> InkCompiler::compile_file(const std::string& file_path)
+InkCompileToStoryResult InkCompiler::compile_file(const std::string& file_path)
 {
 	std::ifstream infile{file_path};
 	std::stringstream buffer;
@@ -341,6 +341,9 @@ void InkCompiler::init_compiler() {
 	all_included_files.clear();
 
 	cached_list_variables.clear();
+
+	current_preprocess_knot = "_S";
+	current_preprocess_stitch.clear();
 }
 
 InkStoryData* InkCompiler::compile(const std::string& script)
@@ -396,8 +399,17 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 					if (this_token.token == InkToken::KeywordConst
 					|| this_token.token == InkToken::KeywordList
 					|| this_token.token == InkToken::KeywordExternal
+					|| this_token.token == InkToken::Equal
+					|| this_token.token == InkToken::Dash
+					|| this_token.token == InkToken::Asterisk
+					|| this_token.token == InkToken::Plus
 					|| this_token.token == InkToken::NewLine) {
 						compile_token(token_stream, this_token, result_knots, current_pass);
+					}
+
+					// THIS IS HORRIBLE
+					if (this_token.token != InkToken::NewLine && this_token.token != InkToken::Equal && this_token.token != InkToken::Plus && this_token.token != InkToken::Asterisk) {
+						at_line_start = false;
 					}
 				} break;
 
@@ -576,6 +588,20 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 						std::string new_knot_name = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
 
+						if (current_pass == CompilerPass::ConstantsLists) {
+							if (new_knot_name == "_S") {
+								throw InkCompilerException("Knot name _S is reserved and cannot be used", token.line_number);
+							}
+
+							if (story_variable_info.content_already_exists(new_knot_name)) {
+								throw InkCompilerException(std::format("Knot name {} is not unique", new_knot_name), token.line_number);
+							}
+
+							current_preprocess_knot = new_knot_name;
+							current_preprocess_stitch.clear();
+							story_variable_info.story_knot_structure[new_knot_name] = {};
+						}
+
 						bool is_new_knot = true;
 						std::size_t existing_index = 0;
 						for (std::size_t i = 0; i < story_knots.size(); ++i) {
@@ -589,9 +615,11 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							}
 						}
 
-						new_knot.name = new_knot_name;
-						new_knot.uuid = Uuid(current_uuid++);
-						new_knot.type = WeaveContentType::Knot;
+						if (current_pass != CompilerPass::ConstantsLists) {
+							new_knot.name = new_knot_name;
+							new_knot.uuid = Uuid(current_uuid++);
+							new_knot.type = WeaveContentType::Knot;
+						}
 
 						if (next_token_is(all_tokens, token_index + 1, InkToken::LeftParen)) {
 							token_index += 3;
@@ -641,12 +669,9 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							new_knot.parameters = params;
 						}
 
-						// TODO: don't force it to parse all the parameters if the knot already exists
-						if (is_new_knot) {
+						if (current_pass != CompilerPass::ConstantsLists) {
 							story_knots.push_back(new_knot);
 							++current_knot_index;
-						} else {
-							current_knot_index = existing_index;
 						}
 
 						while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::NewLine) {
@@ -659,13 +684,32 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					}
 				} else if (next_token_is(all_tokens, token_index, InkToken::Text)) {
 					std::string new_stitch_name = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
+
+					if (current_pass == CompilerPass::ConstantsLists) {
+						if (story_variable_info.story_knot_structure.contains(new_stitch_name)) {
+							throw InkCompilerException(std::format("Stitch name {} is already used by a knot", new_stitch_name), token.line_number);
+						}
+
+						if (
+							story_variable_info.story_knot_structure[current_preprocess_knot].stitches.contains(new_stitch_name)
+							|| story_variable_info.story_knot_structure[current_preprocess_knot].gather_points.contains(new_stitch_name)
+						) {
+							throw InkCompilerException(std::format("Stitch name {} is not unique within knot {}", new_stitch_name, current_preprocess_knot), token.line_number);
+						}
+
+						current_preprocess_stitch = new_stitch_name;
+						story_variable_info.story_knot_structure[current_preprocess_knot].stitches.emplace(new_stitch_name, ExpressionParserV2::KnotContent());
+					}
 					
 					std::vector<Stitch>& stitches = story_knots[current_knot_index].stitches;
 					Stitch new_stitch;
-					new_stitch.name = new_stitch_name;
-					new_stitch.uuid = Uuid(current_uuid++);
-					new_stitch.type = WeaveContentType::Stitch;
-					new_stitch.index = static_cast<std::uint16_t>(story_knots[current_knot_index].objects.size());
+
+					if (current_pass != CompilerPass::ConstantsLists) {
+						new_stitch.name = new_stitch_name;
+						new_stitch.uuid = Uuid(current_uuid++);
+						new_stitch.type = WeaveContentType::Stitch;
+						new_stitch.index = static_cast<std::uint16_t>(story_knots[current_knot_index].objects.size());
+					}
 
 					// TODO: dry it
 					if (next_token_is(all_tokens, token_index + 1, InkToken::LeftParen)) {
@@ -705,7 +749,9 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						new_stitch.parameters = params;
 					}
 
+					if (current_pass != CompilerPass::ConstantsLists) {
 						stitches.push_back(new_stitch);
+					}
 
 					while (token_index < all_tokens.size() && all_tokens[token_index].token != InkToken::NewLine) {
 						++token_index;
@@ -775,6 +821,32 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						choice_stack.back().label = label;
 
 						token_index += 3;
+
+						if (current_pass == CompilerPass::ConstantsLists) {
+							if (story_variable_info.story_knot_structure.contains(label.name)) {
+								throw InkCompilerException(std::format("Choice label name {} is already used by a knot", label.name), token.line_number);
+							}
+
+							if (story_variable_info.story_knot_structure[current_preprocess_knot].stitches.contains(label.name)) {
+								throw InkCompilerException(std::format("Choice label name {} is already used by a stitch", label.name), token.line_number);
+							}
+
+							if (current_preprocess_stitch.empty()) {
+								if (story_variable_info.story_knot_structure[current_preprocess_knot].gather_points.contains(label.name)) {
+									throw InkCompilerException(std::format("Choice label name {} is not unique within knot {}", label.name, current_preprocess_knot), token.line_number);
+								}
+							} else {
+								if (story_variable_info.story_knot_structure[current_preprocess_knot].stitches[current_preprocess_stitch].gather_points.contains(label.name)) {
+									throw InkCompilerException(std::format("Choice label name {} is not unique within stitch {}", label.name, current_preprocess_stitch), token.line_number);
+								}
+							}
+
+							if (!current_preprocess_stitch.empty()) {
+								story_variable_info.story_knot_structure[current_preprocess_knot].stitches[current_preprocess_stitch].gather_points.insert(label.name);
+							} else {
+								story_variable_info.story_knot_structure[current_preprocess_knot].gather_points.insert(label.name);
+							}
+						}
 					}
 
 					while (token_index < all_tokens.size()) {
@@ -818,7 +890,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							}
 						}
 
-						if (InkObject* in_choice_object = compile_token(all_tokens, in_choice_token, story_knots, current_pass)) {
+						if (InkObject* in_choice_object = compile_token(all_tokens, in_choice_token, story_knots, CompilerPass::Main)) {
 							InkChoiceEntry& choice_entry = choice_stack.back();
 							if (!in_result && (in_choice_object->get_id() == ObjectId::LineBreak || in_choice_object->get_id() == ObjectId::Divert)) {
 								in_result = true;
@@ -886,6 +958,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				}
 
 				in_choice_line = false;
+				end_line = true;
 
 				std::vector<InkChoiceEntry> choice_options_vec{
 					std::make_move_iterator(std::begin(choice_options)),
@@ -1381,6 +1454,32 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				if (next_token_is_sequence(all_tokens, token_index, {InkToken::LeftParen, InkToken::Text, InkToken::RightParen})) {
 					new_gather_point.name = all_tokens[token_index + 2].text_contents;
 					token_index += 3;
+
+					if (current_pass == CompilerPass::ConstantsLists) {
+						if (story_variable_info.story_knot_structure.contains(new_gather_point.name)) {
+							throw InkCompilerException(std::format("Gather point name {} is already used by a knot", new_gather_point.name), token.line_number);
+						}
+
+						if (story_variable_info.story_knot_structure[current_preprocess_knot].stitches.contains(new_gather_point.name)) {
+							throw InkCompilerException(std::format("Gather point name {} is already used by a stitch", new_gather_point.name), token.line_number);
+						}
+						
+						if (current_preprocess_stitch.empty()) {
+							if (story_variable_info.story_knot_structure[current_preprocess_knot].gather_points.contains(new_gather_point.name)) {
+								throw InkCompilerException(std::format("Gather point name {} is not unique within knot {}", new_gather_point.name, current_preprocess_knot), token.line_number);
+							}
+						} else {
+							if (story_variable_info.story_knot_structure[current_preprocess_knot].stitches[current_preprocess_stitch].gather_points.contains(new_gather_point.name)) {
+								throw InkCompilerException(std::format("Gather point name {} is not unique within stitch {}", new_gather_point.name, current_preprocess_stitch), token.line_number);
+							}
+						}
+
+						if (!current_preprocess_stitch.empty()) {
+							story_variable_info.story_knot_structure[current_preprocess_knot].stitches[current_preprocess_stitch].gather_points.insert(new_gather_point.name);
+						} else {
+							story_variable_info.story_knot_structure[current_preprocess_knot].gather_points.insert(new_gather_point.name);
+						}
+					}
 				}
 
 				if (!story_knots[current_knot_index].objects.empty() && story_knots[current_knot_index].objects.back()->get_id() == ObjectId::Choice) {
@@ -1389,9 +1488,11 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					}
 				}
 
-				gather_point_knot.gather_points.push_back(new_gather_point);
-				if (!gather_point_knot.stitches.empty() && gather_point_knot.objects.size() >= gather_point_knot.stitches[0].index) {
-					gather_point_knot.stitches.back().gather_points.push_back(new_gather_point);
+				if (current_pass != CompilerPass::ConstantsLists) {
+					gather_point_knot.gather_points.push_back(new_gather_point);
+					if (!gather_point_knot.stitches.empty() && gather_point_knot.objects.size() >= gather_point_knot.stitches[0].index) {
+						gather_point_knot.stitches.back().gather_points.push_back(new_gather_point);
+					}
 				}
 
 				end_line = true;

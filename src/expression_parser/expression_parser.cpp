@@ -6,10 +6,8 @@
 #include <unordered_set>
 #include <cmath>
 #include <stack>
-#include <deque>
 #include <functional>
 #include <format>
-#include <stdexcept>
 
 using namespace ExpressionParserV2;
 

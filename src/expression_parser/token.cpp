@@ -139,6 +139,30 @@ std::string StoryVariableInfo::resolve_redirects(const std::string& start_var) c
 	return *var;
 }
 
+bool StoryVariableInfo::content_already_exists(const std::string& content) const {
+	if (story_knot_structure.contains(content)) {
+		return true;
+	}
+
+	for (const auto& knot : story_knot_structure) {
+		if (knot.second.gather_points.contains(content)) {
+			return true;
+		}
+
+		if (knot.second.stitches.contains(content)) {
+			return true;
+		}
+
+		for (const auto& stitch : knot.second.stitches) {
+			if (stitch.second.gather_points.contains(content)) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 void Token::fetch_variable_value(const StoryVariableInfo& story_vars) {

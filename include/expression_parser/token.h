@@ -126,6 +126,11 @@ using InkFunction = std::function<Variant(const std::vector<Variant>&)>;
 //typedef void (*VariableObserverFunc)(const std::string&, const Variant&);
 using VariableObserverFunc = std::function<void(const std::string&, const Variant&)>;
 
+struct KnotContent {
+	std::unordered_set<std::string> gather_points;
+	std::unordered_map<std::string, KnotContent> stitches;
+};
+
 struct StoryVariableInfo {
 	std::unordered_map<std::string, Variant> variables;
 	std::unordered_map<std::string, Variant> constants;
@@ -141,6 +146,8 @@ struct StoryVariableInfo {
 	std::unordered_map<std::string, std::vector<VariableObserverFunc>> observers;
 
 	InkListDefinitionMap defined_lists;
+
+	std::unordered_map<std::string, KnotContent> story_knot_structure;
 
 	Uuid current_weave_uuid;
 
@@ -161,6 +168,8 @@ struct StoryVariableInfo {
 
 	Uuid add_list_definition(const std::string& name, const std::vector<InkListDefinition::Entry>& values) { return defined_lists.add_list_definition(name, values); }
 	std::optional<Uuid> get_list_entry_origin(const std::string& entry) const { return defined_lists.get_list_entry_origin(entry); }
+
+	bool content_already_exists(const std::string& content) const;
 
 private:
 	void execute_variable_observers(const std::string& variable, const Variant& new_value);

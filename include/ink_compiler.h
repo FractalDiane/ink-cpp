@@ -107,6 +107,9 @@ private:
 	std::vector<InkLexer::Token> include_sublevel_tokens;
 	std::unordered_set<std::string> all_included_files;
 
+	std::string current_preprocess_knot;
+	std::string current_preprocess_stitch;
+
 	ExpressionParserV2::StoryVariableInfo story_variable_info;
 	std::vector<std::pair<std::string, std::pair<Uuid, std::vector<InkListDefinition::Entry>>>> cached_list_variables;
 	

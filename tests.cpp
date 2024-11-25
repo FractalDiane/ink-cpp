@@ -2110,6 +2110,57 @@ TEST_F(ErrorTests, InvalidListValue) {
 		"Line 1: Invalid value for entry forty in list Test: 40.02"
 	);
 }
+
+TEST_F(ErrorTests, DuplicateKnot) {
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main\nhi\n=== main\nhi2",
+		"Line 4: Knot name main is not unique"
+	);
+
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main\nhi\n=main2\nthis is a stitch\n=== main2\nhi2",
+		"Line 6: Knot name main2 is not unique"
+	);
+
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main\nhi\n* (main2) hello there\n*how are you\n-\n=== main2\nhi2",
+		"Line 7: Knot name main2 is not unique"
+	);
+}
+
+TEST_F(ErrorTests, DuplicateStitch) {
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main\nhi\n=stitch\nhi\n=stitch\nhi2",
+		"Line 6: Stitch name stitch is not unique within knot main"
+	);
+
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main\nhi\n=main\nthis is a stitch\n=stitch\nhi2",
+		"Line 4: Stitch name main is already used by a knot"
+	);
+
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main\nhi\n* (main2) hello there\n*how are you\n-\n= main2\nhi2",
+		"Line 7: Stitch name main2 is not unique within knot main"
+	);
+}
+
+TEST_F(ErrorTests, DuplicateGatherPoint) {
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main\n* (main) choice one\n* choice two\n-",
+		"Line 3: Choice label name main is already used by a knot"
+	);
+
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main\n=stitch\nhi\n- (stitch)\n- (test)\n",
+		"Line 5: Gather point name stitch is already used by a stitch"
+	);
+
+	EXPECT_COMPILE_FAIL(
+		"-> main\n=== main\n=stitch\nhi\n- (test)\n- (test)\n",
+		"Line 6: Gather point name test is not unique within stitch stitch"
+	);
+}
 #pragma endregion
 
 #pragma region InkProof
