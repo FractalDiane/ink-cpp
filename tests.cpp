@@ -2069,7 +2069,7 @@ TEST_F(ErrorTests, ChoiceInFunction) {
 TEST_F(ErrorTests, StitchFunction) {
 	EXPECT_COMPILE_FAIL(
 		"-> main\n=== main ===\nhello\nthere\n= function test\n~ return 5",
-		"Line 5: Stitches cannot be functions; only knots"
+		"Line 5: Stitches cannot be functions"
 	);
 }
 
@@ -2160,6 +2160,16 @@ TEST_F(ErrorTests, DuplicateGatherPoint) {
 		"-> main\n=== main\n=stitch\nhi\n- (test)\n- (test)\n",
 		"Line 6: Gather point name test is not unique within stitch stitch"
 	);
+}
+
+TEST_F(ErrorTests, NothingInConditional) {
+	EXPECT_COMPILE_FAIL(
+		"{true:}",
+		"Line 1: Expected content after conditional ':'"
+	);
+
+	InkCompileToStoryResult result = compiler.compile_script("{true: }");
+	ASSERT_TRUE(result.has_value());
 }
 #pragma endregion
 

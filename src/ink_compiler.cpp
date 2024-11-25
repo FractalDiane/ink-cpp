@@ -25,9 +25,6 @@
 #include <sstream>
 #include <algorithm>
 
-#include <format>
-#include <stdexcept>
-
 namespace {
 	static const std::unordered_map<char, InkToken> TokenChars = {
 		{'/', InkToken::Slash},
@@ -680,7 +677,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 						end_line = true;
 					} else {
-						throw std::runtime_error("Expected knot name");
+						throw InkCompilerException("Expected name for knot", token.line_number);
 					}
 				} else if (next_token_is(all_tokens, token_index, InkToken::Text)) {
 					std::string new_stitch_name = strip_string_edges(all_tokens[token_index + 1].text_contents, true, true, true);
@@ -759,9 +756,9 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 					end_line = true;
 				} else if (next_token_is(all_tokens, token_index, InkToken::KeywordFunction)) {
-					throw InkCompilerException("Stitches cannot be functions; only knots", token.line_number);
+					throw InkCompilerException("Stitches cannot be functions", token.line_number);
 				} else {
-					throw std::runtime_error("Expected stitch name");
+					throw InkCompilerException("Expected name for stitch", token.line_number);
 				}
 			} else {
 				result_object = new InkObjectText("=");
@@ -1082,11 +1079,15 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 
 								try {
 									current_condition = ExpressionParserV2::tokenize_and_shunt_expression(condition_string, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
-								} catch (...) {
-									throw std::runtime_error("Malformed condition in conditional");
+								} catch (const ExpressionParserV2::ExpressionException& e) {
+									throw InkCompilerException(e.what(), token.line_number);
 								}
 
 								items.clear();
+
+								if (token_index + 1 == all_tokens.size() || all_tokens[token_index + 1].token == InkToken::RightBrace) {
+									throw InkCompilerException("Expected content after conditional ':'", token.line_number);
+								}
 							}
 						} break;
 
@@ -1133,7 +1134,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 														is_condition_entry = implicit_else = true;
 														break;
 													default:
-														throw std::runtime_error("Too many implicit condition entries");
+														throw InkCompilerException("Too many implicit condition entries", token.line_number);
 												}
 											}
 
@@ -1206,8 +1207,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 											} else {
 												items_conditions.push_back({shunted, {}});
 											}
-										} catch (...) {
-											throw std::runtime_error("Malformed condition in conditional");
+										} catch (const ExpressionParserV2::ExpressionException& e) {
+											throw InkCompilerException(e.what(), token.line_number);
 										}
 
 										found_dash = true;
@@ -1263,8 +1264,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					ExpressionParserV2::ShuntedExpression condition_shunted = ExpressionParserV2::tokenize_and_shunt_expression(condition, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 					condition_shunted.uuid = current_uuid++;
 					choice_stack.back().conditions.push_back(condition_shunted);
-				} catch (...) {
-					throw std::runtime_error("Malformed choice condition");
+				} catch (const ExpressionParserV2::ExpressionException& e) {
+					throw InkCompilerException(e.what(), token.line_number);
 				}
 			} else {
 				if (is_conditional) {
@@ -1282,8 +1283,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						ExpressionParserV2::ShuntedExpression shunted = ExpressionParserV2::tokenize_and_shunt_expression(all_text, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 						shunted.uuid = current_uuid++;
 						result_object = new InkObjectInterpolation(shunted);
-					} catch (...) {
-						throw std::runtime_error("Malformed interpolation");
+					} catch (const ExpressionParserV2::ExpressionException& e) {
+						throw InkCompilerException(e.what(), token.line_number);
 					}
 				}
 			}
@@ -1310,8 +1311,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					target_tokens.uuid = current_uuid++;
 					try {
 						target_tokens = ExpressionParserV2::tokenize_and_shunt_expression(target, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
-					} catch (...) {
-						throw std::runtime_error("Illegal value in divert target");
+					} catch (const ExpressionParserV2::ExpressionException& e) {
+						throw InkCompilerException(e.what() ,token.line_number);
 					}
 		
 					std::vector<ExpressionParserV2::ShuntedExpression> arguments;
@@ -1341,8 +1342,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 								ExpressionParserV2::ShuntedExpression tokenized = ExpressionParserV2::tokenize_and_shunt_expression(arg, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 								tokenized.uuid = current_uuid++;
 								arguments.push_back(tokenized);
-							} catch (...) {
-								throw std::runtime_error("Malformed knot argument");
+							} catch (const ExpressionParserV2::ExpressionException& e) {
+								throw InkCompilerException(e.what(), token.line_number);
 							}
 						}
 					}
@@ -1384,8 +1385,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					std::string target = strip_string_edges(all_tokens[token_index + 2].text_contents, true, true, true);
 					try {
 						target_tokens = ExpressionParserV2::tokenize_and_shunt_expression(target, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
-					} catch (...) {
-						throw std::runtime_error("Illegal value in tunnel divert target");
+					} catch (const ExpressionParserV2::ExpressionException& e) {
+						throw InkCompilerException(e.what(), token.line_number);
 					}
 				}
 
@@ -1417,8 +1418,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							ExpressionParserV2::ShuntedExpression tokenized = ExpressionParserV2::tokenize_and_shunt_expression(arg, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 							tokenized.uuid = current_uuid++;
 							arguments.push_back(tokenized);
-						} catch (...) {
-							throw std::runtime_error("Malformed knot argument");
+						} catch (const ExpressionParserV2::ExpressionException& e) {
+							throw InkCompilerException(e.what() ,token.line_number);
 						}
 					}
 				}
@@ -1517,8 +1518,8 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 					expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info, ExpressionParserV2::ContentsAllowed::Any);
 					expression_shunted.uuid = current_uuid++;
 					result_object = new InkObjectLogic(expression_shunted);
-				} catch (...) {
-					throw std::runtime_error("Malformed logic statement");
+				} catch (const ExpressionParserV2::ExpressionException& e) {
+					throw InkCompilerException(e.what(), token.line_number);
 				}
 
 				if (!story_knots[current_knot_index].is_function) {
@@ -1621,7 +1622,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						}
 					}
 				} else {
-					throw std::runtime_error("Malformed VAR/CONST statement");
+					throw InkCompilerException(std::format("Malformed {} statement", token.token == InkToken::KeywordVar ? "VAR" : "CONST"), token.line_number);
 				}
 			} else {
 				result_object = new InkObjectText(token.token == InkToken::KeywordConst ? "CONST" : "VAR");
@@ -1664,7 +1665,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 									in_list_parens = true;
 									include_this_entry = true;
 								} else {
-									throw std::runtime_error("Malformed LIST definition: mismatched '('");
+									throw InkCompilerException("Malformed LIST definition: mismatched '('", token.line_number);
 								}
 							} break;
 
@@ -1688,7 +1689,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 									this_entry_value = std::stoll(next_text);
 									++token_index;
 								} else {
-									throw std::runtime_error("Malformed LIST definition: misplaced '='");
+									throw InkCompilerException("Malformed LIST definition: misplaced '='", token.line_number);
 								}
 							} break;
 
@@ -1696,7 +1697,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 								if (!this_entry_name.empty()) {
 									(add_entry)();
 								} else {
-									throw std::runtime_error("Malformed LIST definition: misplaced ','");
+									throw InkCompilerException("Malformed LIST definition: misplaced ','", token.line_number);
 								}
 							} break;
 
@@ -1704,12 +1705,12 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 								if (in_list_parens) {
 									in_list_parens = false;
 								} else {
-									throw std::runtime_error("Malformed LIST definition: mismatched ')'");
+									throw InkCompilerException("Malformed LIST definition: mismatched ')'", token.line_number);
 								}
 							} break;
 
 							default: {
-								throw std::runtime_error("Malformed LIST definition");
+								throw InkCompilerException("Malformed LIST definition", token.line_number);
 							} break;
 						}
 
@@ -1727,7 +1728,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 						cached_list_variables.push_back({std::move(identifier), {new_list_uuid, std::move(entries)}});
 					}
 				} else {
-					throw std::runtime_error("Malformed LIST definition");
+					throw InkCompilerException("Malformed LIST definition", token.line_number);
 				}
 			} else {
 				result_object = new InkObjectText("LIST");
@@ -1823,10 +1824,10 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 								story_variable_info.declared_external_functions.insert(function_name);
 							}
 						} else {
-							throw std::runtime_error("Malformed EXTERNAL declaration");
+							throw InkCompilerException("Malformed EXTERNAL declaration", token.line_number);
 						}
 				} else {
-					throw std::runtime_error("Malformed EXTERNAL declaration");
+					throw InkCompilerException("Malformed EXTERNAL declaration", token.line_number);
 				}
 			} else {
 				result_object = new InkObjectText("EXTERNAL");

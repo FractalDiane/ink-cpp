@@ -1,9 +1,4 @@
-
 weave content not found
-->-> invalid placement
-nothing in conditional after :
-unexpected end of content
-
 variable not found
 function not found (go back and check story knots against functions?)
 list not found
