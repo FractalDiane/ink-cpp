@@ -315,7 +315,7 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 			switch (this_char) {
 				case '+': {
 					if (next_char(expression, index) == '+') {
-						if (is_whitespace(next_char(expression, index + 1))) {
+						if (index == expression.size() - 2 || is_whitespace(next_char(expression, index + 1))) {
 							TRY_ADD_WORD();
 							result.push_back(Token::operat(OperatorType::Increment, UnaryType::Postfix));
 						} else {
@@ -366,6 +366,16 @@ std::vector<Token> ExpressionParserV2::tokenize_expression(const std::string& ex
 						result.push_back(Token::operat(OperatorType::Equal, UnaryType::NotUnary));
 						++index;
 					} else {
+						if (result.empty()) {
+							throw ExpressionException("Misplaced operator: '='");
+						}
+
+						if (result.back().type != TokenType::Variable) {
+							throw ExpressionException("Cannot assign to a non-variable");
+						} else if (story_variable_info.constants.contains(result.back().variable_name)) {
+							throw ExpressionException("Cannot assign to a constant");
+						}
+
 						result.push_back(Token::operat(OperatorType::Assign, UnaryType::NotUnary));
 					}
 				} break;
@@ -716,66 +726,95 @@ std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix, Co
 	return result;
 }
 
-#define OP_BIN(type, op) case OperatorType::type: {\
+#define TRY_ADD(_type, what_to_add, binary) bool add = true;\
+	if (consolidation_mode) {\
+		[[unlikely]]\
+		if constexpr (binary) {\
+			bool left_valid = left.type != TokenType::Variable && left.type != TokenType::Function && left.type != TokenType::Operator;\
+			bool right_valid = right.type != TokenType::Variable && right.type != TokenType::Function && right.type != TokenType::Operator;\
+			if (!left_valid || !right_valid) {\
+				add = false;\
+			}\
+		} else {\
+			bool valid = left.type != TokenType::Variable && left.type != TokenType::Function && left.type != TokenType::Operator;\
+			add = valid;\
+		}\
+	}\
+	if (add) {\
+		Token result = Token::from_variant(what_to_add);\
+		[[likely]]\
+		stack.pop_back();\
+		if constexpr (binary) {\
+			stack.pop_back();\
+		}\
+		stack.push_back(result);\
+	} else {\
+		[[unlikely]]\
+		stack.push_back(Token::operat(OperatorType::_type, OperatorUnaryType::NotUnary));\
+	}\
+
+#define OP_BIN(_type, op) case OperatorType::_type: {\
 	if (stack.size() < 2) {\
 		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed));\
 	}\
 	const Token& right = stack.back();\
 	const Token& left = stack[stack.size() - 2];\
-	Token result = Token::from_variant(left.value op right.value);\
-	stack.pop_back();\
-	stack.pop_back();\
-	stack.push_back(result);\
+	TRY_ADD(_type, left.value op right.value, true);\
 } break;
 
-#define OP_BIN_F(type, func) case OperatorType::type: {\
+#define OP_BIN_F(_type, func) case OperatorType::_type: {\
 	if (stack.size() < 2) {\
 		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed));\
 	}\
 	const Token& right = stack.back();\
 	const Token& left = stack[stack.size() - 2];\
-	Token result = Token::from_variant(left.value.operator_##func(right.value));\
-	stack.pop_back();\
-	stack.pop_back();\
-	stack.push_back(result);\
+	TRY_ADD(_type, left.value.operator_##func(right.value), true);\
 } break;
 
-#define OP_UN_PRE(type, op) case OperatorType::type: {\
+#define OP_UN_PRE(_type, op) case OperatorType::_type: {\
 	if (stack.empty()) {\
 		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed));\
 	}\
-	const Token& operand = stack.back();\
-	Token result = Token::from_variant(op operand.value);\
-	stack.pop_back();\
-	stack.push_back(result);\
+	const Token& left = stack.back();\
+	const Token& right = left;\
+	TRY_ADD(_type, op left.value, false);\
 } break;
 
-#define OP_BIN_ASSIGN(_type, func) case OperatorType::_type: {\
+#define OP_BIN_ASSIGN(_type, func, op_str) case OperatorType::_type: {\
 	if (stack.size() < 2) {\
 		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed));\
 	}\
 	Token& value = stack.back();\
 	Token& var = stack[stack.size() - 2];\
-	if (var.type != TokenType::Variable) {\
-		throw std::runtime_error("Invalid use of " #_type " operator");\
+	if (consolidation_mode) {\
+		[[unlikely]]\
+		if (var.type != TokenType::Variable) {\
+			throw ExpressionException("Cannot assign to a non-variable with operator " op_str);\
+		}\
+		stack.push_back(Token::operat(OperatorType::_type, OperatorUnaryType::NotUnary));\
+	} else {\
+		[[likely]]\
+		var.func(value.value, story_variable_info);\
+		stack.pop_back();\
+		stack.pop_back();\
 	}\
-\
-	var.func(value.value, story_variable_info);\
-\
-	stack.pop_back();\
-	stack.pop_back();\
 } break;
 
-ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(std::vector<Token>& expression_tokens, StoryVariableInfo& story_variable_info) {
+ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(std::vector<Token>& expression_tokens, StoryVariableInfo& story_variable_info, bool consolidation_mode) {
 	std::vector<Token> stack;
 	std::size_t index = 0;
+	std::vector<Token> consolidated_tokens;
 
 	while (index < expression_tokens.size()) {
 		Token& this_token = expression_tokens[index];
 
 		switch (this_token.type) {
 			case TokenType::Variable: {
-				this_token.fetch_variable_value(story_variable_info);
+				if (!consolidation_mode || story_variable_info.constants.contains(this_token.variable_name)) {
+					[[likely]]
+					this_token.fetch_variable_value(story_variable_info);
+				}
+				
 				[[fallthrough]];
 			}
 			case TokenType::LiteralBool:
@@ -812,42 +851,49 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(
 					OP_UN_PRE(Negative, -);
 					OP_UN_PRE(Not, !);
 
-					OP_BIN_ASSIGN(PlusAssign, add_assign);
-					OP_BIN_ASSIGN(MinusAssign, sub_assign);
-					OP_BIN_ASSIGN(MultiplyAssign, mul_assign);
-					OP_BIN_ASSIGN(DivideAssign, div_assign);
-					OP_BIN_ASSIGN(ModulusAssign, mod_assign);
+					OP_BIN_ASSIGN(PlusAssign, add_assign, "+=");
+					OP_BIN_ASSIGN(MinusAssign, sub_assign, "-=");
+					OP_BIN_ASSIGN(MultiplyAssign, mul_assign, "*=");
+					OP_BIN_ASSIGN(DivideAssign, div_assign, "/=");
+					OP_BIN_ASSIGN(ModulusAssign, mod_assign, "%=");
 
 					case OperatorType::Increment:
 					case OperatorType::Decrement: {
 						Token& operand = stack.back();
-
-						bool postfix = this_token.operator_unary_type == OperatorUnaryType::Postfix;
-						if (this_token.operator_type == OperatorType::Increment) {
-							operand.increment(postfix, story_variable_info);
+						if (consolidation_mode) {
+							[[unlikely]]
+							stack.push_back(this_token);
 						} else {
-							operand.decrement(postfix, story_variable_info);
-						}
+							bool postfix = this_token.operator_unary_type == OperatorUnaryType::Postfix;
+							[[likely]]
+							if (this_token.operator_type == OperatorType::Increment) {
+								operand.increment(postfix, story_variable_info);
+							} else {
+								operand.decrement(postfix, story_variable_info);
+							}
 
-						stack.pop_back();
+							stack.pop_back();
+						}
 					} break;
 
 					case OperatorType::Assign: {
 						Token& value = stack.back();
 						Token& var = stack[stack.size() - 2];
-						if (var.type != TokenType::Variable) {
-							throw std::runtime_error("Invalid use of assignment operator");
+						if (consolidation_mode) {
+							[[unlikely]]
+							stack.push_back(this_token);
+						} else {
+							std::string var_name = var.variable_name;
+							[[likely]]
+							if (value.type == TokenType::Variable && var.variable_name == value.variable_name) {
+								break;
+							}
+
+							var.assign_variable(value, story_variable_info);
+
+							stack.pop_back();
+							stack.pop_back();
 						}
-
-						std::string var_name = var.variable_name;
-						if (value.type == TokenType::Variable && var.variable_name == value.variable_name) {
-							break;
-						}
-
-						var.assign_variable(value, story_variable_info);
-
-						stack.pop_back();
-						stack.pop_back();
 					} break;
 
 					default: {
@@ -857,35 +903,48 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(
 			} break;
 
 			case TokenType::Function: {
-				this_token.fetch_function_value(story_variable_info);
-				story_variable_info.called_lookahead_unsafe_function |= !this_token.function_lookahead_safe;
+				if (!consolidation_mode) {
+					[[likely]]
+					this_token.fetch_function_value(story_variable_info);
+					story_variable_info.called_lookahead_unsafe_function |= !this_token.function_lookahead_safe;
 
-				std::vector<Token> func_args;
-				for (std::uint8_t i = 0; i < this_token.function_argument_count; ++i) {
-					func_args.push_back(stack[stack.size() - (this_token.function_argument_count - i)]);
-				}
-
-				if (this_token.function_fetch_type == FunctionFetchType::StoryKnot) {
-					return std::unexpected(NulloptResult(NulloptResult::Reason::FoundKnotFunction, this_token, index, func_args));
-				}
-
-				std::vector<Variant> arg_values;
-				if (this_token.function_argument_count > 0) {
-					for (const Token& token : func_args) {
-						arg_values.push_back(token.value);
-					}
-
+					std::vector<Token> func_args;
 					for (std::uint8_t i = 0; i < this_token.function_argument_count; ++i) {
-						stack.pop_back();
+						func_args.push_back(stack[stack.size() - (this_token.function_argument_count - i)]);
 					}
-				}
-				
-				if (auto builtin_func = BuiltinFunctions.find(this_token.value); builtin_func != BuiltinFunctions.end()) {
-					if (Variant result = (builtin_func->second.first)(arg_values); result.has_value()) {
+
+					if (this_token.function_fetch_type == FunctionFetchType::StoryKnot) {
+						return std::unexpected(NulloptResult(NulloptResult::Reason::FoundKnotFunction, this_token, index, func_args));
+					}
+
+					std::vector<Variant> arg_values;
+					if (this_token.function_argument_count > 0) {
+						for (const Token& token : func_args) {
+							arg_values.push_back(token.value);
+						}
+
+						for (std::uint8_t i = 0; i < this_token.function_argument_count; ++i) {
+							stack.pop_back();
+						}
+					}
+					
+					if (auto builtin_func = BuiltinFunctions.find(this_token.value); builtin_func != BuiltinFunctions.end()) {
+						if (Variant result = (builtin_func->second.first)(arg_values); result.has_value()) {
+							stack.push_back(Token::from_variant(result));
+						}
+					} else if (Variant result = this_token.call_function(arg_values, story_variable_info); result.has_value()) {
 						stack.push_back(Token::from_variant(result));
 					}
-				} else if (Variant result = this_token.call_function(arg_values, story_variable_info); result.has_value()) {
-					stack.push_back(Token::from_variant(result));
+				} else {
+					[[unlikely]]
+					stack.push_back(this_token);
+				}
+			} break;
+
+			case TokenType::Keyword: {
+				if (consolidation_mode) {
+					[[unlikely]]
+					stack.push_back(this_token);
 				}
 			} break;
 
@@ -897,7 +956,10 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression_tokens(
 		++index;
 	}
 
-	if (!stack.empty() && stack.back().value.has_value()) {
+	if (consolidation_mode) {
+		[[unlikely]]
+		expression_tokens = stack;
+	} else if (!stack.empty() && stack.back().value.has_value()) {
 		return stack.back().value;
 	}
 
@@ -910,7 +972,7 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression(const s
 	std::vector<Token> tokenized = ExpressionParserV2::tokenize_expression(expression, story_variable_info);
 	std::vector<Token> shunted = ExpressionParserV2::shunt(tokenized, contents_allowed);
 
-	ExecuteResult result = ExpressionParserV2::execute_expression_tokens(shunted, story_variable_info);
+	ExecuteResult result = ExpressionParserV2::execute_expression_tokens(shunted, story_variable_info, false);
 
 	return result;
 }
@@ -918,6 +980,7 @@ ExpressionParserV2::ExecuteResult ExpressionParserV2::execute_expression(const s
 ShuntedExpression ExpressionParserV2::tokenize_and_shunt_expression(const std::string& expression, StoryVariableInfo& story_variable_info, ContentsAllowed contents_allowed) {
 	std::vector<Token> tokenized = ExpressionParserV2::tokenize_expression(expression, story_variable_info);
 	std::vector<Token> shunted = ExpressionParserV2::shunt(tokenized, contents_allowed);
+	ExpressionParserV2::execute_expression_tokens(shunted, story_variable_info, true);
 
 	return ShuntedExpression(shunted);
 }

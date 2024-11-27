@@ -162,7 +162,7 @@ TEST_F(ExpressionParserTests, BasicTokenization) {
 	std::vector<ExpressionParser::Token> result_postfix = ExpressionParser::shunt(result, ExpressionParserV2::ContentsAllowed::Any);
 	EXPECT_EQ(result.size(), result_postfix.size());
 	
-	ExpressionParser::ExecuteResult result_token = ExpressionParser::execute_expression_tokens(result_postfix, blank_variable_info);
+	ExpressionParser::ExecuteResult result_token = ExpressionParser::execute_expression_tokens(result_postfix, blank_variable_info, false);
 	EXPECT_FALSE(result_token.has_value());
 	EXPECT_EQ(static_cast<std::int64_t>(blank_variable_info.variables["test"]), 12);
 }
@@ -245,6 +245,16 @@ TEST_F(ExpressionParserTests, ExpressionEvaluation) {
 	vars4.variables = {{"visited_snakes", true}, {"dream_about_snakes", false}};
 	Variant t20 = execute_expression("visited_snakes && not dream_about_snakes", vars4, ContentsAllowed::Any).value();
 	EXPECT_EQ(static_cast<bool>(t20), true);
+
+	ExpressionParserV2::ShuntedExpression t21 = ExpressionParserV2::tokenize_and_shunt_expression("5 + 3", blank_variable_info, ExpressionParserV2::ContentsAllowed::Any);
+	//ExpressionParserV2::execute_expression_tokens(t21.tokens, blank_variable_info, true);
+	EXPECT_TRUE(t21.tokens.size() == 1 && t21.tokens[0].type == ExpressionParserV2::TokenType::LiteralNumberInt && t21.tokens[0].value.get<std::int64_t>() == 8);
+
+	ExpressionParserV2::ShuntedExpression t22 = ExpressionParserV2::tokenize_and_shunt_expression("5 + blah", blank_variable_info, ExpressionParserV2::ContentsAllowed::Any);
+	EXPECT_TRUE(t22.tokens.size() == 3 && t22.tokens[0].type == ExpressionParserV2::TokenType::LiteralNumberInt && t22.tokens[1].type == ExpressionParserV2::TokenType::Variable);
+
+	ExpressionParserV2::ShuntedExpression t23 = ExpressionParserV2::tokenize_and_shunt_expression("5 + (23 * blah + (8 * 4))", blank_variable_info, ExpressionParserV2::ContentsAllowed::Any);
+	EXPECT_TRUE(t23.tokens.size() == 7);
 }
 #pragma endregion
 
@@ -1733,7 +1743,9 @@ TEST_F(MiscBugTests, ConsecutiveInterpolatesAndLogic) {
 
 TEST_F(MiscBugTests, CrimeSceneChecks) {
 	STORY("22_misc_bugs/22i_crime_scene_checks.ink");
-	EXPECT_TEXT("false", "false", "neatly_made");
+	EXPECT_TEXT("false");
+	EXPECT_TEXT("false");
+	EXPECT_TEXT("neatly_made");
 }
 
 TEST_F(MiscBugTests, KnotDeeplyNestedLabels) {

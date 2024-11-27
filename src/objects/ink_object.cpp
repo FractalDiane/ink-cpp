@@ -138,7 +138,7 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 		story_state.current_knot().current_function_prep_expression = UINT32_MAX;
 	}
 
-	ExpressionParserV2::ExecuteResult result = ExpressionParserV2::execute_expression_tokens(expression.stack_back().function_prepared_tokens, story_variable_info);
+	ExpressionParserV2::ExecuteResult result = ExpressionParserV2::execute_expression_tokens(expression.stack_back().function_prepared_tokens, story_variable_info, false);
 	if (result.has_value()) {
 		expression.pop_entry();
 		return *result;

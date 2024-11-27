@@ -1610,7 +1610,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							try {
 								ExpressionParserV2::ShuntedExpression expression_shunted = ExpressionParserV2::tokenize_and_shunt_expression(expression, story_variable_info, token.token == InkToken::KeywordConst ? ExpressionParserV2::ContentsAllowed::LiteralsOnly : ExpressionParserV2::ContentsAllowed::ConstantsOnly);
 								expression_shunted.uuid = current_uuid++;
-								ExpressionParserV2::Variant expression_result = ExpressionParserV2::execute_expression_tokens(expression_shunted.tokens, story_variable_info).value();
+								ExpressionParserV2::Variant expression_result = ExpressionParserV2::execute_expression_tokens(expression_shunted.tokens, story_variable_info, false).value();
 								if (token.token == InkToken::KeywordConst) {
 									story_variable_info.constants.emplace(identifier, expression_result);
 								} else {

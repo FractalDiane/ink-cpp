@@ -41,7 +41,7 @@ InkObject* InkObjectDivert::populate_from_bytes(const ByteVec& bytes, std::size_
 std::string InkObjectDivert::get_target(InkStoryState& story_state, const ExpressionParserV2::StoryVariableInfo& story_var_info) {
 	std::string target;
 
-	ExpressionParserV2::ExecuteResult target_var = ExpressionParserV2::execute_expression_tokens(target_knot.tokens, story_state.variable_info);
+	ExpressionParserV2::ExecuteResult target_var = ExpressionParserV2::execute_expression_tokens(target_knot.tokens, story_state.variable_info, false);
 	if (target_var.has_value() && target_var->index() == ExpressionParserV2::Variant_String) {
 		target = target_var->get<std::string>();
 	} else if (!target_knot.tokens.empty()) {
@@ -81,7 +81,7 @@ void InkObjectDivert::execute(InkStoryState& story_state, InkStoryEvalResult& ev
 		eval_result.target_knot = target;
 		eval_result.divert_type = type;
 		for (ExpressionParserV2::ShuntedExpression& argument : arguments) {
-			ExpressionParserV2::Variant result = ExpressionParserV2::execute_expression_tokens(argument.tokens, story_state.variable_info).value();
+			ExpressionParserV2::Variant result = ExpressionParserV2::execute_expression_tokens(argument.tokens, story_state.variable_info, false).value();
 			eval_result.divert_args.push_back({
 				argument.tokens.size() == 1 && argument.tokens[0].type == ExpressionParserV2::TokenType::Variable
 					? argument.tokens[0].variable_name

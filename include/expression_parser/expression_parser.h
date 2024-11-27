@@ -93,7 +93,7 @@ struct NulloptResult {
 
 typedef std::expected<Variant, NulloptResult> ExecuteResult;
 
-ExpressionParserV2::ExecuteResult execute_expression_tokens(std::vector<ExpressionParserV2::Token>& tokens, ExpressionParserV2::StoryVariableInfo& story_variable_info);
+ExpressionParserV2::ExecuteResult execute_expression_tokens(std::vector<ExpressionParserV2::Token>& tokens, ExpressionParserV2::StoryVariableInfo& story_variable_info, bool consolidation_mode);
 ExpressionParserV2::ExecuteResult execute_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info, ContentsAllowed contents_allowed);
 ShuntedExpression tokenize_and_shunt_expression(const std::string& expression, ExpressionParserV2::StoryVariableInfo& story_variable_info, ContentsAllowed contents_allowed);
 
