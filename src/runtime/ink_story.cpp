@@ -349,7 +349,12 @@ std::string InkStory::continue_story() {
 			break;
 		}
 
-		current_object->execute(story_state, eval_result);
+		try {
+			current_object->execute(story_state, eval_result);
+		} catch (const InkRuntimeException& e) {
+			story_state.should_end_story = true;
+			return std::format("ERROR: {}", e.what());
+		}
 		
 		// after collecting the options from a choice, a thread returns to its origin
 		if (story_state.should_wrap_up_thread && story_state.current_thread_depth() > 0) {

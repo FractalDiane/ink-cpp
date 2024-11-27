@@ -19,16 +19,6 @@
 #include "uuid.h"
 
 namespace ExpressionParserV2 {
-	class ExpressionException {
-	private:
-		std::string _what;
-
-	public:
-		ExpressionException(std::string&& _what) : _what(_what) {}
-
-		const char* what() const noexcept { return _what.data(); }
-	};
-
 	struct ShuntedExpression {
 	Uuid uuid;
 	std::vector<ExpressionParserV2::Token> tokens;
@@ -85,9 +75,11 @@ struct NulloptResult {
 	ExpressionParserV2::Token function;
 	std::size_t function_index;
 	std::vector<ExpressionParserV2::Token> arguments;
+	std::string error_message;
 
-	NulloptResult(Reason reason) : reason{reason}, function{}, function_index{0}, arguments{} {}
-	NulloptResult(Reason reason, const ExpressionParserV2::Token& function, std::size_t function_index, const std::vector<ExpressionParserV2::Token>& arguments) : reason{reason}, function{function}, function_index{function_index}, arguments{arguments} {}
+	NulloptResult(Reason reason) : reason{reason}, function{}, function_index{0}, arguments{}, error_message{} {}
+	NulloptResult(Reason reason, const std::string& error_message) : reason{reason}, error_message{error_message}, function{}, function_index{0}, arguments{} {}
+	NulloptResult(Reason reason, const ExpressionParserV2::Token& function, std::size_t function_index, const std::vector<ExpressionParserV2::Token>& arguments) : reason{reason}, function{function}, function_index{function_index}, arguments{arguments}, error_message{} {}
 };
 
 

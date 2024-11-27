@@ -742,6 +742,8 @@ Variant Variant::operator%(const Variant& rhs) const {
 	}
 }
 
+#define THROW_ASSIGN(op) throw ExpressionException("Invalid operands for operator '" #op "': INSERT TYPES HERE")
+
 void Variant::operator+=(const Variant& rhs) {
 	switch (value.index()) {
 		case Variant_Bool: {
@@ -762,7 +764,7 @@ void Variant::operator+=(const Variant& rhs) {
 				} break;
 
 				default: {
-					
+					THROW_ASSIGN(+=);
 				} break;
 			}
 		} break;
@@ -783,7 +785,7 @@ void Variant::operator+=(const Variant& rhs) {
 				} break;
 
 				default: {
-
+					THROW_ASSIGN(+=);
 				} break;
 			}
 		} break;
@@ -803,7 +805,7 @@ void Variant::operator+=(const Variant& rhs) {
 				} break;
 
 				default: {
-				
+					THROW_ASSIGN(+=);
 				} break;
 			}
 		} break;
@@ -812,7 +814,7 @@ void Variant::operator+=(const Variant& rhs) {
 			if (rhs.value.index() == Variant_String) {
 				v<std::string>(value) += v<std::string>(rhs.value);
 			} else {
-				
+				THROW_ASSIGN(+=);
 			}
 		} break;
 
@@ -820,12 +822,12 @@ void Variant::operator+=(const Variant& rhs) {
 			if (rhs.value.index() == Variant_List) {
 				v<InkList>(value) += v<InkList>(rhs.value);
 			} else {
-				
+				THROW_ASSIGN(+=);
 			}
 		} break;
 
 		default: {
-			
+			THROW_ASSIGN(+=);
 		} break;
 	}
 }
@@ -850,7 +852,7 @@ void Variant::operator-=(const Variant& rhs) {
 				} break;
 
 				default: {
-					
+					THROW_ASSIGN(-=);
 				} break;
 			}
 		} break;
@@ -871,7 +873,7 @@ void Variant::operator-=(const Variant& rhs) {
 				} break;
 
 				default: {
-
+					THROW_ASSIGN(-=);
 				} break;
 			}
 		} break;
@@ -891,7 +893,7 @@ void Variant::operator-=(const Variant& rhs) {
 				} break;
 
 				default: {
-				
+					THROW_ASSIGN(-=);
 				} break;
 			}
 		} break;
@@ -900,12 +902,12 @@ void Variant::operator-=(const Variant& rhs) {
 			if (rhs.value.index() == Variant_List) {
 				v<InkList>(value) -= v<InkList>(rhs.value);
 			} else {
-				
+				THROW_ASSIGN(-=);
 			}
 		} break;
 
 		default: {
-			
+			THROW_ASSIGN(-=);
 		} break;
 	}
 }
@@ -930,7 +932,7 @@ void Variant::operator*=(const Variant& rhs) {
 				} break;
 
 				default: {
-					
+					THROW_ASSIGN(*=);
 				} break;
 			}
 		} break;
@@ -951,7 +953,7 @@ void Variant::operator*=(const Variant& rhs) {
 				} break;
 
 				default: {
-
+					THROW_ASSIGN(*=);
 				} break;
 			}
 		} break;
@@ -971,13 +973,13 @@ void Variant::operator*=(const Variant& rhs) {
 				} break;
 
 				default: {
-				
+					THROW_ASSIGN(*=);
 				} break;
 			}
 		} break;
 
 		default: {
-			
+			THROW_ASSIGN(*=);
 		} break;
 	}
 }
@@ -1002,7 +1004,7 @@ void Variant::operator/=(const Variant& rhs) {
 				} break;
 
 				default: {
-					
+					THROW_ASSIGN(/=);
 				} break;
 			}
 		} break;
@@ -1023,7 +1025,7 @@ void Variant::operator/=(const Variant& rhs) {
 				} break;
 
 				default: {
-
+					THROW_ASSIGN(/=);
 				} break;
 			}
 		} break;
@@ -1043,13 +1045,13 @@ void Variant::operator/=(const Variant& rhs) {
 				} break;
 
 				default: {
-				
+					THROW_ASSIGN(/=);
 				} break;
 			}
 		} break;
 
 		default: {
-			
+			THROW_ASSIGN(/=);
 		} break;
 	}
 }
@@ -1074,7 +1076,7 @@ void Variant::operator%=(const Variant& rhs) {
 				} break;
 
 				default: {
-					
+					THROW_ASSIGN(%=);
 				} break;
 			}
 		} break;
@@ -1095,7 +1097,7 @@ void Variant::operator%=(const Variant& rhs) {
 				} break;
 
 				default: {
-
+					THROW_ASSIGN(%=);
 				} break;
 			}
 		} break;
@@ -1115,13 +1117,13 @@ void Variant::operator%=(const Variant& rhs) {
 				} break;
 
 				default: {
-				
+					THROW_ASSIGN(%=);
 				} break;
 			}
 		} break;
 
 		default: {
-			
+			THROW_ASSIGN(%=);
 		} break;
 	}
 }

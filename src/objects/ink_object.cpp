@@ -146,9 +146,8 @@ ExpressionParserV2::ExecuteResult InkObject::prepare_next_function_call(Expressi
 		expression.pop_entry();
 		return std::unexpected(result.error());
 	} else if (result.error().reason == ExpressionParserV2::NulloptResult::Reason::Failed) {
-		// TODO: report some error
 		expression.pop_entry();
-		return std::unexpected(result.error());
+		throw InkRuntimeException(std::move(result.error().error_message));
 	}
 
 	const ExpressionParserV2::NulloptResult& nullopt_result = result.error();

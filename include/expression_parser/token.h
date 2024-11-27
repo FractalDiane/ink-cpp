@@ -21,6 +21,16 @@ using ink_float = float;
 
 namespace ExpressionParserV2 {
 
+class ExpressionException {
+private:
+	std::string _what;
+
+public:
+	ExpressionException(std::string&& _what) : _what(_what) {}
+
+	const char* what() const noexcept { return _what.data(); }
+};
+
 enum {
 	Variant_Bool,
 	Variant_Int,
@@ -381,6 +391,8 @@ struct Token {
 	static Token variable(const std::string& var_name, bool is_const) {
 		return {.type = TokenType::Variable, .variable_name = var_name, .const_variable = is_const};
 	}
+
+	bool is_consolidateable_literal() const { return type != TokenType::Variable && type != TokenType::Function && type != TokenType::Operator; }
 
 	void fetch_variable_value(const StoryVariableInfo& story_vars);
 	void store_variable_value(StoryVariableInfo& story_vars);

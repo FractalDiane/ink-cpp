@@ -1773,7 +1773,7 @@ TEST_F(MiscBugTests, ChoiceDivertScope) {
 
 TEST_F(MiscBugTests, AddNullToNumber) {
 	STORY("22_misc_bugs/22m_add_null_to_number.ink");
-	EXPECT_TEXT("Eight is");
+	EXPECT_TEXT("ERROR: Invalid operands for operator '+': one or more null values");
 }
 
 TEST_F(MiscBugTests, MultipleTags) {

@@ -8,6 +8,16 @@
 #include "runtime/ink_story_state.h"
 #include "expression_parser/expression_parser.h"
 
+class InkRuntimeException {
+private:
+	std::string _what;
+
+public:
+	InkRuntimeException(std::string&& _what) : _what(_what) {}
+
+	const char* what() const noexcept { return _what.data(); }
+};
+
 enum class ObjectId {
 	Text,
 	Choice,

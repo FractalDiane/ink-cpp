@@ -726,22 +726,29 @@ std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix, Co
 	return result;
 }
 
-#define TRY_ADD(_type, what_to_add, binary) bool add = true;\
+#define TRY_ADD(_type, what_to_add, binary, op) bool add = true;\
 	if (consolidation_mode) {\
 		[[unlikely]]\
 		if constexpr (binary) {\
-			bool left_valid = left.type != TokenType::Variable && left.type != TokenType::Function && left.type != TokenType::Operator;\
-			bool right_valid = right.type != TokenType::Variable && right.type != TokenType::Function && right.type != TokenType::Operator;\
+			bool left_valid = left.is_consolidateable_literal();\
+			bool right_valid = right.is_consolidateable_literal();\
 			if (!left_valid || !right_valid) {\
 				add = false;\
 			}\
 		} else {\
-			bool valid = left.type != TokenType::Variable && left.type != TokenType::Function && left.type != TokenType::Operator;\
+			bool valid = left.is_consolidateable_literal();\
 			add = valid;\
 		}\
 	}\
 	if (add) {\
 		Token result = Token::from_variant(what_to_add);\
+		if (!result.value.has_value()) {\
+			if (consolidation_mode) {\
+				throw ExpressionException("Invalid operand(s) for operator '" #op "': INSERT TYPES HERE");\
+			} else {\
+				return std::unexpected(NulloptResult(NulloptResult::Reason::Failed, "Invalid operand(s) for operator '" #op "': INSERT TYPES HERE"));\
+			}\
+		}\
 		[[likely]]\
 		stack.pop_back();\
 		if constexpr (binary) {\
@@ -755,34 +762,40 @@ std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix, Co
 
 #define OP_BIN(_type, op) case OperatorType::_type: {\
 	if (stack.size() < 2) {\
-		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed));\
+		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed, "Invalid operands for operator '" #op "': one or more null values"));\
 	}\
 	const Token& right = stack.back();\
 	const Token& left = stack[stack.size() - 2];\
-	TRY_ADD(_type, left.value op right.value, true);\
+	if (consolidation_mode && left.is_consolidateable_literal() && right.is_consolidateable_literal()) {\
+		[[unlikely]]\
+		if (Variant res = left.value op right.value; !res.has_value()) {\
+			throw ExpressionException("Invalid operands for operator '" #op "': INSERT TYPES HERE");\
+		}\
+	}\
+	TRY_ADD(_type, left.value op right.value, true, op);\
 } break;
 
 #define OP_BIN_F(_type, func) case OperatorType::_type: {\
 	if (stack.size() < 2) {\
-		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed));\
+		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed, "Invalid operands for operator '" #func "': one or more null values"));\
 	}\
 	const Token& right = stack.back();\
 	const Token& left = stack[stack.size() - 2];\
-	TRY_ADD(_type, left.value.operator_##func(right.value), true);\
+	TRY_ADD(_type, left.value.operator_##func(right.value), true, op);\
 } break;
 
 #define OP_UN_PRE(_type, op) case OperatorType::_type: {\
 	if (stack.empty()) {\
-		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed));\
+		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed, "Invalid operands for operator '" #op "': null value"));\
 	}\
 	const Token& left = stack.back();\
 	const Token& right = left;\
-	TRY_ADD(_type, op left.value, false);\
+	TRY_ADD(_type, op left.value, false, op);\
 } break;
 
 #define OP_BIN_ASSIGN(_type, func, op_str) case OperatorType::_type: {\
 	if (stack.size() < 2) {\
-		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed));\
+		return std::unexpected(NulloptResult(NulloptResult::Reason::Failed, "Invalid operands for operator '" op_str "': one or more null values"));\
 	}\
 	Token& value = stack.back();\
 	Token& var = stack[stack.size() - 2];\
@@ -794,7 +807,11 @@ std::vector<Token> ExpressionParserV2::shunt(const std::vector<Token>& infix, Co
 		stack.push_back(Token::operat(OperatorType::_type, OperatorUnaryType::NotUnary));\
 	} else {\
 		[[likely]]\
-		var.func(value.value, story_variable_info);\
+		try {\
+			var.func(value.value, story_variable_info);\
+		} catch (const ExpressionException& e) {\
+			return std::unexpected(NulloptResult(NulloptResult::Reason::Failed, e.what()));\
+		}\
 		stack.pop_back();\
 		stack.pop_back();\
 	}\
