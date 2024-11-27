@@ -258,6 +258,12 @@ InkCompileToStoryResult InkCompiler::compile_script(const std::string& script) {
 		InkStoryData* story_data = compile(script);
 		return InkStory(story_data);
 	} catch (const InkCompilerException& e) {
+		for (const auto& entry : result_knots) {
+			for (InkObject* object : entry.objects) {
+				delete object;
+			}
+		}
+
 		return std::unexpected(e);
 	}
 }
@@ -274,6 +280,12 @@ InkCompileToStoryResult InkCompiler::compile_file(const std::string& file_path)
 		InkStoryData* story_data = compile(file_text);
 		return InkStory(story_data);
 	} catch (const InkCompilerException& e) {
+		for (const auto& entry : result_knots) {
+			for (InkObject* object : entry.objects) {
+				delete object;
+			}
+		}
+		
 		return std::unexpected(e);
 	}
 }
@@ -351,7 +363,7 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 	std::vector<InkLexer::Token> token_stream = lexer.lex_script(script);
 	token_stream = remove_comments(token_stream);
 
-	std::vector<Knot> result_knots;
+	result_knots.clear();
 	Knot start_knot;
 	start_knot.name = "_S";
 	start_knot.uuid = Uuid(current_uuid++);
@@ -388,7 +400,10 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 			switch (current_pass) {
 				case CompilerPass::Includes: {
 					if (this_token.token == InkToken::KeywordInclude || this_token.token == InkToken::NewLine) {
-						compile_token(token_stream, this_token, result_knots, current_pass);
+						InkObject* result = compile_token(token_stream, this_token, result_knots, current_pass);
+						if (result) {
+							delete result;
+						}
 					}
 				} break;
 
@@ -401,7 +416,10 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 					|| this_token.token == InkToken::Asterisk
 					|| this_token.token == InkToken::Plus
 					|| this_token.token == InkToken::NewLine) {
-						compile_token(token_stream, this_token, result_knots, current_pass);
+						InkObject* result = compile_token(token_stream, this_token, result_knots, current_pass);
+						if (result) {
+							delete result;
+						}
 					}
 
 					// THIS IS HORRIBLE
@@ -413,7 +431,10 @@ InkStoryData* InkCompiler::compile(const std::string& script)
 				case CompilerPass::GlobalVariables: {
 					if (this_token.token == InkToken::KeywordVar
 					|| this_token.token == InkToken::NewLine) {
-						compile_token(token_stream, this_token, result_knots, current_pass);
+						InkObject* result = compile_token(token_stream, this_token, result_knots, current_pass);
+						if (result) {
+							delete result;
+						}
 					}
 				} break;
 
@@ -1512,6 +1533,7 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 				if (!story_knots[current_knot_index].is_function) {
 					for (const ExpressionParserV2::Token& tok : expression_shunted.tokens) {
 						if (tok.type == ExpressionParserV2::TokenType::Keyword && tok.keyword_type == ExpressionParserV2::KeywordType::Return) {
+							delete result_object;
 							throw InkCompilerException("Return used in non-function knot", token.line_number);
 						}
 					}

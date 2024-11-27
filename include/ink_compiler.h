@@ -75,6 +75,7 @@ public:
 
 class InkCompiler {
 private:
+	std::vector<Knot> result_knots;
 	std::size_t token_index = 0;
 	bool dont_increment_index = false;
 	InkObject* last_token_object = nullptr;
