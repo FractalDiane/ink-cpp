@@ -342,6 +342,7 @@ void InkCompiler::init_compiler() {
 
 	choice_level = 0;
 	choice_stack.clear();
+	anonymous_knot_stack.clear();
 
 	current_sequence_index = 0;
 	current_uuid = 0;
