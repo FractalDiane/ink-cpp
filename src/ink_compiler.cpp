@@ -599,19 +599,6 @@ InkObject* InkCompiler::compile_token(std::vector<InkLexer::Token>& all_tokens, 
 							story_variable_info.story_knot_structure[new_knot_name] = {};
 						}
 
-						bool is_new_knot = true;
-						std::size_t existing_index = 0;
-						for (std::size_t i = 0; i < story_knots.size(); ++i) {
-							for (const Knot& knot : story_knots) {
-								if (knot.name == new_knot_name) {
-									is_new_knot = false;
-									break;
-								}
-
-								++existing_index;
-							}
-						}
-
 						if (current_pass != CompilerPass::ConstantsLists) {
 							new_knot.name = new_knot_name;
 							new_knot.uuid = Uuid(current_uuid++);
