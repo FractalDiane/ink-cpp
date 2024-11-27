@@ -34,9 +34,14 @@ int main(int argc, char* argv[]) {
 	
 	while (true) {
 		while (story.can_continue()) {
-			std::string result = story.continue_story();
-			if (!result.empty()) {
-				print("{}\n\n", result);
+			std::expected<std::string, std::string> result = story.continue_story();
+			if (result.has_value()) {
+				if (!result->empty()) {
+					print("{}\n\n", *result);
+				}
+			} else {
+				print("Error: {}\n", result.error());
+				return 1;
 			}
 		}
 

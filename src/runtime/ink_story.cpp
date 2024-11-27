@@ -295,7 +295,7 @@ bool InkStory::can_continue() const {
 	&& story_state.index_in_knot() < story_state.current_knot_size();
 }
 
-std::string InkStory::continue_story() {
+std::expected<std::string, std::string> InkStory::continue_story() {
 	story_state.current_tags.clear();
 	if (story_state.current_knots_stack.empty()) {
 		return std::string();
@@ -353,7 +353,7 @@ std::string InkStory::continue_story() {
 			current_object->execute(story_state, eval_result);
 		} catch (const InkRuntimeException& e) {
 			story_state.should_end_story = true;
-			return std::format("ERROR: {}", e.what());
+			return std::unexpected(e.what());
 		}
 		
 		// after collecting the options from a choice, a thread returns to its origin
@@ -701,11 +701,17 @@ std::string InkStory::continue_story() {
 	return remove_duplicate_spaces(strip_string_edges(eval_result.result, true, true, true));
 }
 
-std::string InkStory::continue_story_maximally() {
+std::expected<std::string, std::string> InkStory::continue_story_maximally() {
 	std::string result;
 	result.reserve(1024);
 	while (can_continue()) {
-		result += continue_story();
+		std::expected<std::string, std::string> next = continue_story();
+		if (next.has_value()) {
+			result += *next;
+		} else {
+			return std::unexpected(next.error());
+		}
+
 		result.push_back('\n');
 	}
 

@@ -31,7 +31,7 @@ static bool serialize_mode = false;
 #define EXPECT_TEXT(...) {\
 		std::vector<std::string> seq = {__VA_ARGS__};\
 		for (const std::string& expected_text : seq) {\
-			EXPECT_EQ(story.continue_story(), expected_text);\
+			EXPECT_EQ(*(story.continue_story()), expected_text);\
 		}\
 	}
 
@@ -669,8 +669,8 @@ TEST_F(GameQueriesTests, TurnsSinceFunction) {
 
 TEST_F(GameQueriesTests, SeedRandomFunction) {
 	STORY("9_game_queries/9d_seed_random.ink");
-	std::string text1 = story.continue_story();
-	std::string text2 = story.continue_story();
+	std::string text1 = *story.continue_story();
+	std::string text2 = *story.continue_story();
 	EXPECT_EQ(text1, text2);
 }
 #pragma endregion
@@ -1123,7 +1123,7 @@ TEST_F(ConditionalBlockTests, ConditionalWithOptions) {
 TEST_F(ConditionalBlockTests, MultilineAlternatives) {
 	STORY("15_conditional_blocks/15i_multiline_alternatives.ink");
 	EXPECT_TEXT("I entered the casino.");
-	std::string next = story.continue_story();
+	std::string next = *story.continue_story();
 	EXPECT_TRUE(next.starts_with("At the table, I drew a card."));
 	if (next.contains("Diamonds")) {
 		EXPECT_TEXT("'You lose this time!' crowed the croupier.", "I held my breath.", "Would my luck hold?");
@@ -1133,7 +1133,7 @@ TEST_F(ConditionalBlockTests, MultilineAlternatives) {
 	
 	story.choose_choice_index(0);
 	EXPECT_TEXT("I entered the casino again.");
-	std::string next2 = story.continue_story();
+	std::string next2 = *story.continue_story();
 	EXPECT_TRUE(next2.starts_with("At the table, I drew a card."));
 	if (next2.contains("Diamonds")) {
 		EXPECT_TEXT("'You lose this time!' crowed the croupier.", "I waited impatiently.", "Could I win the hand?");
@@ -1143,7 +1143,7 @@ TEST_F(ConditionalBlockTests, MultilineAlternatives) {
 
 	story.choose_choice_index(0);
 	EXPECT_TEXT("Once more, I went inside.");
-	std::string next3 = story.continue_story();
+	std::string next3 = *story.continue_story();
 	EXPECT_TRUE(next3.starts_with("At the table, I drew a card."));
 	if (next3.contains("Diamonds")) {
 		EXPECT_TEXT("'You lose this time!' crowed the croupier.", "I paused.", "");
@@ -1155,15 +1155,15 @@ TEST_F(ConditionalBlockTests, MultilineAlternatives) {
 TEST_F(ConditionalBlockTests, ModifiedShuffles) {
 	STORY("15_conditional_blocks/15j_modified_shuffles.ink");
 
-	std::string one_1 = story.continue_story();
+	std::string one_1 = *story.continue_story();
 	EXPECT_TRUE(one_1 == "The sun was hot." || one_1 == "It was a hot day.");
-	std::string two_1 = story.continue_story();
+	std::string two_1 = *story.continue_story();
 	EXPECT_TRUE(two_1 == "A silver BMW roars past." || two_1 == "A bright yellow Mustang takes the turn.");
 
 	story.choose_choice_index(0);
-	std::string one_2 = story.continue_story();
+	std::string one_2 = *story.continue_story();
 	EXPECT_TRUE((one_2 == "The sun was hot." || one_2 == "It was a hot day.") && one_2 != one_1);
-	std::string two_2 = story.continue_story();
+	std::string two_2 = *story.continue_story();
 	EXPECT_TRUE((two_2 == "A silver BMW roars past." || two_2 == "A bright yellow Mustang takes the turn.") && two_2 != two_1);
 
 	story.choose_choice_index(0);
@@ -1212,7 +1212,7 @@ TEST_F(TemporaryVariableTests, DivertsAsArguments) {
 #pragma region FunctionTests
 TEST_F(FunctionTests, FunctionsInLogic) {
 	STORY("17_functions/17a_functions_in_logic.ink");
-	std::string text = story.continue_story();
+	std::string text = *story.continue_story();
 	EXPECT_TRUE(text.starts_with("x = 3."));
 }
 
@@ -1609,7 +1609,7 @@ TEST_F(ListTests, ListQueries) {
 	EXPECT_TEXT("2");
 	EXPECT_TEXT("Adams");
 	EXPECT_TEXT("Cartwright");
-	std::string random = story.continue_story();
+	std::string random = *story.continue_story();
 	EXPECT_TRUE(random == "Adams" || random == "Cartwright");
 }
 
@@ -1676,7 +1676,7 @@ TEST_F(ListTests, MultiListQueries) {
 		"a",
 	);
 
-	std::string next = story.continue_story();
+	std::string next = *story.continue_story();
 	EXPECT_TRUE(next == "three" || next == "c");
 
 	EXPECT_TEXT(
@@ -1773,7 +1773,9 @@ TEST_F(MiscBugTests, ChoiceDivertScope) {
 
 TEST_F(MiscBugTests, AddNullToNumber) {
 	STORY("22_misc_bugs/22m_add_null_to_number.ink");
-	EXPECT_TEXT("ERROR: Invalid operands for operator '+': one or more null values");
+	std::expected<std::string, std::string> result = story.continue_story();
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(result.error(), "Invalid operands for operator '+': one or more null values");
 }
 
 TEST_F(MiscBugTests, MultipleTags) {
@@ -2688,7 +2690,7 @@ TEST_F(InkProof, EmptyListOrigin) {
 TEST_F(InkProof, ListRandom) {
 	STORY("ink-proof/74_list_random.ink");
 	for (int i = 0; i < 10; ++i) {
-		std::string text = story.continue_story();
+		std::string text = *story.continue_story();
 		EXPECT_TRUE(text == "B" || text == "C" || text == "D");
 	}
 }
@@ -2964,15 +2966,15 @@ TEST_F(InkProof, AllSequenceTypes) {
 	EXPECT_TEXT("Default: one two two two");
 	EXPECT_TEXT("Cycle: one two one two");
 	
-	std::string shuffle_text = story.continue_story();
+	std::string shuffle_text = *story.continue_story();
 	EXPECT_TRUE(shuffle_text.starts_with("Shuffle: "));
 	EXPECT_TRUE(shuffle_text.substr(9).contains("one") || shuffle_text.substr(9).contains("two"));
 
-	std::string shuffle_text_2 = story.continue_story();
+	std::string shuffle_text_2 = *story.continue_story();
 	EXPECT_TRUE(shuffle_text_2.starts_with("Shuffle stopping: "));
 	EXPECT_TRUE(shuffle_text_2.substr(18).contains("one") && shuffle_text_2.substr(18).contains("two") && shuffle_text_2.ends_with("final final"));
 
-	std::string shuffle_text_3 = story.continue_story();
+	std::string shuffle_text_3 = *story.continue_story();
 	EXPECT_TRUE(shuffle_text_3.starts_with("Shuffle once: "));
 	EXPECT_TRUE(shuffle_text_3.substr(14).contains("one") && shuffle_text_3.substr(14).contains("two"));
 }

@@ -14,6 +14,7 @@
 #include <string_view>
 #include <functional>
 #include <concepts>
+#include <expected>
 
 template <typename T>
 concept ConvertibleToVariant = std::convertible_to<T, ExpressionParserV2::Variant>;
@@ -72,8 +73,8 @@ public:
 	void print_info() const;
 
 	bool can_continue() const;
-	std::string continue_story();
-	std::string continue_story_maximally();
+	std::expected<std::string, std::string> continue_story();
+	std::expected<std::string, std::string> continue_story_maximally();
 
 	std::vector<std::string> get_current_choices() const;
 	const std::vector<std::string>& get_current_tags() const { return story_state.current_tags; }
